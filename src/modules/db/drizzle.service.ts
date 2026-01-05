@@ -20,6 +20,7 @@ export class DrizzleService implements OnApplicationBootstrap {
       connectionString: databaseUrl,
       ssl: {
         rejectUnauthorized: false,
+        servername: 'ep-fancy-sunset-agumpje5.c-2.eu-central-1.aws.neon.tech',
       },
     });
 
