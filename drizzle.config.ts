@@ -11,6 +11,9 @@ export default defineConfig({
   dialect: 'postgresql',
   dbCredentials: {
     url: process.env.DATABASE_URL,
-    ssl: true,
+    ssl: {
+      rejectUnauthorized: false,
+      servername: 'ep-fancy-sunset-agumpje5.c-2.eu-central-1.aws.neon.tech',
+    },
   },
 });
