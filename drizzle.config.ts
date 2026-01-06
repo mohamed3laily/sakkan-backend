@@ -13,7 +13,6 @@ export default defineConfig({
     url: process.env.DATABASE_URL,
     ssl: {
       rejectUnauthorized: false,
-      servername: 'ep-fancy-sunset-agumpje5.c-2.eu-central-1.aws.neon.tech',
     },
   },
 });
