@@ -18,9 +18,6 @@ export class DrizzleService implements OnApplicationBootstrap {
 
     const pool = new Pool({
       connectionString: databaseUrl,
-      ssl: {
-        rejectUnauthorized: false,
-      },
     });
 
     this.db = drizzle(pool, {
