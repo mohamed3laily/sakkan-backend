@@ -4,7 +4,6 @@ import { Pool } from 'pg';
 import { ConfigService } from '@nestjs/config';
 import * as schema from './schemas/schema-index';
 import chalk from 'chalk';
-
 @Injectable()
 export class DrizzleService implements OnApplicationBootstrap {
   public db: NodePgDatabase<typeof schema>;
@@ -21,7 +20,6 @@ export class DrizzleService implements OnApplicationBootstrap {
       connectionString: databaseUrl,
       ssl: {
         rejectUnauthorized: false,
-        checkServerIdentity: () => undefined, // Add this line!
       },
     });
 
