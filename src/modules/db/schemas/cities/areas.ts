@@ -1,4 +1,4 @@
-import { integer, pgTable, serial, uuid, varchar } from 'drizzle-orm/pg-core';
+import { integer, pgTable, serial, varchar } from 'drizzle-orm/pg-core';
 import { cities } from './cities';
 import { timestamps } from '../timestamps';
 

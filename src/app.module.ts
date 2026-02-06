@@ -6,9 +6,10 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { ListingModule } from './modules/listing/listing.module';
+import { CityModule } from './modules/city/city.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), DrizzleModule, AuthModule, UserModule, ListingModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), DrizzleModule, AuthModule, UserModule, ListingModule, CityModule],
   controllers: [AppController],
   providers: [AppService],
 })
