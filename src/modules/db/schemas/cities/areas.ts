@@ -1,10 +1,10 @@
-import { pgTable, serial, uuid, varchar } from 'drizzle-orm/pg-core';
+import { integer, pgTable, serial, uuid, varchar } from 'drizzle-orm/pg-core';
 import { cities } from './cities';
-import { timestamps } from '../helpers';
+import { timestamps } from '../timestamps';
 
 export const areas = pgTable('areas', {
   id: serial('id').primaryKey(),
-  cityId: uuid('city_id')
+  cityId: integer('city_id')
     .notNull()
     .references(() => cities.id, { onDelete: 'cascade' }),
 

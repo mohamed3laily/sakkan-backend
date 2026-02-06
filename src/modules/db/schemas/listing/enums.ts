@@ -1,6 +1,6 @@
 import { pgEnum } from 'drizzle-orm/pg-core';
 
-export const dealTypeEnum = pgEnum('listing_type', ['RENT', 'BUY']);
+export const dealTypeEnum = pgEnum('deal_type', ['RENT', 'BUY']);
 
 export const listingTypeEnum = pgEnum('listing_type', ['OFFER', 'REQUEST']);
 

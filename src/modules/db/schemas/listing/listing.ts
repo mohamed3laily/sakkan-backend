@@ -6,12 +6,12 @@ import {
   paymentMethodEnum,
   propertyTypeEnum,
 } from './enums';
-import { timestamps } from '../helpers';
 import { users } from '../schema-index';
 import { cities } from '../cities/cities';
 import { areas } from '../cities/areas';
 
 import { index } from 'drizzle-orm/pg-core';
+import { timestamps } from '../timestamps';
 
 export const listings = pgTable(
   'listings',
