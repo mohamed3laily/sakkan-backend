@@ -63,6 +63,10 @@ export class CreateListingDto {
   numberOfBathrooms?: number;
 
   @IsOptional()
+  @IsBoolean()
+  isSerious?: boolean;
+
+  @IsOptional()
   @IsEnum(PaymentMethod)
   paymentMethod?: PaymentMethod;
 
