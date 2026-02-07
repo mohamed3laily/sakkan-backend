@@ -20,9 +20,7 @@ export class ListingService {
     return this.repo.create(userId, dto);
   }
 
-  async getListings(
-    query: ListingQueryDto,
-  ): Promise<PaginatedResponse<typeof listings.$inferSelect>> {
+  async getListings(query: ListingQueryDto) {
     const { page = 1, limit = 10, sortBy, order, ...filterFields } = query;
 
     const filters: ListingFiltersDto = filterFields;
