@@ -17,6 +17,10 @@ import {
 } from '../enum/listing.enums';
 
 export class CreateListingDto {
+  @IsString()
+  @MaxLength(255)
+  title: string;
+
   @IsEnum(DealType)
   dealType: DealType;
 
@@ -47,6 +51,16 @@ export class CreateListingDto {
   @IsInt()
   @IsPositive()
   spaceSqm?: number;
+
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  numberOfRooms?: number;
+
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  numberOfBathrooms?: number;
 
   @IsOptional()
   @IsEnum(PaymentMethod)

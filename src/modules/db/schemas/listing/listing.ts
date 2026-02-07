@@ -1,4 +1,11 @@
-import { boolean, integer, pgTable, serial, text } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  pgTable,
+  serial,
+  text,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import {
   budgetTypeEnum,
   dealTypeEnum,
@@ -17,6 +24,8 @@ export const listings = pgTable(
   'listings',
   {
     id: serial('id').primaryKey(),
+    title: varchar('title'),
+    description: text('description'),
 
     userId: integer('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
@@ -36,9 +45,9 @@ export const listings = pgTable(
     price: integer('price'),
 
     spaceSqm: integer('space_sqm'),
+    numberOfRooms: integer('number_of_rooms'),
+    numberOfBathrooms: integer('number_of_bathrooms'),
     paymentMethod: paymentMethodEnum('payment_method'),
-
-    description: text('description'),
 
     contactWhatsapp: boolean('contact_whatsapp').default(true),
     contactPhone: boolean('contact_phone').default(false),

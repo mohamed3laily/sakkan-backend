@@ -11,6 +11,7 @@ export class ListingsRepository {
       .insert(listings)
       .values({
         userId,
+        title: dto.title,
         dealType: dto.dealType,
         listingType: dto.listingType,
         propertyType: dto.propertyType,
@@ -19,6 +20,8 @@ export class ListingsRepository {
         budgetType: dto.budgetType,
         price: dto.price,
         spaceSqm: dto.spaceSqm,
+        numberOfRooms: dto.numberOfRooms,
+        numberOfBathrooms: dto.numberOfBathrooms,
         paymentMethod: dto.paymentMethod,
         description: dto.description,
         contactWhatsapp: dto.contactWhatsapp,
