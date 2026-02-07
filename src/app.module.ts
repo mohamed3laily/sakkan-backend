@@ -7,9 +7,18 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { ListingModule } from './modules/listing/listing.module';
 import { CityModule } from './modules/city/city.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), DrizzleModule, AuthModule, UserModule, ListingModule, CityModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    CommonModule,
+    DrizzleModule,
+    AuthModule,
+    UserModule,
+    ListingModule,
+    CityModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

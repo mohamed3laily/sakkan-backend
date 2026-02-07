@@ -42,10 +42,13 @@ export class CreateListingDto {
   @IsEnum(BudgetType)
   budgetType: BudgetType;
 
-  @ValidateIf((o) => o.budgetType === BudgetType.FIXED)
   @IsInt()
   @IsPositive()
   price?: number;
+
+  @IsInt()
+  @IsPositive()
+  mPrice?: number;
 
   @IsOptional()
   @IsInt()
@@ -61,6 +64,21 @@ export class CreateListingDto {
   @IsInt()
   @IsPositive()
   numberOfBathrooms?: number;
+
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  propertyAge?: number;
+
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  latitude?: number;
+
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  longitude?: number;
 
   @IsOptional()
   @IsBoolean()

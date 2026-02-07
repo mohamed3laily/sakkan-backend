@@ -36,6 +36,20 @@
       "when": 1770488227717,
       "tag": "0004_salty_omega_flight",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1770496062414,
+      "tag": "0005_silly_doorman",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1770496893460,
+      "tag": "0006_watery_lilith",
+      "breakpoints": true
     }
   ]
 }

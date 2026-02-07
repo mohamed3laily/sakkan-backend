@@ -2,17 +2,37 @@ import { Injectable } from '@nestjs/common';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { DrizzleService } from '../db/drizzle.service';
 import { listings } from '../db/schemas/listing/listing';
-import { and, asc, desc, eq, gte, ilike, lte, or, SQL } from 'drizzle-orm';
+import { cities } from '../db/schemas/cities/cities';
+import { areas } from '../db/schemas/cities/areas';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  ilike,
+  lte,
+  or,
+  SQL,
+  count,
+} from 'drizzle-orm';
 import { ListingFiltersDto } from './dto/listing-filters.dto';
 import {
   ListingSortBy,
   ListingSortDto,
   SortOrder,
 } from './dto/listing-sort.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
+
+export interface FindAllResult {
+  data: any[];
+  total: number;
+}
 
 @Injectable()
 export class ListingsRepository {
   constructor(private readonly drizzleService: DrizzleService) {}
+
   async create(userId: number, dto: CreateListingDto) {
     const [listing] = await this.drizzleService.db
       .insert(listings)
@@ -31,6 +51,10 @@ export class ListingsRepository {
         numberOfBathrooms: dto.numberOfBathrooms,
         paymentMethod: dto.paymentMethod,
         description: dto.description,
+        mPrice: dto.mPrice,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        propertyAge: dto.propertyAge,
         contactWhatsapp: dto.contactWhatsapp,
         contactPhone: dto.contactPhone,
         isSerious: dto.isSerious,
@@ -40,14 +64,121 @@ export class ListingsRepository {
     return listing;
   }
 
-  async findAll(filters: ListingFiltersDto, sort: ListingSortDto) {
+  async findAll(
+    filters: ListingFiltersDto,
+    sort: ListingSortDto,
+    pagination: PaginationDto,
+  ): Promise<FindAllResult> {
     const whereClause = this.buildWhere(filters);
     const orderByClause = this.buildOrderBy(sort);
-    return this.drizzleService.db
-      .select()
+    const { page = 1, limit = 10 } = pagination;
+    const offset = (page - 1) * limit;
+
+    const [data, [{ total }]] = await Promise.all([
+      this.drizzleService.db
+        .select({
+          id: listings.id,
+          title: listings.title,
+          description: listings.description,
+          userId: listings.userId,
+          dealType: listings.dealType,
+          listingType: listings.listingType,
+          propertyType: listings.propertyType,
+          budgetType: listings.budgetType,
+          price: listings.price,
+          spaceSqm: listings.spaceSqm,
+          numberOfRooms: listings.numberOfRooms,
+          numberOfBathrooms: listings.numberOfBathrooms,
+          latitude: listings.latitude,
+          longitude: listings.longitude,
+          mPrice: listings.mPrice,
+          propertyAge: listings.propertyAge,
+          paymentMethod: listings.paymentMethod,
+          contactWhatsapp: listings.contactWhatsapp,
+          contactPhone: listings.contactPhone,
+          isSerious: listings.isSerious,
+          createdAt: listings.createdAt,
+
+          city: {
+            id: cities.id,
+            nameEn: cities.nameEn,
+            nameAr: cities.nameAr,
+          },
+
+          area: {
+            id: areas.id,
+            nameEn: areas.nameEn,
+            nameAr: areas.nameAr,
+            cityId: areas.cityId,
+          },
+        })
+        .from(listings)
+        .leftJoin(cities, eq(listings.cityId, cities.id))
+        .leftJoin(areas, eq(listings.areaId, areas.id))
+        .where(whereClause)
+        .orderBy(orderByClause)
+        .limit(limit)
+        .offset(offset),
+
+      this.drizzleService.db
+        .select({ total: count() })
+        .from(listings)
+        .where(whereClause),
+    ]);
+
+    return {
+      data,
+      total: Number(total),
+    };
+  }
+
+  async findById(id: number) {
+    const [listing] = await this.drizzleService.db
+      .select({
+        id: listings.id,
+        title: listings.title,
+        description: listings.description,
+        userId: listings.userId,
+        dealType: listings.dealType,
+        listingType: listings.listingType,
+        propertyType: listings.propertyType,
+        cityId: listings.cityId,
+        areaId: listings.areaId,
+        budgetType: listings.budgetType,
+        price: listings.price,
+        spaceSqm: listings.spaceSqm,
+        numberOfRooms: listings.numberOfRooms,
+        numberOfBathrooms: listings.numberOfBathrooms,
+        latitude: listings.latitude,
+        longitude: listings.longitude,
+        mPrice: listings.mPrice,
+        propertyAge: listings.propertyAge,
+        paymentMethod: listings.paymentMethod,
+        contactWhatsapp: listings.contactWhatsapp,
+        contactPhone: listings.contactPhone,
+        isSerious: listings.isSerious,
+        createdAt: listings.createdAt,
+
+        city: {
+          id: cities.id,
+          nameEn: cities.nameEn,
+          nameAr: cities.nameAr,
+        },
+
+        area: {
+          id: areas.id,
+          nameEn: areas.nameEn,
+          nameAr: areas.nameAr,
+          cityId: areas.cityId,
+        },
+      })
       .from(listings)
-      .where(whereClause)
-      .orderBy(orderByClause);
+      .leftJoin(cities, eq(listings.cityId, cities.id))
+      .leftJoin(areas, eq(listings.areaId, areas.id))
+      .where(eq(listings.id, id))
+      .limit(1);
+
+    return listing || null;
   }
 
   private buildWhere(filters: ListingFiltersDto): SQL | undefined {
@@ -130,7 +261,6 @@ export class ListingsRepository {
         return direction(listings.isSerious);
 
       case ListingSortBy.CREATED_AT:
-
       default:
         return direction(listings.createdAt);
     }

@@ -43,10 +43,13 @@ export const listings = pgTable(
 
     budgetType: budgetTypeEnum('budget_type').notNull(),
     price: integer('price'),
-
+    mPrice: integer('m_price'),
     spaceSqm: integer('space_sqm'),
     numberOfRooms: integer('number_of_rooms'),
     numberOfBathrooms: integer('number_of_bathrooms'),
+    propertyAge: integer('property_age'),
+    latitude: integer('latitude'),
+    longitude: integer('longitude'),
     paymentMethod: paymentMethodEnum('payment_method'),
 
     contactWhatsapp: boolean('contact_whatsapp').default(true),

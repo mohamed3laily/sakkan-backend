@@ -1,5 +1,12 @@
-import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
-import { Transform } from 'class-transformer';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 import {
   BudgetType,
@@ -24,12 +31,12 @@ export class ListingFiltersDto {
 
   @IsOptional()
   @IsInt()
-  @Transform(({ value }) => parseInt(value, 10), { toClassOnly: true })
+  @Type(() => Number)
   cityId?: number;
 
   @IsOptional()
   @IsInt()
-  @Transform(({ value }) => parseInt(value, 10), { toClassOnly: true })
+  @Type(() => Number)
   areaId?: number;
 
   @IsOptional()
@@ -43,33 +50,39 @@ export class ListingFiltersDto {
   @IsOptional()
   @IsInt()
   @Min(0)
+  @Type(() => Number)
   minPrice?: number;
 
   @IsOptional()
   @IsInt()
   @Min(0)
+  @Type(() => Number)
   maxPrice?: number;
 
   @IsOptional()
   @IsInt()
+  @Type(() => Number)
   minSpaceSqm?: number;
 
   @IsOptional()
   @IsInt()
+  @Type(() => Number)
   maxSpaceSqm?: number;
 
   @IsOptional()
   @IsInt()
+  @Type(() => Number)
   numberOfRooms?: number;
 
   @IsOptional()
   @IsInt()
   @Min(0)
+  @Type(() => Number)
   numberOfBathrooms?: number;
 
   @IsOptional()
-  @IsInt()
-  @Min(0)
+  @Type(() => Boolean)
+  @IsBoolean()
   isSerious?: boolean;
 
   @IsOptional()
