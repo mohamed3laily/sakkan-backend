@@ -8,6 +8,48 @@
       "when": 1765028584635,
       "tag": "0000_common_songbird",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770409550808,
+      "tag": "0001_slow_impossible_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770409763193,
+      "tag": "0002_short_dexter_bennett",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1770485649658,
+      "tag": "0003_gifted_freak",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1770488227717,
+      "tag": "0004_salty_omega_flight",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1770496062414,
+      "tag": "0005_silly_doorman",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1770496893460,
+      "tag": "0006_watery_lilith",
+      "breakpoints": true
     }
   ]
 }

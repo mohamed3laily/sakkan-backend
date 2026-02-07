@@ -1,0 +1,2 @@
+CREATE TYPE "public"."deal_type" AS ENUM('RENT', 'BUY');--> statement-breakpoint
+ALTER TABLE "listings" ALTER COLUMN "deal_type" SET DATA TYPE "public"."deal_type" USING "deal_type"::text::"public"."deal_type";
