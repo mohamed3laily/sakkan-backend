@@ -7,6 +7,11 @@ export class RequestResetDto {
 }
 
 export class ResetPasswordDto {
+
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
+
   @IsString()
   @IsNotEmpty()
   token: string;

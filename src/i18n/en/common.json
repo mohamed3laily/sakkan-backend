@@ -1,0 +1,7 @@
+{
+  "SUCCESS": "Success",
+  "NOT_FOUND": "Resource not found",
+  "UNAUTHORIZED": "Unauthorized",
+  "FORBIDDEN": "Access forbidden",
+  "INTERNAL_ERROR": "Internal server error"
+}
