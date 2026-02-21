@@ -5,9 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { DrizzleService } from 'src/modules/db/drizzle.service';
 import { LoginDto } from './dto/login.dto';
 import { RequestResetDto, ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
@@ -18,10 +16,8 @@ import { PhoneUtils } from './utils/phone.utils';
 @Injectable()
 export class AuthService {
   constructor(
-    private drizzleService: DrizzleService,
     private authRepo: AuthRepo,
     private jwtService: JwtService,
-    private configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -35,25 +31,79 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    const [newUser] = await this.authRepo.insertUser({
-      firstName,
-      lastName,
-      phone: normalizedPhone,
-      password: hashedPassword,
-    });
-
+    const verifyPhoneToken = this.generateVerifyPhoneToken();
+    const verifyPhoneTokenExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    const [newUser] = await this.authRepo.insertUser(
+      {
+        firstName,
+        lastName,
+        phone: normalizedPhone,
+        password: hashedPassword,
+      },
+      verifyPhoneToken,
+      verifyPhoneTokenExpiry,
+    );
     const token = this.generateToken(newUser.id, newUser.phone);
 
     return {
+      message: 'REGISTER_OTP_SENT',
       accessToken: token,
       user: {
         id: newUser.id,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
         phone: newUser.phone,
+        phoneVerified: !!newUser.verifiedPhoneAt,
       },
     };
+  }
+
+  async verifyPhone(phone: string, token: string) {
+    const normalizedPhone = PhoneUtils.normalizePhone(phone);
+
+    const user = await this.authRepo.getUserByPhone(normalizedPhone);
+
+    if (!user || !user.verifyPhoneToken || !user.verifyPhoneTokenExpiry) {
+      throw new BadRequestException('INVALID_VERIFICATION_REQUEST');
+    }
+
+    if (new Date() > user.verifyPhoneTokenExpiry) {
+      throw new BadRequestException('VERIFICATION_TOKEN_EXPIRED');
+    }
+
+    // TODO: Use crypted tokens and compare using a timing-safe method
+    const valid = user.verifyPhoneToken === token;
+
+    if (!valid) {
+      throw new BadRequestException('INVALID_VERIFICATION_TOKEN');
+    }
+
+    await this.authRepo.updateUser(user.id, {
+      verifiedPhoneAt: new Date(),
+      verifyPhoneToken: null,
+      verifyPhoneTokenExpiry: null,
+    });
+
+    return { message: 'PHONE_VERIFIED' };
+  }
+
+  async resendVerifyPhone(phone: string) {
+    const normalizedPhone = PhoneUtils.normalizePhone(phone);
+
+    const user = await this.authRepo.getUserByPhone(normalizedPhone);
+    if (!user) {
+      throw new BadRequestException('INVALID_VERIFICATION_REQUEST');
+    }
+
+    const verifyPhoneToken = this.generateVerifyPhoneToken();
+    const verifyPhoneTokenExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    await this.authRepo.updateUser(user.id, {
+      verifyPhoneToken,
+      verifyPhoneTokenExpiry,
+    });
+
+    return { message: 'VERIFY_OTP_SENT' };
   }
 
   async login(loginDto: LoginDto) {
@@ -86,6 +136,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
+        phoneVerified: !!user.verifiedPhoneAt,
       },
     };
   }
@@ -117,6 +168,25 @@ export class AuthService {
     // TODO: Send reset token via SMS provider
 
     return { message: 'RESET_SENT' };
+  }
+
+  async verifyResetToken(phone: string, token: string) {
+    const normalizedPhone = PhoneUtils.normalizePhone(phone);
+
+    const user = await this.authRepo.getUserByPhone(normalizedPhone);
+    if (!user || !user.resetToken || !user.resetTokenExpiry) {
+      throw new BadRequestException('INVALID_RESET_REQUEST');
+    }
+
+    if (user.resetToken !== token) {
+      throw new BadRequestException('INVALID_RESET_TOKEN');
+    }
+
+    if (new Date() > user.resetTokenExpiry) {
+      throw new BadRequestException('RESET_TOKEN_EXPIRED');
+    }
+
+    return { message: 'RESET_TOKEN_VALID' };
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
@@ -155,6 +225,10 @@ export class AuthService {
 
   private generateResetToken(): string {
     // TODO: Replace with cryptographically secure generator
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return '11111';
+  }
+  private generateVerifyPhoneToken(): string {
+    // TODO: Replace with cryptographically secure generator
+    return '11111';
   }
 }

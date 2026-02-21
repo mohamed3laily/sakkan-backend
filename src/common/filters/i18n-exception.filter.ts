@@ -18,24 +18,24 @@ export class I18nExceptionFilter implements ExceptionFilter {
     const lang = getLang(host);
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message: string | string[] = 'INTERNAL_ERROR';
+    let payload: any = {
+      message: 'INTERNAL_ERROR',
+    };
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const res = exception.getResponse() as any;
 
       if (typeof res === 'string') {
-        message = res;
+        payload.message = t(res, lang);
       } else if (Array.isArray(res?.message)) {
-        message = res.message.map((m) => t(m, lang));
-      } else {
-        message = res?.message ?? message;
+        payload.message = res.message.map((m) => t(m, lang));
+      } else if (typeof res === 'object') {
+        payload = { ...res };
+        if (res.message) payload.message = t(res.message, lang);
       }
     }
 
-    response.status(status).json({
-      statusCode: status,
-      message: Array.isArray(message) ? message : t(message as string, lang),
-    });
+    response.status(status).json(payload);
   }
 }
