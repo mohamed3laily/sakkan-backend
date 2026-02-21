@@ -14,6 +14,11 @@ import {
 } from './dto/reset-password.dto';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AllowUnverified } from './decorators/allow-unverified.decorator';
+import { VerifyPhoneDto } from './dto/verify-phone.dto';
+import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
+import { CurrentUser } from './decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -27,6 +32,23 @@ export class AuthController {
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @AllowUnverified()
+  @Post('verify-phone')
+  verifyPhone(
+    @Body() dto: VerifyPhoneDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.authService.verifyPhone(user.phone, dto.token);
+  }
+
+  @Post('resend-verify-otp')
+  @UseGuards(JwtAuthGuard)
+  @AllowUnverified()
+  async resendVerifyPhone(@CurrentUser() user: AuthenticatedUser) {
+    return this.authService.resendVerifyPhone(user.phone);
   }
 
   @Post('request-reset')

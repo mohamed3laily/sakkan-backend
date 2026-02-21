@@ -14,8 +14,19 @@ export class AuthRepo {
     });
   }
 
-  async insertUser(userData: RegisterDto) {
-    return this.drizzleService.db.insert(users).values(userData).returning();
+  async insertUser(
+    userData: RegisterDto,
+    verifyPhoneToken?: string,
+    verifyPhoneTokenExpiry?: Date,
+  ) {
+    return this.drizzleService.db
+      .insert(users)
+      .values({
+        ...userData,
+        verifyPhoneToken,
+        verifyPhoneTokenExpiry,
+      })
+      .returning();
   }
 
   async updateUser(userId: number, updateData: Partial<InsertUser>) {
