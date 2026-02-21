@@ -7,9 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { eq } from 'drizzle-orm';
 import { DrizzleService } from 'src/modules/db/drizzle.service';
-import { users } from 'src/modules/db/schemas/user/user';
 import { LoginDto } from './dto/login.dto';
 import { RequestResetDto, ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
@@ -33,7 +31,7 @@ export class AuthService {
     const existingUser = await this.authRepo.getUserByPhone(normalizedPhone);
 
     if (existingUser) {
-      throw new ConflictException('User with this phone number already exists');
+      throw new ConflictException('PHONE_EXISTS');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -64,19 +62,19 @@ export class AuthService {
     let normalizedPhone: string;
     try {
       normalizedPhone = PhoneUtils.normalizePhone(phone);
-    } catch (error) {
-      throw new UnauthorizedException('Invalid credentials');
+    } catch {
+      throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
 
     const user = await this.authRepo.getUserByPhone(normalizedPhone);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
 
     const token = this.generateToken(user.id, user.phone);
@@ -98,46 +96,45 @@ export class AuthService {
     let normalizedPhone: string;
     try {
       normalizedPhone = PhoneUtils.normalizePhone(phone);
-    } catch (error) {
-      return {
-        message: 'If the phone number exists, a reset token will be sent',
-      };
+    } catch {
+      return { message: 'RESET_SENT' };
     }
 
     const user = await this.authRepo.getUserByPhone(normalizedPhone);
 
     if (!user) {
-      return {
-        message: 'If the phone number exists, a reset token will be sent',
-      };
+      return { message: 'RESET_SENT' };
     }
 
     const resetToken = this.generateResetToken();
-    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     await this.authRepo.updateUser(user.id, {
       resetToken,
       resetTokenExpiry,
     });
 
-    // TODO: Send reset token via SMS
+    // TODO: Send reset token via SMS provider
 
-    return {
-      message: 'If the phone number exists, a reset token will be sent',
-    };
+    return { message: 'RESET_SENT' };
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const { token, newPassword } = resetPasswordDto;
+    const { phone, token, newPassword } = resetPasswordDto;
 
-    const user = await this.authRepo.getUserByResetToken(token);
+    const normalizedPhone = PhoneUtils.normalizePhone(phone);
+    const user = await this.authRepo.getUserByPhone(normalizedPhone);
 
-    if (!user || !user.resetTokenExpiry) {
-      throw new BadRequestException('Invalid or expired reset token');
+    if (!user || !user.resetToken || !user.resetTokenExpiry) {
+      throw new BadRequestException('INVALID_RESET_REQUEST');
+    }
+
+    if (user.resetToken !== token) {
+      throw new BadRequestException('INVALID_RESET_TOKEN');
     }
 
     if (new Date() > user.resetTokenExpiry) {
-      throw new BadRequestException('Reset token has expired');
+      throw new BadRequestException('RESET_TOKEN_EXPIRED');
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -148,7 +145,7 @@ export class AuthService {
       resetTokenExpiry: null,
     });
 
-    return { message: 'Password reset successful' };
+    return { message: 'RESET_SUCCESS' };
   }
 
   private generateToken(userId: number, phone: string): string {
@@ -157,6 +154,7 @@ export class AuthService {
   }
 
   private generateResetToken(): string {
-    return '11111'; // TODO: Implement proper token generation
+    // TODO: Replace with cryptographically secure generator
+    return Math.floor(100000 + Math.random() * 900000).toString();
   }
 }

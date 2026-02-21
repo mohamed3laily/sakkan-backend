@@ -1,6 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ResponseTranslateInterceptor } from './common/interceptors/response-translate.interceptor';
+import { TranslateInterceptor } from './common/interceptors/translate.interceptor';
+import { I18nExceptionFilter } from './common/filters/i18n-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,6 +20,12 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.useGlobalInterceptors(
+    new TranslateInterceptor(),
+    new ResponseTranslateInterceptor(),
+  );
+
+  app.useGlobalFilters(new I18nExceptionFilter());
 
   await app.listen(process.env.PORT ?? 3000);
 }
