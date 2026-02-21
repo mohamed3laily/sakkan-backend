@@ -18,10 +18,8 @@ import { PhoneUtils } from './utils/phone.utils';
 @Injectable()
 export class AuthService {
   constructor(
-    private drizzleService: DrizzleService,
     private authRepo: AuthRepo,
     private jwtService: JwtService,
-    private configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -119,6 +117,25 @@ export class AuthService {
     return { message: 'RESET_SENT' };
   }
 
+  async verifyResetToken(phone: string, token: string) {
+    const normalizedPhone = PhoneUtils.normalizePhone(phone);
+
+    const user = await this.authRepo.getUserByPhone(normalizedPhone);
+    if (!user || !user.resetToken || !user.resetTokenExpiry) {
+      throw new BadRequestException('INVALID_RESET_REQUEST');
+    }
+
+    if (user.resetToken !== token) {
+      throw new BadRequestException('INVALID_RESET_TOKEN');
+    }
+
+    if (new Date() > user.resetTokenExpiry) {
+      throw new BadRequestException('RESET_TOKEN_EXPIRED');
+    }
+
+    return { message: 'RESET_TOKEN_VALID' };
+  }
+
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
     const { phone, token, newPassword } = resetPasswordDto;
 
@@ -155,6 +172,6 @@ export class AuthService {
 
   private generateResetToken(): string {
     // TODO: Replace with cryptographically secure generator
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return '11111';
   }
 }

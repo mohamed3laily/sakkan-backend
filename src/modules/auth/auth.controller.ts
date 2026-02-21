@@ -7,7 +7,11 @@ import {
   Request,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RequestResetDto, ResetPasswordDto } from './dto/reset-password.dto';
+import {
+  RequestResetDto,
+  ResetPasswordDto,
+  VerifyResetDto,
+} from './dto/reset-password.dto';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -28,6 +32,11 @@ export class AuthController {
   @Post('request-reset')
   async requestReset(@Body() requestResetDto: RequestResetDto) {
     return this.authService.requestPasswordReset(requestResetDto);
+  }
+
+  @Post('verify-reset-otp')
+  async verifyReset(@Body() dto: VerifyResetDto) {
+    return this.authService.verifyResetToken(dto.phone, dto.token);
   }
 
   @Post('reset-password')
