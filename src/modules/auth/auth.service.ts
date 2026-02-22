@@ -143,18 +143,17 @@ export class AuthService {
 
   async requestPasswordReset(requestResetDto: RequestResetDto) {
     const { phone } = requestResetDto;
-
     let normalizedPhone: string;
     try {
       normalizedPhone = PhoneUtils.normalizePhone(phone);
     } catch {
-      return { message: 'RESET_SENT' };
+      return { message: 'PHONE_WRONG' };
     }
 
     const user = await this.authRepo.getUserByPhone(normalizedPhone);
 
     if (!user) {
-      return { message: 'RESET_SENT' };
+      return { message: 'PHONE_NOT_FOUND' };
     }
 
     const resetToken = this.generateResetToken();
