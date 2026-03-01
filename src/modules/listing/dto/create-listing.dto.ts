@@ -5,8 +5,10 @@ import {
   IsPositive,
   IsString,
   MaxLength,
-  ValidateIf,
   IsBoolean,
+  IsArray,
+  ArrayMaxSize,
+  ValidateIf,
 } from 'class-validator';
 import {
   DealType,
@@ -35,19 +37,23 @@ export class CreateListingDto {
   cityId: number;
 
   @IsOptional()
-  @IsInt()
-  @IsPositive()
-  areaId?: number;
+  @IsArray()
+  @IsInt({ each: true })
+  @ValidateIf((o) => o.listingType === ListingType.OFFER)
+  @ArrayMaxSize(1)
+  areaIds?: number[];
 
   @IsEnum(BudgetType)
   budgetType: BudgetType;
 
   @IsInt()
   @IsPositive()
+  @IsOptional()
   price?: number;
 
   @IsInt()
   @IsPositive()
+  @IsOptional()
   mPrice?: number;
 
   @IsOptional()

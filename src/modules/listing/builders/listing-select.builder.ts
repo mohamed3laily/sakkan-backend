@@ -1,6 +1,7 @@
 import { listings } from '../../db/schemas/listing/listing';
 import { cities } from '../../db/schemas/cities/cities';
 import { areas } from '../../db/schemas/cities/areas';
+import { sql } from 'drizzle-orm';
 
 export class ListingSelectBuilder {
   static getSelectFields() {
@@ -13,7 +14,16 @@ export class ListingSelectBuilder {
       listingType: listings.listingType,
       propertyType: listings.propertyType,
       cityId: listings.cityId,
-      areaId: listings.areaId,
+      areas: sql<{ id: number; name: string }[]>`
+      COALESCE(
+        (
+          SELECT json_agg(json_build_object('id', ${areas.id}, 'nameEn', ${areas.nameEn}, 'nameAr', ${areas.nameAr}))
+          FROM ${areas}
+          WHERE ${areas.id} = ANY(${listings.areaIds})
+        ),
+        '[]'
+      )
+    `.as('areas'),
       budgetType: listings.budgetType,
       price: listings.price,
       spaceSqm: listings.spaceSqm,
@@ -33,13 +43,6 @@ export class ListingSelectBuilder {
         id: cities.id,
         nameEn: cities.nameEn,
         nameAr: cities.nameAr,
-      },
-
-      area: {
-        id: areas.id,
-        nameEn: areas.nameEn,
-        nameAr: areas.nameAr,
-        cityId: areas.cityId,
       },
     };
   }

@@ -1,4 +1,3 @@
-// listing.repo.ts
 import { Injectable } from '@nestjs/common';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { DrizzleService } from '../db/drizzle.service';
@@ -26,7 +25,7 @@ export class ListingsRepository {
         listingType: dto.listingType,
         propertyType: dto.propertyType,
         cityId: dto.cityId,
-        areaId: dto.areaId,
+        areaIds: dto.areaIds ?? [],
         budgetType: dto.budgetType,
         price: dto.price,
         spaceSqm: dto.spaceSqm,
@@ -64,7 +63,6 @@ export class ListingsRepository {
         .select(selectFields)
         .from(listings)
         .leftJoin(cities, eq(listings.cityId, cities.id))
-        .leftJoin(areas, eq(listings.areaId, areas.id))
         .where(whereClause)
         .orderBy(orderByClause)
         .limit(limit)
@@ -89,7 +87,6 @@ export class ListingsRepository {
       .select(selectFields)
       .from(listings)
       .leftJoin(cities, eq(listings.cityId, cities.id))
-      .leftJoin(areas, eq(listings.areaId, areas.id))
       .where(eq(listings.id, id))
       .limit(1);
 

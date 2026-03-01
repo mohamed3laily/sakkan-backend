@@ -39,7 +39,7 @@ export const listings = pgTable(
       .notNull()
       .references(() => cities.id),
 
-    areaId: integer('area_id').references(() => areas.id),
+    areaIds: integer('area_ids').array(),
 
     budgetType: budgetTypeEnum('budget_type').notNull(),
     price: integer('price'),
@@ -59,7 +59,10 @@ export const listings = pgTable(
   },
   (table) => ({
     cityIdx: index('idx_property_listings_city').on(table.cityId),
-    areaIdx: index('idx_property_listings_area').on(table.areaId),
+    areaIdsIdx: index('idx_property_listings_area_ids').using(
+      'gin',
+      table.areaIds,
+    ),
 
     propertyTypeIdx: index('idx_property_listings_property_type').on(
       table.propertyType,
