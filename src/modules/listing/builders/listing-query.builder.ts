@@ -41,6 +41,7 @@ export class ListingQueryBuilder {
       listings.areaIds,
       filters.areaIds,
     );
+    console.log('isSerious', filters.isSerious);
     this.addEqualityCondition(
       conditions,
       listings.isSerious,
@@ -109,6 +110,10 @@ export class ListingQueryBuilder {
     column: any,
     value: T | undefined | null,
   ): void {
+    console.log('Adding equality condition:', {
+      column: column.toString(),
+      value,
+    });
     if (value !== undefined && value !== null) {
       conditions.push(eq(column, value));
     }
