@@ -1,4 +1,15 @@
-import { SQL, and, eq, gte, lte, or, ilike, asc, desc } from 'drizzle-orm';
+import {
+  SQL,
+  and,
+  eq,
+  gte,
+  lte,
+  or,
+  ilike,
+  asc,
+  desc,
+  arrayOverlaps,
+} from 'drizzle-orm';
 import { listings } from '../../db/schemas/listing/listing';
 import { ListingFiltersDto } from '../dto/listing-filters.dto';
 import {
@@ -25,7 +36,11 @@ export class ListingQueryBuilder {
       filters.propertyType,
     );
     this.addEqualityCondition(conditions, listings.cityId, filters.cityId);
-    this.addEqualityCondition(conditions, listings.areaId, filters.areaId);
+    this.addArrayOverlapCondition(
+      conditions,
+      listings.areaIds,
+      filters.areaIds,
+    );
     this.addEqualityCondition(
       conditions,
       listings.isSerious,
@@ -110,6 +125,16 @@ export class ListingQueryBuilder {
     }
     if (max !== undefined && max !== null) {
       conditions.push(lte(column, max));
+    }
+  }
+
+  private static addArrayOverlapCondition(
+    conditions: SQL[],
+    column: any,
+    values: number[] | undefined | null,
+  ): void {
+    if (values?.length) {
+      conditions.push(arrayOverlaps(column, values));
     }
   }
 }

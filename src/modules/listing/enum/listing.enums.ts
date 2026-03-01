@@ -18,6 +18,11 @@ export const PropertyType = {
   FLOOR: 'FLOOR',
   BUILDING_TOWER: 'BUILDING_TOWER',
   APARTMENT_ROOM: 'APARTMENT_ROOM',
+  SHOP_SHOWROOM: 'SHOP_SHOWROOM',
+  CHALET_RESORT: 'CHALET_RESORT',
+  FARM_YARD: 'FARM_YARD',
+  COMMERCIAL_SERVICE: 'COMMERCIAL_SERVICE',
+  INDUSTRIAL_LOGISTICS: 'INDUSTRIAL_LOGISTICS',
 } as const;
 
 export type PropertyType = (typeof PropertyType)[keyof typeof PropertyType];

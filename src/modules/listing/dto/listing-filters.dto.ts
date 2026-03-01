@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsEnum,
   IsInt,
@@ -35,9 +36,9 @@ export class ListingFiltersDto {
   cityId?: number;
 
   @IsOptional()
-  @IsInt()
-  @Type(() => Number)
-  areaId?: number;
+  @IsArray()
+  @IsInt({ each: true })
+  areaIds?: number[];
 
   @IsOptional()
   @IsEnum(BudgetType)
