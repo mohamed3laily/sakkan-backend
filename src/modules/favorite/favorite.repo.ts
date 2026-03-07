@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 import { DrizzleService } from '../db/drizzle.service';
-import { favorites } from '../db/schemas/favorites/favorite';
+import { favorites } from '../db/schemas/favorites/favorites';
 import { FavoritableType } from './enums';
 
 @Injectable()

@@ -3,5 +3,6 @@
   "NOT_FOUND": "Resource not found",
   "UNAUTHORIZED": "Unauthorized",
   "FORBIDDEN": "Access forbidden",
-  "INTERNAL_ERROR": "Internal server error"
+  "INTERNAL_ERROR": "Internal server error",
+  "ALREADY_REPORTED": "You have already reported this item"
 }

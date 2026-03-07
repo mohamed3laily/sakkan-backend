@@ -3,5 +3,6 @@
   "NOT_FOUND": "المورد غير موجود",
   "UNAUTHORIZED": "غير مصرح",
   "FORBIDDEN": "غير مسموح",
-  "INTERNAL_ERROR": "خطأ داخلي في السيرفر"
+  "INTERNAL_ERROR": "خطأ داخلي في السيرفر",
+  "ALREADY_REPORTED": "لقد قمت بالإبلاغ عن هذا العنصر بالفعل"
 }

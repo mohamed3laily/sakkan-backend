@@ -60,6 +60,7 @@ export class ListingsRepository {
         .select(selectFields)
         .from(listings)
         .leftJoin(cities, eq(listings.cityId, cities.id))
+        .leftJoin(propertyType, eq(listings.propertyTypeId, propertyType.id))
         .where(whereClause)
         .orderBy(orderByClause)
         .limit(limit)
@@ -81,6 +82,7 @@ export class ListingsRepository {
       .select(selectFields)
       .from(listings)
       .leftJoin(cities, eq(listings.cityId, cities.id))
+      .leftJoin(propertyType, eq(listings.propertyTypeId, propertyType.id))
       .where(eq(listings.id, id))
       .limit(1);
 
