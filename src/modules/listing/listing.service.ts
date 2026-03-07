@@ -22,7 +22,7 @@ export class ListingService {
     return this.repo.create(userId, dto);
   }
 
-  async getListings(query: ListingQueryDto) {
+  async getListings(query: ListingQueryDto, userId?: number) {
     const { page = 1, limit = 10, sortBy, order, ...filterFields } = query;
 
     const filters: ListingFiltersDto = filterFields;
@@ -37,7 +37,7 @@ export class ListingService {
       limit,
     };
 
-    const { data, total } = await this.repo.findAll(filters, sort, pagination);
+    const { data, total } = await this.repo.findAll(filters, sort, pagination, userId);
     return this.paginationService.createPaginatedResponse(data, total, page, limit);
   }
 

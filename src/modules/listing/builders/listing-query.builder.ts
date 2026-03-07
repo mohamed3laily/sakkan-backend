@@ -1,76 +1,87 @@
-import { SQL, and, eq, gte, lte, or, ilike, asc, desc, arrayOverlaps } from 'drizzle-orm';
+import { SQL, and, eq, gte, lte, or, ilike, asc, desc, arrayOverlaps, sql } from 'drizzle-orm';
 import { listings } from '../../db/schemas/listing/listing';
 import { ListingFiltersDto } from '../dto/listing-filters.dto';
 import { ListingSortDto, ListingSortBy, SortOrder } from '../dto/listing-sort.dto';
 
-export class ListingQueryBuilder {
-  static buildWhere(filters: ListingFiltersDto): SQL | undefined {
-    const conditions: SQL[] = [];
+// ----helpers ----
 
-    this.addEqualityCondition(conditions, listings.dealType, filters.dealType);
-    this.addEqualityCondition(conditions, listings.listingType, filters.listingType);
-    this.addEqualityCondition(conditions, listings.propertyTypeId, filters.propertyTypeId);
-    this.addEqualityCondition(conditions, listings.cityId, filters.cityId);
-    this.addArrayOverlapCondition(conditions, listings.areaIds, filters.areaIds);
-    this.addEqualityCondition(conditions, listings.isSerious, filters.isSerious);
-    this.addEqualityCondition(conditions, listings.budgetType, filters.budgetType);
-    this.addEqualityCondition(conditions, listings.paymentMethod, filters.paymentMethod);
-    this.addEqualityCondition(conditions, listings.numberOfRooms, filters.numberOfRooms);
+function whenDefined<T>(value: T | undefined | null, fn: (v: T) => SQL): SQL | undefined {
+  return value !== undefined && value !== null ? fn(value) : undefined;
+}
 
-    this.addRangeCondition(conditions, listings.price, filters.minPrice, filters.maxPrice);
-    this.addRangeCondition(conditions, listings.spaceSqm, filters.minSpaceSqm, filters.maxSpaceSqm);
+function whenArray<T>(value: T[] | undefined | null, fn: (v: T[]) => SQL): SQL | undefined {
+  return value?.length ? fn(value) : undefined;
+}
 
-    if (filters.keyword?.trim()) {
-      const keyword = filters.keyword.trim();
-      conditions.push(or(ilike(listings.title, `%${keyword}%`), ilike(listings.description, `%${keyword}%`))!);
-    }
+function collect(...conditions: (SQL | undefined)[]): SQL | undefined {
+  const defined = conditions.filter(Boolean) as SQL[];
+  return defined.length ? and(...defined) : undefined;
+}
 
-    return conditions.length > 0 ? and(...conditions) : undefined;
-  }
+// ---- filter builders ----
 
-  static buildOrderBy(sort: ListingSortDto): SQL {
-    const direction = sort.order === SortOrder.ASC ? asc : desc;
+function buildBasicFilters(f: ListingFiltersDto) {
+  return collect(
+    whenDefined(f.dealType, (v) => eq(listings.dealType, v)),
+    whenDefined(f.listingType, (v) => eq(listings.listingType, v)),
+    whenDefined(f.propertyTypeId, (v) => eq(listings.propertyTypeId, v)),
+    whenDefined(f.cityId, (v) => eq(listings.cityId, v)),
+    whenDefined(f.isSerious, (v) => eq(listings.isSerious, v)),
+    whenDefined(f.budgetType, (v) => eq(listings.budgetType, v)),
+    whenDefined(f.paymentMethod, (v) => eq(listings.paymentMethod, v)),
+    whenDefined(f.numberOfRooms, (v) => eq(listings.numberOfRooms, v)),
+    whenArray(f.areaIds, (v) => arrayOverlaps(listings.areaIds, v)),
+  );
+}
 
-    switch (sort.sortBy) {
-      case ListingSortBy.PRICE:
-        return direction(listings.price);
-      case ListingSortBy.SPACE:
-        return direction(listings.spaceSqm);
-      case ListingSortBy.IS_SERIOUS:
-        return direction(listings.isSerious);
-      case ListingSortBy.CREATED_AT:
-      default:
-        return direction(listings.createdAt);
-    }
-  }
+function buildRangeFilters(f: ListingFiltersDto) {
+  return collect(
+    whenDefined(f.minPrice, (v) => gte(listings.price, v)),
+    whenDefined(f.maxPrice, (v) => lte(listings.price, v)),
+    whenDefined(f.minSpaceSqm, (v) => gte(listings.spaceSqm, v)),
+    whenDefined(f.maxSpaceSqm, (v) => lte(listings.spaceSqm, v)),
+  );
+}
 
-  private static addEqualityCondition<T>(conditions: SQL[], column: any, value: T | undefined | null): void {
-    console.log('Adding equality condition:', {
-      column: column.toString(),
-      value,
-    });
-    if (value !== undefined && value !== null) {
-      conditions.push(eq(column, value));
-    }
-  }
+function buildKeywordFilter(keyword?: string) {
+  const trimmed = keyword?.trim();
+  if (!trimmed) return undefined;
+  return or(ilike(listings.title, `%${trimmed}%`), ilike(listings.description, `%${trimmed}%`));
+}
 
-  private static addRangeCondition(
-    conditions: SQL[],
-    column: any,
-    min: number | undefined | null,
-    max: number | undefined | null,
-  ): void {
-    if (min !== undefined && min !== null) {
-      conditions.push(gte(column, min));
-    }
-    if (max !== undefined && max !== null) {
-      conditions.push(lte(column, max));
-    }
-  }
+function buildFavoritedFilter(favorited?: boolean, userId?: number) {
+  if (!favorited || !userId) return undefined;
+  return sql`EXISTS (
+    SELECT 1 FROM favorites
+    WHERE favorites.user_id = ${userId}
+      AND favorites.favoritable_type = 'LISTING'
+      AND favorites.favoritable_id = ${listings.id}
+  )`;
+}
 
-  private static addArrayOverlapCondition(conditions: SQL[], column: any, values: number[] | undefined | null): void {
-    if (values?.length) {
-      conditions.push(arrayOverlaps(column, values));
-    }
+// ---- exports ----
+
+export function buildListingWhere(filters: ListingFiltersDto, userId?: number) {
+  return collect(
+    buildBasicFilters(filters),
+    buildRangeFilters(filters),
+    buildKeywordFilter(filters.keyword),
+    buildFavoritedFilter(filters.favorited, userId),
+  );
+}
+
+export function buildListingOrderBy(sort: ListingSortDto): SQL {
+  const direction = sort.order === SortOrder.ASC ? asc : desc;
+
+  switch (sort.sortBy) {
+    case ListingSortBy.PRICE:
+      return direction(listings.price);
+    case ListingSortBy.SPACE:
+      return direction(listings.spaceSqm);
+    case ListingSortBy.IS_SERIOUS:
+      return direction(listings.isSerious);
+    case ListingSortBy.CREATED_AT:
+    default:
+      return direction(listings.createdAt);
   }
 }

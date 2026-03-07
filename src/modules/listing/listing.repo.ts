@@ -9,8 +9,9 @@ import { eq, count } from 'drizzle-orm';
 import { ListingFiltersDto } from './dto/listing-filters.dto';
 import { ListingSortDto } from './dto/listing-sort.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
-import { ListingQueryBuilder } from './builders/listing-query.builder';
+import { buildListingOrderBy, buildListingWhere } from './builders/listing-query.builder';
 import { ListingSelectBuilder } from './builders/listing-select.builder';
+import { users } from '../db/schemas/schema-index';
 
 @Injectable()
 export class ListingsRepository {
@@ -47,10 +48,15 @@ export class ListingsRepository {
     return listing;
   }
 
-  async findAll(filters: ListingFiltersDto, sort: ListingSortDto, pagination: PaginationDto) {
-    const whereClause = ListingQueryBuilder.buildWhere(filters);
-    const orderByClause = ListingQueryBuilder.buildOrderBy(sort);
-    const selectFields = ListingSelectBuilder.getSelectFields();
+  async findAll(
+    filters: ListingFiltersDto,
+    sort: ListingSortDto,
+    pagination: PaginationDto,
+    userId?: number,
+  ) {
+    const whereClause = buildListingWhere(filters, userId);
+    const orderByClause = buildListingOrderBy(sort);
+    const selectFields = ListingSelectBuilder.getSelectFields(userId);
 
     const { page = 1, limit = 10 } = pagination;
     const offset = (page - 1) * limit;
@@ -61,6 +67,7 @@ export class ListingsRepository {
         .from(listings)
         .leftJoin(cities, eq(listings.cityId, cities.id))
         .leftJoin(propertyType, eq(listings.propertyTypeId, propertyType.id))
+        .leftJoin(users, eq(listings.userId, users.id))
         .where(whereClause)
         .orderBy(orderByClause)
         .limit(limit)
@@ -75,14 +82,15 @@ export class ListingsRepository {
     };
   }
 
-  async findById(id: number) {
-    const selectFields = ListingSelectBuilder.getSelectFields();
+  async findById(id: number, userId?: number) {
+    const selectFields = ListingSelectBuilder.getSelectFields(userId);
 
     const [listing] = await this.drizzleService.db
       .select(selectFields)
       .from(listings)
       .leftJoin(cities, eq(listings.cityId, cities.id))
       .leftJoin(propertyType, eq(listings.propertyTypeId, propertyType.id))
+      .leftJoin(users, eq(listings.userId, users.id))
       .where(eq(listings.id, id))
       .limit(1);
 
