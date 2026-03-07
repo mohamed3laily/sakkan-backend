@@ -12,7 +12,6 @@ export class FavoriteController {
 
   @Post('toggle')
   async toggle(@CurrentUser() user: AuthenticatedUser, @Body() dto: ToggleFavoriteDto) {
-    console.log('Toggling favorite for user:', user.id, 'with data:', dto);
     return this.favoriteService.toggle(user.id, dto);
   }
 }

@@ -1,5 +1,6 @@
 // users
 export * from './user/user';
+export * from './user/enums';
 // cities
 export * from './cities/cities';
 export * from './cities/areas';
