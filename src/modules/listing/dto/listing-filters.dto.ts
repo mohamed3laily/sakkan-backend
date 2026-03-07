@@ -1,21 +1,7 @@
-import {
-  IsArray,
-  IsBoolean,
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsString,
-  Min,
-} from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
-import {
-  BudgetType,
-  DealType,
-  ListingType,
-  PaymentMethod,
-  PropertyType,
-} from '../enum/listing.enums';
+import { BudgetType, DealType, ListingType, PaymentMethod } from '../enum/listing.enums';
 
 export class ListingFiltersDto {
   @IsOptional()
@@ -27,8 +13,9 @@ export class ListingFiltersDto {
   listingType?: ListingType;
 
   @IsOptional()
-  @IsEnum(PropertyType)
-  propertyType?: PropertyType;
+  @IsInt()
+  @Type(() => Number)
+  propertyTypeId?: number;
 
   @IsOptional()
   @IsInt()

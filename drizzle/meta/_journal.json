@@ -64,6 +64,20 @@
       "when": 1772333111068,
       "tag": "0008_great_thunderbird",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1772832525010,
+      "tag": "0009_brave_blindfold",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1772845244156,
+      "tag": "0010_aromatic_genesis",
+      "breakpoints": true
     }
   ]
 }

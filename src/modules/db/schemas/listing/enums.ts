@@ -4,7 +4,7 @@ export const dealTypeEnum = pgEnum('deal_type', ['RENT', 'BUY']);
 
 export const listingTypeEnum = pgEnum('listing_type', ['OFFER', 'REQUEST']);
 
-export const propertyTypeEnum = pgEnum('property_type', [
+export const propertyParentTypeEnum = pgEnum('property_parents_type', [
   'LAND',
   'VILLA_PALACE',
   'APARTMENT_ROOM',

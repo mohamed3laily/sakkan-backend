@@ -3,3 +3,4 @@ export * from './cities/cities';
 export * from './cities/areas';
 export * from './listing/listing';
 export * from './listing/enums';
+export * from './listing/property-type';

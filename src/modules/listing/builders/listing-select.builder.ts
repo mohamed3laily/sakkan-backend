@@ -1,6 +1,7 @@
 import { listings } from '../../db/schemas/listing/listing';
 import { cities } from '../../db/schemas/cities/cities';
 import { areas } from '../../db/schemas/cities/areas';
+import { propertyType } from '../../db/schemas/listing/property-type';
 import { sql } from 'drizzle-orm';
 
 export class ListingSelectBuilder {
@@ -12,7 +13,11 @@ export class ListingSelectBuilder {
       userId: listings.userId,
       dealType: listings.dealType,
       listingType: listings.listingType,
-      propertyType: listings.propertyType,
+      propertyType: {
+        id: propertyType.id,
+        nameAr: propertyType.nameAr,
+        nameEn: propertyType.nameEn,
+      },
       cityId: listings.cityId,
       areas: sql<{ id: number; name: string }[]>`
       COALESCE(

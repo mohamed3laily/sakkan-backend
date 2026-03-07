@@ -1,3 +1,4 @@
+import { propertyType } from '../db/schemas/listing/property-type';
 import { Injectable } from '@nestjs/common';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { DrizzleService } from '../db/drizzle.service';
@@ -23,7 +24,7 @@ export class ListingsRepository {
         title: dto.title,
         dealType: dto.dealType,
         listingType: dto.listingType,
-        propertyType: dto.propertyType,
+        propertyTypeId: dto.propertyTypeId,
         cityId: dto.cityId,
         areaIds: dto.areaIds ?? [],
         budgetType: dto.budgetType,
@@ -46,11 +47,7 @@ export class ListingsRepository {
     return listing;
   }
 
-  async findAll(
-    filters: ListingFiltersDto,
-    sort: ListingSortDto,
-    pagination: PaginationDto,
-  ) {
+  async findAll(filters: ListingFiltersDto, sort: ListingSortDto, pagination: PaginationDto) {
     const whereClause = ListingQueryBuilder.buildWhere(filters);
     const orderByClause = ListingQueryBuilder.buildOrderBy(sort);
     const selectFields = ListingSelectBuilder.getSelectFields();
@@ -68,10 +65,7 @@ export class ListingsRepository {
         .limit(limit)
         .offset(offset),
 
-      this.drizzleService.db
-        .select({ total: count() })
-        .from(listings)
-        .where(whereClause),
+      this.drizzleService.db.select({ total: count() }).from(listings).where(whereClause),
     ]);
 
     return {
@@ -91,5 +85,15 @@ export class ListingsRepository {
       .limit(1);
 
     return listing || null;
+  }
+
+  async getPropertyTypes(parent?: (typeof propertyType.$inferSelect)['parent']) {
+    const db = this.drizzleService.db;
+
+    return db
+      .select()
+      .from(propertyType)
+      .where(parent ? eq(propertyType.parent, parent) : undefined)
+      .orderBy(propertyType.parent, propertyType.nameEn);
   }
 }
