@@ -10,13 +10,7 @@ import {
   ArrayMaxSize,
   ValidateIf,
 } from 'class-validator';
-import {
-  DealType,
-  ListingType,
-  PropertyType,
-  BudgetType,
-  PaymentMethod,
-} from '../enum/listing.enums';
+import { DealType, ListingType, BudgetType, PaymentMethod } from '../enum/listing.enums';
 
 export class CreateListingDto {
   @IsString()
@@ -29,8 +23,8 @@ export class CreateListingDto {
   @IsEnum(ListingType)
   listingType: ListingType;
 
-  @IsEnum(PropertyType)
-  propertyType: PropertyType;
+  @IsInt()
+  propertyTypeId: number;
 
   @IsInt()
   @IsPositive()

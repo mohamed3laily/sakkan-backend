@@ -1,3 +1,5 @@
+import { PropertyTypeQueryDto } from './dto/property-type-query.dto';
+
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { ListingsRepository } from './listing.repo';
@@ -36,12 +38,7 @@ export class ListingService {
     };
 
     const { data, total } = await this.repo.findAll(filters, sort, pagination);
-    return this.paginationService.createPaginatedResponse(
-      data,
-      total,
-      page,
-      limit,
-    );
+    return this.paginationService.createPaginatedResponse(data, total, page, limit);
   }
 
   async getListingById(id: number) {
@@ -52,5 +49,9 @@ export class ListingService {
     }
 
     return listing;
+  }
+
+  async getPropertyTypes(query: PropertyTypeQueryDto) {
+    return this.repo.getPropertyTypes(query.parent);
   }
 }

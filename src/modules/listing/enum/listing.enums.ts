@@ -12,7 +12,7 @@ export const ListingType = {
 
 export type ListingType = (typeof ListingType)[keyof typeof ListingType];
 
-export const PropertyType = {
+export const PropertyParentType = {
   LAND: 'LAND',
   VILLA_PALACE: 'VILLA_PALACE',
   FLOOR: 'FLOOR',
@@ -25,7 +25,7 @@ export const PropertyType = {
   INDUSTRIAL_LOGISTICS: 'INDUSTRIAL_LOGISTICS',
 } as const;
 
-export type PropertyType = (typeof PropertyType)[keyof typeof PropertyType];
+export type PropertyParentType = (typeof PropertyParentType)[keyof typeof PropertyParentType];
 
 export const BudgetType = {
   MARKET: 'MARKET',

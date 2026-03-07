@@ -1,0 +1,3 @@
+CREATE TYPE "public"."property_parents_type" AS ENUM('LAND', 'VILLA_PALACE', 'APARTMENT_ROOM', 'FLOOR', 'BUILDING_TOWER', 'SHOP_SHOWROOM', 'CHALET_RESORT', 'FARM_YARD', 'COMMERCIAL_SERVICE', 'INDUSTRIAL_LOGISTICS');--> statement-breakpoint
+ALTER TABLE "listings" ALTER COLUMN "property_type" SET DATA TYPE "public"."property_parents_type" USING "property_type"::text::"public"."property_parents_type";--> statement-breakpoint
+DROP TYPE "public"."property_type";

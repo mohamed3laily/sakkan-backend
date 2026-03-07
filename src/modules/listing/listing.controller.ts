@@ -15,10 +15,17 @@ import { CreateListingDto } from './dto/create-listing.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ListingQueryDto } from './dto/listing-query.dto';
 import { TranslateInterceptor } from 'src/common/interceptors/translate.interceptor';
+import { PropertyTypeQueryDto } from './dto/property-type-query.dto';
 
 @Controller('listings')
 export class ListingController {
   constructor(private readonly service: ListingService) {}
+
+  @UseInterceptors(TranslateInterceptor)
+  @Get('/property-types')
+  async getPropertyTypes(@Query() query: PropertyTypeQueryDto) {
+    return this.service.getPropertyTypes(query);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post()

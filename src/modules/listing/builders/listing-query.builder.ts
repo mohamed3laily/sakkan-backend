@@ -1,89 +1,28 @@
-import {
-  SQL,
-  and,
-  eq,
-  gte,
-  lte,
-  or,
-  ilike,
-  asc,
-  desc,
-  arrayOverlaps,
-} from 'drizzle-orm';
+import { SQL, and, eq, gte, lte, or, ilike, asc, desc, arrayOverlaps } from 'drizzle-orm';
 import { listings } from '../../db/schemas/listing/listing';
 import { ListingFiltersDto } from '../dto/listing-filters.dto';
-import {
-  ListingSortDto,
-  ListingSortBy,
-  SortOrder,
-} from '../dto/listing-sort.dto';
+import { ListingSortDto, ListingSortBy, SortOrder } from '../dto/listing-sort.dto';
 
 export class ListingQueryBuilder {
-  /**
-   */
   static buildWhere(filters: ListingFiltersDto): SQL | undefined {
     const conditions: SQL[] = [];
 
     this.addEqualityCondition(conditions, listings.dealType, filters.dealType);
-    this.addEqualityCondition(
-      conditions,
-      listings.listingType,
-      filters.listingType,
-    );
-    this.addEqualityCondition(
-      conditions,
-      listings.propertyType,
-      filters.propertyType,
-    );
+    this.addEqualityCondition(conditions, listings.listingType, filters.listingType);
+    this.addEqualityCondition(conditions, listings.propertyTypeId, filters.propertyTypeId);
     this.addEqualityCondition(conditions, listings.cityId, filters.cityId);
-    this.addArrayOverlapCondition(
-      conditions,
-      listings.areaIds,
-      filters.areaIds,
-    );
-    console.log('isSerious', filters.isSerious);
-    this.addEqualityCondition(
-      conditions,
-      listings.isSerious,
-      filters.isSerious,
-    );
-    this.addEqualityCondition(
-      conditions,
-      listings.budgetType,
-      filters.budgetType,
-    );
-    this.addEqualityCondition(
-      conditions,
-      listings.paymentMethod,
-      filters.paymentMethod,
-    );
-    this.addEqualityCondition(
-      conditions,
-      listings.numberOfRooms,
-      filters.numberOfRooms,
-    );
+    this.addArrayOverlapCondition(conditions, listings.areaIds, filters.areaIds);
+    this.addEqualityCondition(conditions, listings.isSerious, filters.isSerious);
+    this.addEqualityCondition(conditions, listings.budgetType, filters.budgetType);
+    this.addEqualityCondition(conditions, listings.paymentMethod, filters.paymentMethod);
+    this.addEqualityCondition(conditions, listings.numberOfRooms, filters.numberOfRooms);
 
-    this.addRangeCondition(
-      conditions,
-      listings.price,
-      filters.minPrice,
-      filters.maxPrice,
-    );
-    this.addRangeCondition(
-      conditions,
-      listings.spaceSqm,
-      filters.minSpaceSqm,
-      filters.maxSpaceSqm,
-    );
+    this.addRangeCondition(conditions, listings.price, filters.minPrice, filters.maxPrice);
+    this.addRangeCondition(conditions, listings.spaceSqm, filters.minSpaceSqm, filters.maxSpaceSqm);
 
     if (filters.keyword?.trim()) {
       const keyword = filters.keyword.trim();
-      conditions.push(
-        or(
-          ilike(listings.title, `%${keyword}%`),
-          ilike(listings.description, `%${keyword}%`),
-        )!,
-      );
+      conditions.push(or(ilike(listings.title, `%${keyword}%`), ilike(listings.description, `%${keyword}%`))!);
     }
 
     return conditions.length > 0 ? and(...conditions) : undefined;
@@ -105,11 +44,7 @@ export class ListingQueryBuilder {
     }
   }
 
-  private static addEqualityCondition<T>(
-    conditions: SQL[],
-    column: any,
-    value: T | undefined | null,
-  ): void {
+  private static addEqualityCondition<T>(conditions: SQL[], column: any, value: T | undefined | null): void {
     console.log('Adding equality condition:', {
       column: column.toString(),
       value,
@@ -133,11 +68,7 @@ export class ListingQueryBuilder {
     }
   }
 
-  private static addArrayOverlapCondition(
-    conditions: SQL[],
-    column: any,
-    values: number[] | undefined | null,
-  ): void {
+  private static addArrayOverlapCondition(conditions: SQL[], column: any, values: number[] | undefined | null): void {
     if (values?.length) {
       conditions.push(arrayOverlaps(column, values));
     }

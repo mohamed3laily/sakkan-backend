@@ -1,21 +1,7 @@
-import {
-  boolean,
-  integer,
-  pgTable,
-  serial,
-  text,
-  varchar,
-} from 'drizzle-orm/pg-core';
-import {
-  budgetTypeEnum,
-  dealTypeEnum,
-  listingTypeEnum,
-  paymentMethodEnum,
-  propertyTypeEnum,
-} from './enums';
-import { users } from '../schema-index';
+import { boolean, integer, pgTable, serial, text, varchar } from 'drizzle-orm/pg-core';
+import { budgetTypeEnum, dealTypeEnum, listingTypeEnum, paymentMethodEnum } from './enums';
+import { propertyType, users } from '../schema-index';
 import { cities } from '../cities/cities';
-import { areas } from '../cities/areas';
 
 import { index } from 'drizzle-orm/pg-core';
 import { timestamps } from '../timestamps';
@@ -26,15 +12,12 @@ export const listings = pgTable(
     id: serial('id').primaryKey(),
     title: varchar('title'),
     description: text('description'),
-
     userId: integer('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
-
     dealType: dealTypeEnum('deal_type').notNull(),
     listingType: listingTypeEnum('listing_type').notNull(),
-    propertyType: propertyTypeEnum('property_type').notNull(),
-
+    propertyTypeId: integer('property_type_id').references(() => propertyType.id),
     cityId: integer('city_id')
       .notNull()
       .references(() => cities.id),
@@ -59,21 +42,11 @@ export const listings = pgTable(
   },
   (table) => ({
     cityIdx: index('idx_property_listings_city').on(table.cityId),
-    areaIdsIdx: index('idx_property_listings_area_ids').using(
-      'gin',
-      table.areaIds,
-    ),
-
-    propertyTypeIdx: index('idx_property_listings_property_type').on(
-      table.propertyType,
-    ),
-
+    areaIdsIdx: index('idx_property_listings_area_ids').using('gin', table.areaIds),
+    propertyTypeIdx: index('idx_listings_property_type').on(table.propertyTypeId),
     priceIdx: index('idx_property_listings_price').on(table.price),
-
     userIdx: index('idx_property_listings_user').on(table.userId),
-
     createdAtIdx: index('idx_property_listings_created_at').on(table.createdAt),
-
     cityDealListingIdx: index('idx_property_listings_city_deal_listing').on(
       table.cityId,
       table.dealType,

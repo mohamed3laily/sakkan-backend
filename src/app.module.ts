@@ -8,6 +8,8 @@ import { UserModule } from './modules/user/user.module';
 import { ListingModule } from './modules/listing/listing.module';
 import { CityModule } from './modules/city/city.module';
 import { CommonModule } from './common/common.module';
+import { FavoriteModule } from './modules/favorite/favorite.module';
+import { ReportModule } from './modules/report/report.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { CommonModule } from './common/common.module';
     UserModule,
     ListingModule,
     CityModule,
+    FavoriteModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],
