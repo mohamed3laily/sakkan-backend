@@ -78,6 +78,13 @@
       "when": 1772845244156,
       "tag": "0010_aromatic_genesis",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1772849292577,
+      "tag": "0011_cuddly_longshot",
+      "breakpoints": true
     }
   ]
 }

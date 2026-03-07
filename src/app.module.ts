@@ -8,6 +8,7 @@ import { UserModule } from './modules/user/user.module';
 import { ListingModule } from './modules/listing/listing.module';
 import { CityModule } from './modules/city/city.module';
 import { CommonModule } from './common/common.module';
+import { FavoriteModule } from './modules/favorite/favorite.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { CommonModule } from './common/common.module';
     UserModule,
     ListingModule,
     CityModule,
+    FavoriteModule,
   ],
   controllers: [AppController],
   providers: [AppService],
