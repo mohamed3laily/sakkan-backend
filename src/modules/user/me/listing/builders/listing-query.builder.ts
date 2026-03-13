@@ -1,5 +1,5 @@
 import { SQL, and, eq, gte, lte, or, ilike, asc, desc, arrayOverlaps, sql } from 'drizzle-orm';
-import { listings } from '../../db/schemas/listing/listing';
+import { listings } from '../../../../db/schemas/listing/listing';
 import { ListingFiltersDto } from '../dto/listing-filters.dto';
 import { ListingSortDto, ListingSortBy, SortOrder } from '../dto/listing-sort.dto';
 

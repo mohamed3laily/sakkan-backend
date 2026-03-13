@@ -1,7 +1,7 @@
-import { listings } from '../../db/schemas/listing/listing';
-import { cities } from '../../db/schemas/cities/cities';
-import { areas } from '../../db/schemas/cities/areas';
-import { propertyType } from '../../db/schemas/listing/property-type';
+import { listings } from '../../../../db/schemas/listing/listing';
+import { cities } from '../../../../db/schemas/cities/cities';
+import { areas } from '../../../../db/schemas/cities/areas';
+import { propertyType } from '../../../../db/schemas/listing/property-type';
 import { sql } from 'drizzle-orm';
 import { users } from 'src/modules/db/schemas/user/user';
 
