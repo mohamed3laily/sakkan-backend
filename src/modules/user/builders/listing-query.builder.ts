@@ -59,12 +59,13 @@ function buildFavoritedFilter(favorited?: boolean, userId?: number) {
   )`;
 }
 
-export function buildListingWhere(filters: ListingFiltersDto, userId?: number) {
+export function buildListingWhere(filters: ListingFiltersDto, userId: number) {
   return collect(
     buildBasicFilters(filters),
     buildRangeFilters(filters),
     buildKeywordFilter(filters.keyword),
     buildFavoritedFilter(filters.favorited, userId),
+    whenDefined(userId, (v) => eq(listings.userId, v)),
   );
 }
 
