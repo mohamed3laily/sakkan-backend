@@ -8,8 +8,6 @@ import { ListingSortDto } from './dto/listing-sort.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { ListingQueryDto } from './dto/listing-query.dto';
 import { PaginationService } from 'src/common/services/pagination.service';
-import { PaginatedResponse } from 'src/common/types/pagination.types';
-import { listings } from '../db/schemas/listing/listing';
 
 @Injectable()
 export class ListingService {
