@@ -1,0 +1,1 @@
+ALTER TABLE "users" ALTER COLUMN "social_media_links" SET DEFAULT '{"facebook":null,"instagram":null,"x":null,"website":null}'::jsonb;

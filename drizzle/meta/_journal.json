@@ -99,6 +99,41 @@
       "when": 1772894208071,
       "tag": "0013_ambitious_inhumans",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1773439639110,
+      "tag": "0014_bored_husk",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1773518224267,
+      "tag": "0015_mature_whiplash",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1773519591150,
+      "tag": "0016_overconfident_ben_grimm",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1773519934435,
+      "tag": "0017_secret_misty_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1773520029697,
+      "tag": "0018_glossy_deathstrike",
+      "breakpoints": true
     }
   ]
 }

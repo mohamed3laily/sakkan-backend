@@ -1,0 +1,1 @@
+ALTER TABLE "users" ALTER COLUMN "social_media_links" SET DEFAULT '{}'::jsonb;
