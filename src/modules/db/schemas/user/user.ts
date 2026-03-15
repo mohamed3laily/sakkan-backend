@@ -41,6 +41,8 @@ export const users = pgTable('users', {
   cityId: integer('city_id').references(() => cities.id),
   contactViaWhatsapp: boolean('contact_via_whatsapp').default(true),
   contactViaPhone: boolean('contact_via_phone').default(true),
+  avgRating: integer('avg_rating').default(0),
+  reviewsCount: integer('reviews_count').default(0),
   verifyPhoneToken: varchar('verify_phone_token'),
   verifyPhoneTokenExpiry: timestamp('verify_phone_token_expiry'),
   verifiedPhoneAt: timestamp('verified_phone_at'),

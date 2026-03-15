@@ -14,3 +14,7 @@ export * from './favorites/enums';
 // reports
 export * from './reports/reports';
 export * from './reports/enums';
+
+// reviews
+export * from './reviews/reviews';
+export * from './reviews/enums';
