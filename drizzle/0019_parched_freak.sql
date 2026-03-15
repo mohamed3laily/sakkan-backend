@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "avg_rating" integer DEFAULT 0;

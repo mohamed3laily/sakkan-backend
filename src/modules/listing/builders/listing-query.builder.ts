@@ -31,6 +31,7 @@ function buildBasicFilters(f: ListingFiltersDto) {
     whenDefined(f.paymentMethod, (v) => eq(listings.paymentMethod, v)),
     whenDefined(f.numberOfRooms, (v) => eq(listings.numberOfRooms, v)),
     whenArray(f.areaIds, (v) => arrayOverlaps(listings.areaIds, v)),
+    whenDefined(f.userId, (v) => eq(listings.userId, v)),
   );
 }
 

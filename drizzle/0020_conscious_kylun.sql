@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "reviews_count" integer DEFAULT 0;

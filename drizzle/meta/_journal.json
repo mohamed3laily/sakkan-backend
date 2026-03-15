@@ -134,6 +134,27 @@
       "when": 1773520029697,
       "tag": "0018_glossy_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1773611790632,
+      "tag": "0019_parched_freak",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1773612359529,
+      "tag": "0020_conscious_kylun",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1773612541482,
+      "tag": "0021_harsh_liz_osborn",
+      "breakpoints": true
     }
   ]
 }

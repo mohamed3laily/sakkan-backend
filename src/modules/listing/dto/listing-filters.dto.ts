@@ -89,4 +89,9 @@ export class ListingFiltersDto {
     return value;
   })
   favorited?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  userId?: number;
 }
