@@ -29,7 +29,6 @@ export class MeRepository {
         },
         contactViaWhatsapp: users.contactViaWhatsapp,
         contactViaPhone: users.contactViaPhone,
-        verifiedPhoneAt: users.verifiedPhoneAt,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
       })
@@ -58,7 +57,6 @@ export class MeRepository {
         socialMediaLinks: users.socialMediaLinks,
         contactViaWhatsapp: users.contactViaWhatsapp,
         contactViaPhone: users.contactViaPhone,
-        verifiedPhoneAt: users.verifiedPhoneAt,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
       });

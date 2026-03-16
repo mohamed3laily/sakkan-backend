@@ -10,23 +10,23 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Get('agents/:id')
+  async getAgentById(@Param('id', ParseIntPipe) userId: number) {
+    return this.userService.getAgentById(userId);
+  }
+
   @Get('agents')
   async getAgents(@Query() query: UserQueryDto) {
     return this.userService.getAgents(query);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('/:id/reviews')
+  @Post('agents/:id/reviews')
   async createReview(
     @Param('id', ParseIntPipe) userId: number,
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateReviewDto,
   ) {
     return this.userService.addReview(user.id, userId, dto);
-  }
-
-  @Get('/:id')
-  async getAgentById(@Param('id', ParseIntPipe) userId: number) {
-    return this.userService.getAgentById(userId);
   }
 }
