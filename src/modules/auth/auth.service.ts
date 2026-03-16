@@ -21,7 +21,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { firstName, lastName, phone, password } = registerDto;
+    const { firstName, lastName, phone, password, type } = registerDto;
 
     const normalizedPhone = PhoneUtils.normalizePhone(phone);
     const existingUser = await this.authRepo.getUserByPhone(normalizedPhone);
@@ -39,6 +39,7 @@ export class AuthService {
         lastName,
         phone: normalizedPhone,
         password: hashedPassword,
+        type,
       },
       verifyPhoneToken,
       verifyPhoneTokenExpiry,
@@ -53,6 +54,7 @@ export class AuthService {
         firstName: newUser.firstName,
         lastName: newUser.lastName,
         phone: newUser.phone,
+        type: newUser.type,
         phoneVerified: !!newUser.verifiedPhoneAt,
       },
     };
