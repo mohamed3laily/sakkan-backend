@@ -162,6 +162,20 @@
       "when": 1773777643142,
       "tag": "0022_odd_newton_destine",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1773779325441,
+      "tag": "0023_mysterious_rockslide",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1773787237202,
+      "tag": "0024_curly_siren",
+      "breakpoints": true
     }
   ]
 }

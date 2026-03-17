@@ -1,8 +1,8 @@
-import { IsString, IsInt, IsOptional, IsIn, Min, Max } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsIn, Min, Max } from 'class-validator';
 import { ReviewServiceType } from 'src/modules/db/schemas/reviews/enums';
 
 export class CreateReviewDto {
-  @IsInt()
+  @IsNumber()
   @Min(1)
   @Max(5)
   rating: number;

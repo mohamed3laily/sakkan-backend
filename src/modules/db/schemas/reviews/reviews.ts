@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text } from 'drizzle-orm/pg-core';
+import { pgTable, serial, integer, real, text } from 'drizzle-orm/pg-core';
 import { users } from '../schema-index';
 import { timestamps } from '../timestamps';
 import { reviewableTypeEnum, reviewServiceTypeEnum } from './enums';
@@ -11,7 +11,7 @@ export const reviews = pgTable('reviews', {
   reviewableId: integer('reviewable_id').notNull(),
   reviewableType: reviewableTypeEnum('reviewable_type').notNull(),
   serviceType: reviewServiceTypeEnum('service_type').notNull(),
-  rating: integer('rating').notNull(),
+  rating: real('rating').notNull(),
   comment: text('comment'),
   ...timestamps,
 });

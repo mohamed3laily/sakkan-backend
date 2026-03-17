@@ -1,9 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
-import { and, asc, avg, count, eq, ilike, isNull, notInArray, or, sql } from 'drizzle-orm';
+import { Injectable } from '@nestjs/common';
+import { and, asc, count, eq, ilike, notInArray, or, sql } from 'drizzle-orm';
 import { cities, users } from '../db/schemas/schema-index';
 import { DrizzleService } from '../db/drizzle.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
-import { CreateReviewDto } from './dto/create-review.dto';
 import { reviews } from '../db/schemas/reviews/reviews';
 
 @Injectable()
@@ -16,7 +15,7 @@ export class UserRepo {
     });
   }
 
-  async findAgents(search: string | undefined, pagination: PaginationDto) {
+  async findAgents(search: string | undefined, pagination: PaginationDto, currentUserId?: number) {
     const { page = 1, limit = 10 } = pagination;
     const offset = (page - 1) * limit;
 
@@ -26,6 +25,15 @@ export class UserRepo {
         ? or(ilike(users.firstName, `%${search}%`), ilike(users.lastName, `%${search}%`))
         : undefined,
     );
+
+    const hasReviewedField = currentUserId
+      ? sql<boolean>`EXISTS (
+          SELECT 1 FROM ${reviews} r
+          WHERE r.reviewer_id = ${currentUserId}
+            AND r.reviewable_id = ${users.id}
+            AND r.reviewable_type = 'USER'
+        )`
+      : sql<boolean>`false`;
 
     const [data, [{ total }]] = await Promise.all([
       this.drizzleService.db
@@ -48,6 +56,7 @@ export class UserRepo {
             nameEn: cities.nameEn,
           },
           createdAt: users.createdAt,
+          hasReviewed: hasReviewedField,
         })
         .from(users)
         .leftJoin(cities, eq(users.cityId, cities.id))
@@ -60,34 +69,6 @@ export class UserRepo {
     ]);
 
     return { data, total: Number(total) };
-  }
-
-  async addReview(userId: number, reviewableId: number, dto: CreateReviewDto) {
-    const existing = await this.drizzleService.db
-      .select({ id: reviews.id })
-      .from(reviews)
-      .where(and(eq(reviews.reviewerId, userId), eq(reviews.reviewableId, reviewableId)))
-      .limit(1);
-
-    if (existing.length > 0) {
-      throw new ConflictException('REVIEW_ALREADY_EXISTS');
-    }
-
-    const [review] = await this.drizzleService.db
-      .insert(reviews)
-      .values({
-        reviewerId: userId,
-        reviewableId,
-        reviewableType: 'USER',
-        serviceType: dto.serviceType,
-        rating: dto.rating,
-        comment: dto.comment,
-      })
-      .returning();
-
-    await this.updateUserAvgRating(reviewableId);
-
-    return review;
   }
 
   async findAgentById(id: number) {
@@ -133,25 +114,5 @@ export class UserRepo {
       .limit(1);
 
     return user || null;
-  }
-
-  private async updateUserAvgRating(userId: number) {
-    await this.drizzleService.db
-      .update(users)
-      .set({
-        avgRating: sql<number>`(
-        SELECT ROUND(AVG(${reviews.rating}))
-        FROM ${reviews}
-        WHERE ${reviews.reviewableId} = ${userId}
-        AND ${reviews.reviewableType} = 'USER'
-      )`,
-        reviewsCount: sql<number>`(
-        SELECT COUNT(*)
-        FROM ${reviews}
-        WHERE ${reviews.reviewableId} = ${userId}
-        AND ${reviews.reviewableType} = 'USER'
-      )`,
-      })
-      .where(eq(users.id, userId));
   }
 }
