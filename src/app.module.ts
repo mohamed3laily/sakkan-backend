@@ -10,6 +10,7 @@ import { CityModule } from './modules/city/city.module';
 import { CommonModule } from './common/common.module';
 import { FavoriteModule } from './modules/favorite/favorite.module';
 import { ReportModule } from './modules/report/report.module';
+import { TodoModule } from './modules/todo/todo.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ReportModule } from './modules/report/report.module';
     CityModule,
     FavoriteModule,
     ReportModule,
+    TodoModule,
   ],
   controllers: [AppController],
   providers: [AppService],
