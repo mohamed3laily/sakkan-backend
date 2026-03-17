@@ -83,9 +83,9 @@ export class ReviewRepo {
       })
       .returning();
 
-    await this.updateAgentAvgRating(agentId);
+    const { avgRating, reviewsCount } = await this.updateAgentAvgRating(agentId);
 
-    return review;
+    return { ...review, newAgentRating: { avgRating, reviewsCount } };
   }
 
   async update(reviewerId: number, agentId: number, dto: UpdateReviewDto) {
@@ -110,9 +110,9 @@ export class ReviewRepo {
       .where(eq(reviews.id, existing.id))
       .returning();
 
-    await this.updateAgentAvgRating(agentId);
+    const { avgRating, reviewsCount } = await this.updateAgentAvgRating(agentId);
 
-    return updated;
+    return { ...updated, newAgentRating: { avgRating, reviewsCount } };
   }
 
   async findMine(reviewerId: number, agentId: number) {
@@ -132,7 +132,7 @@ export class ReviewRepo {
   }
 
   private async updateAgentAvgRating(agentId: number) {
-    await this.drizzleService.db
+    const [updated] = await this.drizzleService.db
       .update(users)
       .set({
         avgRating: sql<number>`(
@@ -148,6 +148,9 @@ export class ReviewRepo {
           AND ${reviews.reviewableType} = 'USER'
         )`,
       })
-      .where(eq(users.id, agentId));
+      .where(eq(users.id, agentId))
+      .returning({ avgRating: users.avgRating, reviewsCount: users.reviewsCount });
+
+    return updated;
   }
 }
