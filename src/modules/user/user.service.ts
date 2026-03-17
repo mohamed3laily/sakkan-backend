@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserRepo } from './user.repo';
 import { PaginationService } from 'src/common/services/pagination.service';
 import { UserQueryDto } from './dto/user-query.dto';
-import { CreateReviewDto } from './dto/create-review.dto';
 
 @Injectable()
 export class UserService {
@@ -15,10 +14,10 @@ export class UserService {
     return this.userRepo.getUserById(id);
   }
 
-  async getAgents(query: UserQueryDto) {
+  async getAgents(query: UserQueryDto, currentUserId?: number) {
     const { page = 1, limit = 10, search } = query;
 
-    const { data, total } = await this.userRepo.findAgents(search, { page, limit });
+    const { data, total } = await this.userRepo.findAgents(search, { page, limit }, currentUserId);
 
     return this.paginationService.createPaginatedResponse(data, total, page, limit);
   }
@@ -27,16 +26,5 @@ export class UserService {
     const user = await this.userRepo.findAgentById(id);
     if (!user) throw new NotFoundException('USER_NOT_FOUND');
     return user;
-  }
-
-  async addReview(userId: number, reviewableId: number, dto: CreateReviewDto) {
-    if (userId === reviewableId) {
-      throw new NotFoundException('CANNOT_REVIEW_YOURSELF');
-    }
-
-    const user = await this.userRepo.getUserById(reviewableId);
-    if (!user) throw new NotFoundException('USER_NOT_FOUND');
-
-    return this.userRepo.addReview(userId, reviewableId, dto);
   }
 }

@@ -1,10 +1,10 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserQueryDto } from './dto/user-query.dto';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
-import { CreateReviewDto } from './dto/create-review.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @Controller('')
 export class UserController {
@@ -15,18 +15,10 @@ export class UserController {
     return this.userService.getAgentById(userId);
   }
 
-  @Get('agents')
-  async getAgents(@Query() query: UserQueryDto) {
-    return this.userService.getAgents(query);
-  }
-
   @UseGuards(JwtAuthGuard)
-  @Post('agents/:id/reviews')
-  async createReview(
-    @Param('id', ParseIntPipe) userId: number,
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: CreateReviewDto,
-  ) {
-    return this.userService.addReview(user.id, userId, dto);
+  @Public()
+  @Get('agents')
+  async getAgents(@Query() query: UserQueryDto, @CurrentUser() user: AuthenticatedUser | null) {
+    return this.userService.getAgents(query, user?.id);
   }
 }

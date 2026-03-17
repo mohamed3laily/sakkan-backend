@@ -1,0 +1,1 @@
+ALTER TABLE "users" ALTER COLUMN "avg_rating" SET DATA TYPE real;
