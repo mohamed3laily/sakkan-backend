@@ -99,14 +99,9 @@ export class ReviewRepo {
       throw new NotFoundException('REVIEW_NOT_FOUND');
     }
 
-    const updateData: Partial<typeof reviews.$inferInsert> = {};
-    if (dto.rating !== undefined) updateData.rating = dto.rating;
-    if (dto.serviceType !== undefined) updateData.serviceType = dto.serviceType;
-    if (dto.comment !== undefined) updateData.comment = dto.comment;
-
     const [updated] = await this.drizzleService.db
       .update(reviews)
-      .set(updateData)
+      .set(dto)
       .where(eq(reviews.id, existing.id))
       .returning();
 

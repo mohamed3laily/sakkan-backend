@@ -26,15 +26,6 @@ export class UserRepo {
         : undefined,
     );
 
-    const hasReviewedField = currentUserId
-      ? sql<boolean>`EXISTS (
-          SELECT 1 FROM ${reviews} r
-          WHERE r.reviewer_id = ${currentUserId}
-            AND r.reviewable_id = ${users.id}
-            AND r.reviewable_type = 'USER'
-        )`
-      : sql<boolean>`false`;
-
     const [data, [{ total }]] = await Promise.all([
       this.drizzleService.db
         .select({
@@ -56,7 +47,6 @@ export class UserRepo {
             nameEn: cities.nameEn,
           },
           createdAt: users.createdAt,
-          hasReviewed: hasReviewedField,
         })
         .from(users)
         .leftJoin(cities, eq(users.cityId, cities.id))
@@ -71,7 +61,7 @@ export class UserRepo {
     return { data, total: Number(total) };
   }
 
-  async findAgentById(id: number) {
+  async findAgentById(id: number, currentUserId?: number) {
     const [user] = await this.drizzleService.db
       .select({
         id: users.id,
@@ -93,6 +83,7 @@ export class UserRepo {
         avgRating: users.avgRating,
         reviewsCount: users.reviewsCount,
         createdAt: users.createdAt,
+        hasReviewed: this.hasReviewedByUser(currentUserId),
         recentReviewers: sql<
           { id: number; firstName: string; lastName: string; profilePicture: string | null }[]
         >`(
@@ -114,5 +105,15 @@ export class UserRepo {
       .limit(1);
 
     return user || null;
+  }
+
+  private hasReviewedByUser(currentUserId?: number) {
+    if (!currentUserId) return sql<boolean>`false`;
+    return sql<boolean>`EXISTS (
+      SELECT 1 FROM ${reviews} r
+      WHERE r.reviewer_id = ${currentUserId}
+        AND r.reviewable_id = ${users.id}
+        AND r.reviewable_type = 'USER'
+    )`;
   }
 }

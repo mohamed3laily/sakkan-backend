@@ -22,8 +22,8 @@ export class UserService {
     return this.paginationService.createPaginatedResponse(data, total, page, limit);
   }
 
-  async getAgentById(id: number) {
-    const user = await this.userRepo.findAgentById(id);
+  async getAgentById(id: number, currentUserId?: number) {
+    const user = await this.userRepo.findAgentById(id, currentUserId);
     if (!user) throw new NotFoundException('USER_NOT_FOUND');
     return user;
   }
