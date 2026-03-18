@@ -10,9 +10,14 @@ import { Public } from 'src/common/decorators/public.decorator';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @UseGuards(JwtAuthGuard)
+  @Public()
   @Get('agents/:id')
-  async getAgentById(@Param('id', ParseIntPipe) userId: number) {
-    return this.userService.getAgentById(userId);
+  async getAgentById(
+    @Param('id', ParseIntPipe) userId: number,
+    @CurrentUser() user: AuthenticatedUser | null,
+  ) {
+    return this.userService.getAgentById(userId, user?.id);
   }
 
   @UseGuards(JwtAuthGuard)
