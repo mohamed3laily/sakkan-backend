@@ -24,3 +24,7 @@ export * from './todos/todos';
 
 // notes
 export * from './notes/notes';
+
+// preferences
+export * from './preferences/preferences';
+export * from './preferences/enums';

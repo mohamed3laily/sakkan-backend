@@ -6,6 +6,7 @@ import { RouterModule } from '@nestjs/core';
 import { UserController } from './user.controller';
 import { UserRepo } from './user.repo';
 import { UserService } from './user.service';
+import { PreferenceModule } from '../preference/preference.module';
 
 @Module({
   providers: [UserService, UserRepo],
@@ -14,6 +15,7 @@ import { UserService } from './user.service';
   imports: [
     MeModule,
     ReviewModule,
+    PreferenceModule,
     RouterModule.register([
       {
         path: 'users',

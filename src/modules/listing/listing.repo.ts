@@ -42,6 +42,7 @@ export class ListingsRepository {
         contactWhatsapp: dto.contactWhatsapp,
         contactPhone: dto.contactPhone,
         isSerious: dto.isSerious,
+        agentId: dto.agentId,
       })
       .returning();
 

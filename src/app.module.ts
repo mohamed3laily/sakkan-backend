@@ -12,6 +12,7 @@ import { FavoriteModule } from './modules/favorite/favorite.module';
 import { ReportModule } from './modules/report/report.module';
 import { TodoModule } from './modules/todo/todo.module';
 import { NoteModule } from './modules/note/note.module';
+import { PreferenceModule } from './modules/preference/preference.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { NoteModule } from './modules/note/note.module';
     ReportModule,
     TodoModule,
     NoteModule,
+    PreferenceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

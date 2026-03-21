@@ -10,6 +10,11 @@ import { Public } from 'src/common/decorators/public.decorator';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Get('agents/:id/preferences')
+  async getAgentPreferences(@Param('id', ParseIntPipe) agentId: number) {
+    return this.userService.getAgentPreferences(agentId);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Public()
   @Get('agents/:id')

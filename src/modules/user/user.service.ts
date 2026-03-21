@@ -2,12 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserRepo } from './user.repo';
 import { PaginationService } from 'src/common/services/pagination.service';
 import { UserQueryDto } from './dto/user-query.dto';
+import { PreferenceService } from '../preference/preference.service';
 
 @Injectable()
 export class UserService {
   constructor(
     private userRepo: UserRepo,
     private paginationService: PaginationService,
+    private preferenceService: PreferenceService,
   ) {}
 
   async getUserById(id: number) {
@@ -16,9 +18,7 @@ export class UserService {
 
   async getAgents(query: UserQueryDto, currentUserId?: number) {
     const { page = 1, limit = 10, search } = query;
-
     const { data, total } = await this.userRepo.findAgents(search, { page, limit }, currentUserId);
-
     return this.paginationService.createPaginatedResponse(data, total, page, limit);
   }
 
@@ -26,5 +26,11 @@ export class UserService {
     const user = await this.userRepo.findAgentById(id, currentUserId);
     if (!user) throw new NotFoundException('USER_NOT_FOUND');
     return user;
+  }
+
+  async getAgentPreferences(agentId: number) {
+    const user = await this.userRepo.getUserById(agentId);
+    if (!user) throw new NotFoundException('USER_NOT_FOUND');
+    return this.preferenceService.getUserPreferences(agentId);
   }
 }
