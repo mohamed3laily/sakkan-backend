@@ -37,4 +37,9 @@ export class MeController {
   async deleteMe(@CurrentUser() user: AuthenticatedUser) {
     return this.meService.deleteMe(user.id);
   }
+
+  @Get('preferences')
+  async getMyPreferences(@CurrentUser() user: AuthenticatedUser) {
+    return this.meService.getMyPreferences(user.id);
+  }
 }

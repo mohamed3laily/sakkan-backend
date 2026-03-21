@@ -47,6 +47,7 @@ export class UserRepo {
             nameEn: cities.nameEn,
           },
           createdAt: users.createdAt,
+          hasReviewed: this.hasReviewedExpr(currentUserId),
         })
         .from(users)
         .leftJoin(cities, eq(users.cityId, cities.id))
@@ -83,7 +84,7 @@ export class UserRepo {
         avgRating: users.avgRating,
         reviewsCount: users.reviewsCount,
         createdAt: users.createdAt,
-        hasReviewed: this.hasReviewedByUser(currentUserId),
+        hasReviewed: this.hasReviewedExpr(currentUserId),
         recentReviewers: sql<
           { id: number; firstName: string; lastName: string; profilePicture: string | null }[]
         >`(
@@ -107,7 +108,7 @@ export class UserRepo {
     return user || null;
   }
 
-  private hasReviewedByUser(currentUserId?: number) {
+  private hasReviewedExpr(currentUserId?: number) {
     if (!currentUserId) return sql<boolean>`false`;
     return sql<boolean>`EXISTS (
       SELECT 1 FROM ${reviews} r
