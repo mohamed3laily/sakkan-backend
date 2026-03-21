@@ -4,6 +4,7 @@ import * as arErrors from './ar/errors.json';
 import * as arListing from './ar/listing.json';
 import * as arUser from './ar/user.json';
 import * as arTodo from './ar/todo.json';
+import * as arNote from './ar/note.json';
 
 import * as enCommon from './en/common.json';
 import * as enAuth from './en/auth.json';
@@ -11,6 +12,7 @@ import * as enErrors from './en/errors.json';
 import * as enListing from './en/listing.json';
 import * as enUser from './en/user.json';
 import * as enTodo from './en/todo.json';
+import * as enNote from './en/note.json';
 
 export const i18n = {
   ar: {
@@ -20,6 +22,7 @@ export const i18n = {
     ...arListing,
     ...arUser,
     ...arTodo,
+    ...arNote,
   },
   en: {
     ...enCommon,
@@ -28,6 +31,7 @@ export const i18n = {
     ...enListing,
     ...enUser,
     ...enTodo,
+    ...enNote,
   },
 };
 

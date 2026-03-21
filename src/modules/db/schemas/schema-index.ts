@@ -21,3 +21,6 @@ export * from './reviews/enums';
 
 // todos
 export * from './todos/todos';
+
+// notes
+export * from './notes/notes';
