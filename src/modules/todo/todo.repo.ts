@@ -7,6 +7,8 @@ import { TodoQueryDto } from './dto/todo-query.dto';
 import { and, count, eq, ilike, sql } from 'drizzle-orm';
 import { buildTodoStatusClause, getTodayBoundaries, resolveTodoStatus } from './todo.utils';
 
+type RawTodo = typeof todos.$inferSelect;
+
 @Injectable()
 export class TodoRepository {
   constructor(private readonly drizzleService: DrizzleService) {}
@@ -22,8 +24,7 @@ export class TodoRepository {
         remindMe: dto.remindMe,
       })
       .returning();
-    const boundaries = getTodayBoundaries();
-    return { ...todo, status: resolveTodoStatus(todo, boundaries) };
+    return this.withStatus(todo);
   }
 
   async findAll(userId: number, query: TodoQueryDto) {
@@ -56,14 +57,13 @@ export class TodoRepository {
   }
 
   async findOne(userId: number, todoId: number) {
-    const boundaries = getTodayBoundaries();
     const [todo] = await this.drizzleService.db
       .select()
       .from(todos)
       .where(and(eq(todos.id, todoId), eq(todos.userId, userId)))
       .limit(1);
     if (!todo) return null;
-    return { ...todo, status: resolveTodoStatus(todo, boundaries) };
+    return this.withStatus(todo);
   }
 
   async toggleDone(userId: number, todoId: number) {
@@ -81,8 +81,7 @@ export class TodoRepository {
       .where(and(eq(todos.id, todoId), eq(todos.userId, userId)))
       .returning();
 
-    const boundaries = getTodayBoundaries();
-    return { ...todo, status: resolveTodoStatus(todo, boundaries) };
+    return this.withStatus(todo);
   }
 
   async update(userId: number, todoId: number, dto: UpdateTodoDto) {
@@ -92,8 +91,7 @@ export class TodoRepository {
       .where(and(eq(todos.id, todoId), eq(todos.userId, userId)))
       .returning();
     if (!todo) return null;
-    const boundaries = getTodayBoundaries();
-    return { ...todo, status: resolveTodoStatus(todo, boundaries) };
+    return this.withStatus(todo);
   }
 
   async delete(userId: number, todoId: number) {
@@ -102,5 +100,9 @@ export class TodoRepository {
       .where(and(eq(todos.id, todoId), eq(todos.userId, userId)))
       .returning();
     return todo ?? null;
+  }
+
+  private withStatus(todo: RawTodo) {
+    return { ...todo, status: resolveTodoStatus(todo, getTodayBoundaries()) };
   }
 }

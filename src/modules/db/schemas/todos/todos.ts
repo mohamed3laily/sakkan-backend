@@ -7,7 +7,7 @@ export const todos = pgTable('todos', {
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
   userId: integer('user_id')
-    .references(() => users.id)
+    .references(() => users.id, { onDelete: 'cascade' })
     .notNull(),
   dueDate: timestamp('due_date', {
     withTimezone: true,

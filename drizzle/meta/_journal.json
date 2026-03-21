@@ -176,6 +176,20 @@
       "when": 1773787237202,
       "tag": "0024_curly_siren",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1774117053634,
+      "tag": "0025_cute_magik",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1774117805291,
+      "tag": "0026_worthless_storm",
+      "breakpoints": true
     }
   ]
 }
