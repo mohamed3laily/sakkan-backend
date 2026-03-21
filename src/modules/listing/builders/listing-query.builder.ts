@@ -60,12 +60,32 @@ function buildFavoritedFilter(favorited?: boolean, userId?: number) {
   )`;
 }
 
+function buildAgentPreferenceFilter(f: ListingFiltersDto, userId?: number) {
+  if (!f.matchMyPreferences || !userId) return undefined;
+
+  return or(
+    eq(listings.agentId, userId),
+    sql`${listings.propertyTypeId} IN (
+      SELECT preferable_id FROM preferences
+      WHERE user_id = ${userId}
+        AND preferable_type = 'PROPERTY_TYPE'
+    )`,
+    sql`EXISTS (
+      SELECT 1 FROM preferences
+      WHERE user_id = ${userId}
+        AND preferable_type = 'AREA'
+        AND preferable_id = ANY(${listings.areaIds})
+    )`,
+  );
+}
+
 export function buildListingWhere(filters: ListingFiltersDto, userId?: number) {
   return collect(
     buildBasicFilters(filters),
     buildRangeFilters(filters),
     buildKeywordFilter(filters.keyword),
     buildFavoritedFilter(filters.favorited, userId),
+    buildAgentPreferenceFilter(filters, userId),
   );
 }
 

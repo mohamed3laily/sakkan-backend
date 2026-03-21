@@ -23,7 +23,7 @@ export const listings = pgTable(
       .references(() => cities.id),
 
     areaIds: integer('area_ids').array(),
-
+    agentId: integer('agent_id').references(() => users.id, { onDelete: 'cascade' }),
     budgetType: budgetTypeEnum('budget_type').notNull(),
     price: integer('price'),
     mPrice: integer('m_price'),

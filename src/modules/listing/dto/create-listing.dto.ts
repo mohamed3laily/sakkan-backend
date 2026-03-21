@@ -100,4 +100,8 @@ export class CreateListingDto {
   @IsOptional()
   @IsBoolean()
   contactPhone?: boolean = false;
+
+  @IsOptional()
+  @IsInt()
+  agentId?: number;
 }
