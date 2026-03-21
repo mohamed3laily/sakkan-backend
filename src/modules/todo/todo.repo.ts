@@ -22,7 +22,8 @@ export class TodoRepository {
         remindMe: dto.remindMe,
       })
       .returning();
-    return todo;
+    const boundaries = getTodayBoundaries();
+    return { ...todo, status: resolveTodoStatus(todo, boundaries) };
   }
 
   async findAll(userId: number, query: TodoQueryDto) {
@@ -80,7 +81,8 @@ export class TodoRepository {
       .where(and(eq(todos.id, todoId), eq(todos.userId, userId)))
       .returning();
 
-    return todo;
+    const boundaries = getTodayBoundaries();
+    return { ...todo, status: resolveTodoStatus(todo, boundaries) };
   }
 
   async update(userId: number, todoId: number, dto: UpdateTodoDto) {
@@ -89,7 +91,9 @@ export class TodoRepository {
       .set(dto)
       .where(and(eq(todos.id, todoId), eq(todos.userId, userId)))
       .returning();
-    return todo ?? null;
+    if (!todo) return null;
+    const boundaries = getTodayBoundaries();
+    return { ...todo, status: resolveTodoStatus(todo, boundaries) };
   }
 
   async delete(userId: number, todoId: number) {
