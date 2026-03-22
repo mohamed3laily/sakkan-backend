@@ -1,10 +1,11 @@
-import { boolean, integer, pgTable, serial, text, varchar } from 'drizzle-orm/pg-core';
+import { boolean, integer, pgTable, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { budgetTypeEnum, dealTypeEnum, listingTypeEnum, paymentMethodEnum } from './enums';
 import { propertyType, users } from '../schema-index';
 import { cities } from '../cities/cities';
 
 import { index } from 'drizzle-orm/pg-core';
 import { timestamps } from '../timestamps';
+import { time } from 'console';
 
 export const listings = pgTable(
   'listings',
@@ -37,7 +38,7 @@ export const listings = pgTable(
 
     contactWhatsapp: boolean('contact_whatsapp').default(true),
     contactPhone: boolean('contact_phone').default(false),
-    isSerious: boolean('is_serious').default(false),
+    unlistedAt: timestamp('unlisted_at'),
     ...timestamps,
   },
   (table) => ({
