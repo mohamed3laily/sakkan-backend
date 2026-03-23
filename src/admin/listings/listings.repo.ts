@@ -9,7 +9,6 @@ import { cities } from 'src/modules/db/schemas/cities/cities';
 import { propertyType } from 'src/modules/db/schemas/listing/property-type';
 import { users } from 'src/modules/db/schemas/schema-index';
 import { eq, count, sql } from 'drizzle-orm';
-import { ListingQueryDto } from './dto/listing-query.dto';
 import { ListingSelectBuilder } from './builders/listing-select.builder';
 import { ListingFiltersDto } from './dto/listing-filters.dto';
 import { ListingSortDto } from './dto/listing-sort.dto';
@@ -61,14 +60,12 @@ export class ListingsRepo {
     await this.drizzleService.db.delete(listings).where(eq(listings.id, id));
   }
 
-  async toggleUnlist(id: number): Promise<{ unlistedAt: Date | null } | null> {
+  async updateStatus(id: number, status: 'PUBLISHED' | 'UNLISTED' | 'PENDING') {
     const [updated] = await this.drizzleService.db
       .update(listings)
-      .set({
-        unlistedAt: sql`CASE WHEN ${listings.unlistedAt} IS NULL THEN NOW() ELSE NULL END`,
-      })
+      .set({ status })
       .where(eq(listings.id, id))
-      .returning({ unlistedAt: listings.unlistedAt });
+      .returning({ id: listings.id, status: listings.status });
 
     return updated ?? null;
   }

@@ -5,6 +5,7 @@ import { ListingFiltersDto } from './dto/listing-filters.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { ListingSortDto } from './dto/listing-sort.dto';
 import { PaginationService } from 'src/common/services/pagination.service';
+import { UpdateListingStatusDto } from './dto/update-listing-status.dto';
 
 @Injectable()
 export class ListingsService {
@@ -45,14 +46,9 @@ export class ListingsService {
     return { success: true };
   }
 
-  async toggleUnlist(id: number) {
-    const result = await this.repo.toggleUnlist(id);
+  async updateStatus(id: number, dto: UpdateListingStatusDto) {
+    const result = await this.repo.updateStatus(id, dto.status);
     if (!result) throw new NotFoundException(`Listing ${id} not found`);
-
-    return {
-      id,
-      unlisted: result.unlistedAt !== null,
-      unlistedAt: result.unlistedAt,
-    };
+    return result;
   }
 }

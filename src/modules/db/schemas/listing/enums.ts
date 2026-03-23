@@ -19,3 +19,5 @@ export const propertyParentTypeEnum = pgEnum('property_parents_type', [
 
 export const budgetTypeEnum = pgEnum('budget_type', ['MARKET', 'FIXED']);
 export const paymentMethodEnum = pgEnum('payment_method', ['CASH', 'OTHER']);
+
+export const listingStatusEnum = pgEnum('listing_status', ['PUBLISHED', 'UNLISTED', 'PENDING']);
