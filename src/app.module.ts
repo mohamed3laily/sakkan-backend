@@ -13,7 +13,6 @@ import { ReportModule } from './modules/report/report.module';
 import { TodoModule } from './modules/todo/todo.module';
 import { NoteModule } from './modules/note/note.module';
 import { PreferenceModule } from './modules/preference/preference.module';
-import { AdminModule } from './admin/admin/admin.module';
 import { AdminModule } from './admin/admin.module';
 
 @Module({

@@ -204,6 +204,13 @@
       "when": 1774136779676,
       "tag": "0028_perpetual_shocker",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1774367094979,
+      "tag": "0029_special_mongu",
+      "breakpoints": true
     }
   ]
 }

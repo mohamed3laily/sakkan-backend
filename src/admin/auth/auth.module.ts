@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AdminAuthService } from './admin-auth.service';
-import { AdminAuthController } from './admin-auth.controller';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
 import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
 import { AdminJwtAuthGuard } from './guards/admin-jwt-auth.guard';
 import { DrizzleModule } from 'src/modules/db/drizzle.module';
@@ -25,8 +25,8 @@ import { AuthRepo } from './auth.repo';
       }),
     }),
   ],
-  controllers: [AdminAuthController],
-  providers: [AdminAuthService, AuthRepo, AdminJwtStrategy, AdminJwtAuthGuard],
-  exports: [AdminAuthService, AuthRepo, AdminJwtAuthGuard],
+  controllers: [AuthController],
+  providers: [AuthService, AuthRepo, AdminJwtStrategy, AdminJwtAuthGuard],
+  exports: [AuthService, AuthRepo, AdminJwtAuthGuard],
 })
 export class AuthModule {}
