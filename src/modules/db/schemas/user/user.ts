@@ -50,5 +50,6 @@ export const users = pgTable('users', {
   password: varchar('password').notNull(),
   resetToken: text('reset_token'),
   resetTokenExpiry: timestamp('reset_token_expiry'),
+  deactivatedAt: timestamp('deactivated_at'),
   ...timestamps,
 });

@@ -1,21 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { PreferenceRepo } from './preference.repo';
-import { TogglePreferenceDto } from './dto/toggle-preference.dto';
+import { TogglePreferencesDto } from './dto/toggle-preference.dto';
 
 @Injectable()
 export class PreferenceService {
   constructor(private readonly repo: PreferenceRepo) {}
 
-  async toggle(userId: number, dto: TogglePreferenceDto) {
-    const existing = await this.repo.findExisting(userId, dto.preferableType, dto.preferableId);
+  async toggle(userId: number, dto: TogglePreferencesDto) {
+    const { preferableType, preferableIds } = dto;
 
-    if (existing) {
-      await this.repo.delete(existing.id);
-      return { isPreferred: false };
-    }
+    const existing = await this.repo.findExistingBatch(userId, preferableType, preferableIds);
 
-    await this.repo.create(userId, dto.preferableType, dto.preferableId);
-    return { isPreferred: true };
+    const existingIdSet = new Set(existing.map((e) => e.preferableId));
+    const toDelete = existing.map((e) => e.id);
+    const toCreate = preferableIds.filter((id) => !existingIdSet.has(id));
+
+    await Promise.all([
+      toDelete.length && this.repo.deleteBatch(toDelete),
+      toCreate.length && this.repo.createBatch(userId, preferableType, toCreate),
+    ]);
+
+    return preferableIds.map((id) => ({
+      preferableId: id,
+      preferableType,
+      isPreferred: !existingIdSet.has(id),
+    }));
   }
 
   async getUserPreferences(userId: number) {
