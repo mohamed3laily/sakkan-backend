@@ -211,6 +211,13 @@
       "when": 1774367094979,
       "tag": "0029_special_mongu",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1774371187005,
+      "tag": "0030_thick_lady_vermin",
+      "breakpoints": true
     }
   ]
 }
