@@ -44,6 +44,7 @@ export const listings = pgTable(
     contactWhatsapp: boolean('contact_whatsapp').default(true),
     contactPhone: boolean('contact_phone').default(false),
     status: listingStatusEnum('status').default('PUBLISHED'),
+    isSerious: boolean('is_serious').default(false),
     ...timestamps,
   },
   (table) => ({
