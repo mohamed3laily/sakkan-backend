@@ -9,6 +9,7 @@ import {
   IsArray,
   ArrayMaxSize,
   ValidateIf,
+  IsNumber,
 } from 'class-validator';
 import { DealType, ListingType, BudgetType, PaymentMethod } from '../enum/listing.enums';
 
@@ -71,13 +72,11 @@ export class CreateListingDto {
   propertyAge?: number;
 
   @IsOptional()
-  @IsInt()
-  @IsPositive()
+  @IsNumber()
   latitude?: number;
 
   @IsOptional()
-  @IsInt()
-  @IsPositive()
+  @IsNumber()
   longitude?: number;
 
   @IsOptional()
