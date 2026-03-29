@@ -218,6 +218,13 @@
       "when": 1774371187005,
       "tag": "0030_thick_lady_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1774826480361,
+      "tag": "0031_early_rafael_vega",
+      "breakpoints": true
     }
   ]
 }
