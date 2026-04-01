@@ -15,6 +15,7 @@ import { NoteModule } from './modules/note/note.module';
 import { PreferenceModule } from './modules/preference/preference.module';
 import { AdminModule } from './admin/admin.module';
 import { BullModule } from '@nestjs/bullmq';
+import { MonetizationModule } from './modules/monetization/monetization.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { BullModule } from '@nestjs/bullmq';
     NoteModule,
     PreferenceModule,
     AdminModule,
+    MonetizationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,0 +1,21 @@
+import { index, integer, pgTable, serial, timestamp, unique } from 'drizzle-orm/pg-core';
+import { creditTypeEnum } from './enums';
+import { users } from '../schema-index';
+import { timestamps } from '../timestamps';
+
+export const oneTimeCredits = pgTable(
+  'one_time_credits',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: creditTypeEnum('type').notNull(),
+    totalCredits: integer('total_credits').notNull().default(0),
+    usedCredits: integer('used_credits').notNull().default(0),
+    ...timestamps,
+  },
+  (table) => ({
+    userIdx: index('idx_one_time_credits_user').on(table.userId),
+  }),
+);
