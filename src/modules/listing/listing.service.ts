@@ -8,16 +8,22 @@ import { ListingSortDto } from './dto/listing-sort.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { ListingQueryDto } from './dto/listing-query.dto';
 import { PaginationService } from 'src/common/services/pagination.service';
+import { CityQueue } from '../city/city.queue';
 
 @Injectable()
 export class ListingService {
   constructor(
     private readonly repo: ListingsRepository,
     private readonly paginationService: PaginationService,
+    private readonly cityQueue: CityQueue,
   ) {}
 
   async createListing(userId: number, dto: CreateListingDto) {
-    return this.repo.create(userId, dto);
+    const listing = await this.repo.create(userId, dto);
+
+    await this.cityQueue.incrementListingCount(dto.cityId);
+
+    return listing;
   }
 
   async getListings(query: ListingQueryDto, userId?: number) {
