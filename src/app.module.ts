@@ -14,10 +14,19 @@ import { TodoModule } from './modules/todo/todo.module';
 import { NoteModule } from './modules/note/note.module';
 import { PreferenceModule } from './modules/preference/preference.module';
 import { AdminModule } from './admin/admin.module';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    BullModule.forRoot({
+      connection: {
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT),
+        password: process.env.NODE_ENV === 'production' ? process.env.REDIS_PASSWORD : undefined,
+        tls: process.env.NODE_ENV === 'production' ? {} : undefined,
+      },
+    }),
     CommonModule,
     DrizzleModule,
     AuthModule,
