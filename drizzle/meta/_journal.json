@@ -225,6 +225,13 @@
       "when": 1774826480361,
       "tag": "0031_early_rafael_vega",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1775017136835,
+      "tag": "0032_nifty_victor_mancha",
+      "breakpoints": true
     }
   ]
 }

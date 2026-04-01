@@ -13,8 +13,8 @@ async function bootstrap() {
   // const propertyTypeSeed = app.get(PropertyTypeSeed);
   // await propertyTypeSeed.run();
 
-  const citiesSeed = app.get(CitiesSeed);
-  await citiesSeed.run();
+  // const citiesSeed = app.get(CitiesSeed);
+  // await citiesSeed.run();
 
   await app.close();
 }

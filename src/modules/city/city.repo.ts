@@ -18,8 +18,12 @@ export class CityRepository {
         id: cities.id,
         nameEn: cities.nameEn,
         nameAr: cities.nameAr,
+        listingCount: cities.listingCount,
+        latitude: cities.latitude,
+        longitude: cities.longitude,
       })
       .from(cities)
+      .orderBy(cities.id)
       .where(conditions);
   }
 
@@ -27,13 +31,7 @@ export class CityRepository {
     const cityCondition = eq(areas.cityId, cityId);
 
     const filterCondition = name
-      ? and(
-          cityCondition,
-          or(
-            ilike(areas.nameEn, `%${name}%`),
-            ilike(areas.nameAr, `%${name}%`),
-          ),
-        )
+      ? and(cityCondition, or(ilike(areas.nameEn, `%${name}%`), ilike(areas.nameAr, `%${name}%`)))
       : cityCondition;
 
     return this.drizzleService.db
@@ -41,6 +39,8 @@ export class CityRepository {
         id: areas.id,
         nameEn: areas.nameEn,
         nameAr: areas.nameAr,
+        latitude: areas.latitude,
+        longitude: areas.longitude,
       })
       .from(areas)
       .where(filterCondition);
