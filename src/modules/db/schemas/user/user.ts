@@ -39,7 +39,7 @@ export const users = pgTable('users', {
     x: null,
     website: null,
   }),
-  cityId: integer('city_id').references(() => cities.id),
+  cityId: integer('city_id').references(() => cities.id, { onDelete: 'set null' }),
   contactViaWhatsapp: boolean('contact_via_whatsapp').default(true),
   contactViaPhone: boolean('contact_via_phone').default(true),
   avgRating: real('avg_rating').default(0),

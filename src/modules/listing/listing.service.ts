@@ -9,6 +9,7 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { ListingQueryDto } from './dto/listing-query.dto';
 import { PaginationService } from 'src/common/services/pagination.service';
 import { CityQueue } from '../city/city.queue';
+import { GeoValidationService } from './geo-validation.service';
 
 @Injectable()
 export class ListingService {
@@ -16,9 +17,11 @@ export class ListingService {
     private readonly repo: ListingsRepository,
     private readonly paginationService: PaginationService,
     private readonly cityQueue: CityQueue,
+    private readonly geoValidationService: GeoValidationService,
   ) {}
 
   async createListing(userId: number, dto: CreateListingDto) {
+    await this.geoValidationService.validateListingLocation(dto);
     const listing = await this.repo.create(userId, dto);
 
     await this.cityQueue.incrementListingCount(dto.cityId);

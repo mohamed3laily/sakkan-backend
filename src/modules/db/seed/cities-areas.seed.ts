@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { DrizzleService } from '../drizzle.service';
 import { areas, cities } from '../schemas/schema-index';
 
+import * as fs from 'fs';
+import * as path from 'path';
+import * as turf from '@turf/turf';
+
 @Injectable()
 export class CitiesAreasSeed {
   constructor(private readonly drizzle: DrizzleService) {}
@@ -9,144 +13,91 @@ export class CitiesAreasSeed {
   async run() {
     const db = this.drizzle.db;
 
-    console.log('🌱 Seeding Egyptian cities & areas...');
+    console.log('🌱 Seeding Egyptian cities & areas from GeoJSON...');
 
-    /**
-     * 1️⃣ Cities WITH lat/long
-     */
-    await db
-      .insert(cities)
-      .values([
-        {
-          nameEn: 'Cairo',
-          nameAr: 'القاهرة',
-          latitude: 30.0444,
-          longitude: 31.2357,
-        },
-        {
-          nameEn: 'Alexandria',
-          nameAr: 'الإسكندرية',
-          latitude: 31.2001,
-          longitude: 29.9187,
-        },
-        {
-          nameEn: 'Giza',
-          nameAr: 'الجيزة',
-          latitude: 30.0131,
-          longitude: 31.2089,
-        },
-        {
-          nameEn: 'Dakahlia',
-          nameAr: 'الدقهلية',
-          latitude: 31.0364,
-          longitude: 31.3807,
-        },
-      ])
-      .onConflictDoNothing();
+    // ─────────────────────────────────────────────
+    // 1️⃣ Load GeoJSON
+    // ─────────────────────────────────────────────
+    //src/modules/city/data/egypt-geo.json
+    const filePath = path.join(__dirname, '../../city/data/egypt-geo.json');
+    const geojson = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 
-    /**
-     * 2️⃣ Fetch city IDs
-     */
+    const features = geojson.features;
+
+    // ─────────────────────────────────────────────
+    // 2️⃣ Extract Cities (Governorates)
+    // ─────────────────────────────────────────────
+    const cityMap = new Map<
+      string,
+      { nameEn: string; nameAr: string; lat: number; lng: number; count: number }
+    >();
+
+    for (const feature of features) {
+      const { governorate_en, governorate_ar } = feature.properties;
+
+      const polygon = turf.feature(feature.geometry);
+      const centroid = turf.centroid(polygon);
+      const [lng, lat] = centroid.geometry.coordinates;
+
+      if (!cityMap.has(governorate_en)) {
+        cityMap.set(governorate_en, {
+          nameEn: governorate_en,
+          nameAr: governorate_ar,
+          lat,
+          lng,
+          count: 1,
+        });
+      } else {
+        // average centroid for better city center approximation
+        const existing = cityMap.get(governorate_en)!;
+        existing.lat = (existing.lat * existing.count + lat) / (existing.count + 1);
+        existing.lng = (existing.lng * existing.count + lng) / (existing.count + 1);
+        existing.count++;
+      }
+    }
+
+    const cityValues = Array.from(cityMap.values()).map((c) => ({
+      nameEn: c.nameEn,
+      nameAr: c.nameAr,
+      latitude: c.lat,
+      longitude: c.lng,
+    }));
+
+    await db.insert(cities).values(cityValues).onConflictDoNothing();
+
+    // ─────────────────────────────────────────────
+    // 3️⃣ Fetch City IDs
+    // ─────────────────────────────────────────────
     const cityRows = await db.select().from(cities);
 
-    const cityIdByName = Object.fromEntries(
-      cityRows.map((city) => [city.nameEn, city.id]),
-    ) as Record<string, number>;
+    const cityIdByName = Object.fromEntries(cityRows.map((c) => [c.nameEn, c.id])) as Record<
+      string,
+      number
+    >;
 
-    await db
-      .insert(areas)
-      .values([
-        {
-          cityId: cityIdByName.Cairo,
-          nameEn: 'Nasr City',
-          nameAr: 'مدينة نصر',
-          latitude: 30.0566,
-          longitude: 31.33,
-        },
-        {
-          cityId: cityIdByName.Cairo,
-          nameEn: 'Heliopolis',
-          nameAr: 'مصر الجديدة',
-          latitude: 30.0916,
-          longitude: 31.33,
-        },
-        {
-          cityId: cityIdByName.Cairo,
-          nameEn: 'Maadi',
-          nameAr: 'المعادي',
-          latitude: 29.9602,
-          longitude: 31.2569,
-        },
-        {
-          cityId: cityIdByName.Cairo,
-          nameEn: 'Zamalek',
-          nameAr: 'الزمالك',
-          latitude: 30.0626,
-          longitude: 31.2197,
-        },
-        {
-          cityId: cityIdByName.Cairo,
-          nameEn: 'Shubra',
-          nameAr: 'شبرا',
-          latitude: 30.08,
-          longitude: 31.245,
-        },
+    // ─────────────────────────────────────────────
+    // 4️⃣ Extract Areas
+    // ─────────────────────────────────────────────
+    const areaValues = features.map((feature) => {
+      const { area_en, area_ar, governorate_en } = feature.properties;
 
-        // ---------------- Giza (partial) ----------------
-        {
-          cityId: cityIdByName.Giza,
-          nameEn: 'Dokki',
-          nameAr: 'الدقي',
-          latitude: 30.0384,
-          longitude: 31.2101,
-        },
-        {
-          cityId: cityIdByName.Giza,
-          nameEn: 'Mohandessin',
-          nameAr: 'المهندسين',
-          latitude: 30.0495,
-          longitude: 31.1995,
-        },
-        {
-          cityId: cityIdByName.Giza,
-          nameEn: '6th of October',
-          nameAr: '6 أكتوبر',
-          latitude: 29.9285,
-          longitude: 30.9188,
-        },
+      const polygon = turf.feature(feature.geometry);
+      const centroid = turf.centroid(polygon);
+      const [lng, lat] = centroid.geometry.coordinates;
 
-        // ---------------- Alexandria (ONLY one with coords) ----------------
-        {
-          cityId: cityIdByName.Alexandria,
-          nameEn: 'Smouha',
-          nameAr: 'سموحة',
-          latitude: 31.2156,
-          longitude: 29.9553,
-        },
-        {
-          cityId: cityIdByName.Alexandria,
-          nameEn: 'Stanley',
-          nameAr: 'ستانلي',
-        },
+      return {
+        cityId: cityIdByName[governorate_en],
+        nameEn: area_en,
+        nameAr: area_ar,
+        latitude: lat,
+        longitude: lng,
+      };
+    });
 
-        {
-          cityId: cityIdByName.Dakahlia,
-          nameEn: 'Mansoura',
-          nameAr: 'المنصورة',
-        },
-        {
-          cityId: cityIdByName.Dakahlia,
-          nameEn: 'Talkha',
-          nameAr: 'طلخا',
-        },
-        {
-          cityId: cityIdByName.Dakahlia,
-          nameEn: 'Mit Ghamr',
-          nameAr: 'ميت غمر',
-        },
-      ])
-      .onConflictDoNothing();
+    await db.insert(areas).values(areaValues).onConflictDoNothing();
 
-    console.log('✅ Egyptian cities & areas seeded successfully');
+    console.log('✅ Done');
+    console.log(`   Cities: ${cityValues.length}`);
+    console.log(`   Areas: ${areaValues.length}`);
   }
 }

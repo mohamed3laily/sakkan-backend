@@ -1,4 +1,5 @@
 {
   "LISTING_DELETED": "تم حذف الإعلان",
-  "LISTING_NOT_FOUND": "الإعلان غير موجود"
+  "LISTING_NOT_FOUND": "الإعلان غير موجود",
+  "LOCATION_VALIDATION_FAILED": "الموقع خارج المنطقة المختارة"
 }

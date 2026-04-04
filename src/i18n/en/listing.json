@@ -1,4 +1,5 @@
 {
   "LISTING_DELETED": "Listing deleted",
-  "LISTING_NOT_FOUND": "Listing not found"
+  "LISTING_NOT_FOUND": "Listing not found",
+  "LOCATION_VALIDATION_FAILED": "Location is outside the selected area"
 }
