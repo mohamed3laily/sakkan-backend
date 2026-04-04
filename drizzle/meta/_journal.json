@@ -232,6 +232,13 @@
       "when": 1775017136835,
       "tag": "0032_nifty_victor_mancha",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1775328830071,
+      "tag": "0033_magenta_clea",
+      "breakpoints": true
     }
   ]
 }
