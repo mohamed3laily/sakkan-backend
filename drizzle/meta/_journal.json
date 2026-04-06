@@ -239,6 +239,13 @@
       "when": 1775328830071,
       "tag": "0033_magenta_clea",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1775491204744,
+      "tag": "0034_whole_snowbird",
+      "breakpoints": true
     }
   ]
 }
