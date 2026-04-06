@@ -1,4 +1,4 @@
-import { doublePrecision, integer, pgTable, serial, varchar } from 'drizzle-orm/pg-core';
+import { doublePrecision, integer, jsonb, pgTable, serial, varchar } from 'drizzle-orm/pg-core';
 import { cities } from './cities';
 import { timestamps } from '../timestamps';
 
@@ -12,6 +12,7 @@ export const areas = pgTable('areas', {
   nameAr: varchar('name_ar', { length: 150 }).notNull(),
   latitude: doublePrecision('latitude'),
   longitude: doublePrecision('longitude'),
+  geometry: jsonb('geometry'),
 
   ...timestamps,
 });

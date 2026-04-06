@@ -18,10 +18,19 @@ export class ListingSelectBuilder {
         nameAr: propertyType.nameAr,
         nameEn: propertyType.nameEn,
       },
-      areas: sql<{ id: number; name: string }[]>`
+      areas: sql<
+        {
+          id: number;
+          nameEn: string;
+          nameAr: string;
+          latitude: number | null;
+          longitude: number | null;
+          geometry: any;
+        }[]
+      >`
       COALESCE(
         (
-          SELECT json_agg(json_build_object('id', ${areas.id}, 'nameEn', ${areas.nameEn}, 'nameAr', ${areas.nameAr}))
+          SELECT json_agg(json_build_object('id', ${areas.id}, 'nameEn', ${areas.nameEn}, 'nameAr', ${areas.nameAr}, 'latitude', ${areas.latitude}, 'longitude', ${areas.longitude}, 'geometry', ${areas.geometry}))
           FROM ${areas}
           WHERE ${areas.id} = ANY(${listings.areaIds})
         ),

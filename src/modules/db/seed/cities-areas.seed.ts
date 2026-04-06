@@ -91,6 +91,7 @@ export class CitiesAreasSeed {
         nameAr: area_ar,
         latitude: lat,
         longitude: lng,
+        geometry: feature.geometry,
       };
     });
 
