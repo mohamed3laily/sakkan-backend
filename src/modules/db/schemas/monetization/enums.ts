@@ -13,7 +13,7 @@ export const subscriptionStatusEnum = pgEnum('subscription_status', [
 export const paymentTypeEnum = pgEnum('payment_type', [
   'subscription',
   'featured_single',
-  'featured_bundle'
+  'featured_bundle',
 ]);
 
 export const paymentStatusEnum = pgEnum('payment_status', [
@@ -24,4 +24,3 @@ export const paymentStatusEnum = pgEnum('payment_status', [
 ]);
 
 export const creditTypeEnum = pgEnum('credit_type', ['serious', 'featured']);
-

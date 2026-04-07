@@ -11,4 +11,9 @@ export const reportReasonEnum = pgEnum('report_reason', [
   'OTHER',
 ]);
 
-export const reportStatusEnum = pgEnum('report_status', ['PENDING', 'REVIEWED', 'RESOLVED', 'DISMISSED']);
+export const reportStatusEnum = pgEnum('report_status', [
+  'PENDING',
+  'REVIEWED',
+  'RESOLVED',
+  'DISMISSED',
+]);

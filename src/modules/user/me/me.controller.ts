@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Body,
-  UseGuards,
-  Put,
-  Delete,
-  HttpStatus,
-  HttpCode,
-} from '@nestjs/common';
+import { Controller, Get, Body, UseGuards, Put, Delete } from '@nestjs/common';
 
 import { MeService } from './me.service';
 import { UpdateMeDto } from './dto/me.dto';
@@ -33,9 +24,9 @@ export class MeController {
   }
 
   @Delete()
-  @HttpCode(HttpStatus.NO_CONTENT)
   async deleteMe(@CurrentUser() user: AuthenticatedUser) {
-    return this.meService.deleteMe(user.id);
+    await this.meService.deleteMe(user.id);
+    return { message: 'ACCOUNT_DELETED' };
   }
 
   @Get('preferences')

@@ -1,8 +1,4 @@
-import {
-  parsePhoneNumber,
-  isValidPhoneNumber,
-  CountryCode,
-} from 'libphonenumber-js';
+import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumber-js';
 import { BadRequestException } from '@nestjs/common';
 
 export class PhoneUtils {
@@ -12,10 +8,7 @@ export class PhoneUtils {
    * @param defaultCountry - Default country code if not provided in phone
    * @returns Normalized phone number in E.164 format (e.g., +201234567890)
    */
-  static normalizePhone(
-    phone: string,
-    defaultCountry: CountryCode = 'EG',
-  ): string {
+  static normalizePhone(phone: string, defaultCountry: CountryCode = 'EG'): string {
     try {
       // Remove any whitespace
       const cleanedPhone = phone.trim();

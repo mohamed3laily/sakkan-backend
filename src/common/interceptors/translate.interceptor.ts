@@ -1,9 +1,4 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -11,8 +6,7 @@ import { map } from 'rxjs/operators';
 export class TranslateInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
-    const lang =
-      request.headers['accept-language']?.split(',')[0]?.split('-')[0] || 'en';
+    const lang = request.headers['accept-language']?.split(',')[0]?.split('-')[0] || 'en';
 
     return next.handle().pipe(map((data) => this.translate(data, lang)));
   }

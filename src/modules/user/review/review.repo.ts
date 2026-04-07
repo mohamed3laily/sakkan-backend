@@ -25,10 +25,7 @@ export class ReviewRepo {
     const { page = 1, limit = 10 } = pagination;
     const offset = (page - 1) * limit;
 
-    const whereClause = and(
-      eq(reviews.reviewableId, agentId),
-      eq(reviews.reviewableType, 'USER'),
-    );
+    const whereClause = and(eq(reviews.reviewableId, agentId), eq(reviews.reviewableType, 'USER'));
 
     const reviewer = alias(users, 'reviewer');
 

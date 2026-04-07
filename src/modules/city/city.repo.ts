@@ -3,6 +3,7 @@ import { and, eq, ilike, or } from 'drizzle-orm';
 import { cities } from '../db/schemas/cities/cities';
 import { areas } from '../db/schemas/cities/areas';
 import { DrizzleService } from '../db/drizzle.service';
+import { geometry } from 'drizzle-orm/pg-core';
 
 @Injectable()
 export class CityRepository {
@@ -41,6 +42,7 @@ export class CityRepository {
         nameAr: areas.nameAr,
         latitude: areas.latitude,
         longitude: areas.longitude,
+        geometry: areas.geometry,
       })
       .from(areas)
       .where(filterCondition);
