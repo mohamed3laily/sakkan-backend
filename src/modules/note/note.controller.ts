@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { NoteService } from './note.service';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
@@ -23,10 +34,7 @@ export class NoteController {
   }
 
   @Get(':id')
-  async getNote(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+  async getNote(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number) {
     return this.noteService.getNote(user.id, id);
   }
 
@@ -40,10 +48,7 @@ export class NoteController {
   }
 
   @Delete(':id')
-  async deleteNote(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+  async deleteNote(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number) {
     return this.noteService.deleteNote(user.id, id);
   }
 }

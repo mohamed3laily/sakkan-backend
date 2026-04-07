@@ -30,10 +30,7 @@ export class AuthRepo {
   }
 
   async updateUser(userId: number, updateData: Partial<InsertUser>) {
-    return this.drizzleService.db
-      .update(users)
-      .set(updateData)
-      .where(eq(users.id, userId));
+    return this.drizzleService.db.update(users).set(updateData).where(eq(users.id, userId));
   }
 
   async getUserByResetToken(token: string) {

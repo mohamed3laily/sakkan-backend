@@ -1,17 +1,6 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-  Get,
-  Request,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import {
-  RequestResetDto,
-  ResetPasswordDto,
-  VerifyResetDto,
-} from './dto/reset-password.dto';
+import { RequestResetDto, ResetPasswordDto, VerifyResetDto } from './dto/reset-password.dto';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -37,10 +26,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @AllowUnverified()
   @Post('verify-phone')
-  verifyPhone(
-    @Body() dto: VerifyPhoneDto,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
+  verifyPhone(@Body() dto: VerifyPhoneDto, @CurrentUser() user: AuthenticatedUser) {
     return this.authService.verifyPhone(user.phone, dto.token);
   }
 

@@ -34,7 +34,11 @@ const propertyTypeData = [
   { parent: 'APARTMENT_ROOM', nameAr: 'شقة وروف', nameEn: 'Apartment with Roof' },
   { parent: 'APARTMENT_ROOM', nameAr: 'ستوديو', nameEn: 'Studio' },
   { parent: 'APARTMENT_ROOM', nameAr: 'شقة مفروشة', nameEn: 'Furnished Apartment' },
-  { parent: 'APARTMENT_ROOM', nameAr: 'شقة في مجمع سكني', nameEn: 'Apartment in Residential Compound' },
+  {
+    parent: 'APARTMENT_ROOM',
+    nameAr: 'شقة في مجمع سكني',
+    nameEn: 'Apartment in Residential Compound',
+  },
   { parent: 'APARTMENT_ROOM', nameAr: 'شقة دوبليكس', nameEn: 'Duplex Apartment' },
 
   // FLOOR

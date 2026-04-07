@@ -2,5 +2,6 @@
   "CANNOT_REVIEW_YOURSELF": "You cannot review yourself",
   "REVIEW_NOT_FOUND": "Review not found",
   "USER_NOT_FOUND": "User not found",
-  "REVIEW_ALREADY_EXISTS": "You have already reviewed this user before"
+  "REVIEW_ALREADY_EXISTS": "You have already reviewed this user before",
+  "ACCOUNT_DELETED": "Account deleted successfully"
 }
