@@ -19,6 +19,7 @@ import { ListingService } from './listing.service';
 export class ListingController {
   constructor(private service: ListingService) {}
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(TranslateInterceptor)
   @Get()
   async getListings(@CurrentUser() user: AuthenticatedUser, @Query() query: ListingQueryDto) {
     return this.service.getListings(query, user.id);
