@@ -24,16 +24,19 @@ export class TranslateInterceptor implements NestInterceptor {
   private translateItem(item: any, lang: string): any {
     if (!item || typeof item !== 'object') return item;
 
+    if (Array.isArray(item)) {
+      return item.map((i) => this.translate(i, lang));
+    }
+
     const { nameEn, nameAr, ...rest } = item;
 
     if (nameEn || nameAr) {
       return {
-        ...rest,
+        ...this.translate(rest, lang),
         name: lang === 'ar' ? nameAr : nameEn,
       };
     }
 
-    // Recursively translate nested objects
     const translated: any = {};
     for (const key in item) {
       translated[key] = this.translate(item[key], lang);
