@@ -1,5 +1,6 @@
 {
   "NOT_FOUND": "المورد غير موجود",
   "AREA_NOT_FOUND": "المنطقة غير موجودة",
-  "VALIDATION_ERROR": "فشل التحقق"
+  "VALIDATION_ERROR": "فشل التحقق",
+  "INVALID_FILE_TYPE": "نوع الملف غير صالح"
 }

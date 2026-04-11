@@ -12,6 +12,7 @@ import {
   IsNumber,
 } from 'class-validator';
 import { DealType, ListingType, BudgetType, PaymentMethod } from '../enum/listing.enums';
+import { Type } from 'class-transformer';
 
 export class CreateListingDto {
   @IsString()
@@ -25,10 +26,12 @@ export class CreateListingDto {
   listingType: ListingType;
 
   @IsInt()
+  @Type(() => Number)
   propertyTypeId: number;
 
   @IsInt()
   @IsPositive()
+  @Type(() => Number)
   cityId: number;
 
   @IsOptional()

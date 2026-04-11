@@ -1,5 +1,6 @@
 {
   "NOT_FOUND": "Resource not found",
   "AREA_NOT_FOUND": "Area not found",
-  "VALIDATION_ERROR": "Validation failed"
+  "VALIDATION_ERROR": "Validation failed",
+  "INVALID_FILE_TYPE": "Invalid file type"
 }

@@ -4,6 +4,7 @@ import { areas } from '../../db/schemas/cities/areas';
 import { propertyType } from '../../db/schemas/listing/property-type';
 import { sql } from 'drizzle-orm';
 import { users } from 'src/modules/db/schemas/user/user';
+import { attachments } from 'src/modules/db/schemas/schema-index';
 
 export class ListingSelectBuilder {
   static getSelectFields(userId?: number) {
@@ -17,6 +18,12 @@ export class ListingSelectBuilder {
         id: propertyType.id,
         nameAr: propertyType.nameAr,
         nameEn: propertyType.nameEn,
+      },
+      attachment: {
+        id: attachments.id,
+        url: attachments.url,
+        fileType: attachments.fileType,
+        mimeType: attachments.mimeType,
       },
       areas: sql<
         {

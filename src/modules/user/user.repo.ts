@@ -11,6 +11,23 @@ export class UserRepo {
 
   async getUserById(id: number) {
     return this.drizzleService.db.query.users.findFirst({
+      columns: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        profilePicture: true,
+        type: true,
+        bio: true,
+        organizationNameAr: true,
+        organizationNameEn: true,
+        socialMediaLinks: true,
+        contactViaWhatsapp: true,
+        contactViaPhone: true,
+        cityId: true,
+        createdAt: true,
+        verifiedPhoneAt: true,
+      },
       where: eq(users.id, id),
     });
   }
