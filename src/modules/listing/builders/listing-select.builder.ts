@@ -19,12 +19,22 @@ export class ListingSelectBuilder {
         nameAr: propertyType.nameAr,
         nameEn: propertyType.nameEn,
       },
-      attachment: {
-        id: attachments.id,
-        url: attachments.url,
-        fileType: attachments.fileType,
-        mimeType: attachments.mimeType,
-      },
+      attachments: sql<{ id: number; url: string; fileType: string; mimeType: string }[]>`
+        COALESCE(
+          (
+            SELECT json_agg(json_build_object(
+              'id', ${attachments.id},
+              'url', ${attachments.url},
+              'fileType', ${attachments.fileType},
+              'mimeType', ${attachments.mimeType}
+            ))
+            FROM ${attachments}
+            WHERE ${attachments.attachableId} = ${listings.id}
+              AND ${attachments.attachableType} = 'LISTING'
+          ),
+          '[]'
+        )
+      `.as('attachments'),
       areas: sql<
         {
           id: number;
