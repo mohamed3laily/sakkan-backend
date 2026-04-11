@@ -10,6 +10,7 @@ import { ListingQueryDto } from './dto/listing-query.dto';
 import { PaginationService } from 'src/common/services/pagination.service';
 import { CityQueue } from '../city/city.queue';
 import { GeoValidationService } from './geo-validation.service';
+import { AttachmentService } from '../attachment/attachment.service';
 
 @Injectable()
 export class ListingService {
@@ -18,13 +19,18 @@ export class ListingService {
     private readonly paginationService: PaginationService,
     private readonly cityQueue: CityQueue,
     private readonly geoValidationService: GeoValidationService,
+    private readonly attachmentService: AttachmentService,
   ) {}
 
-  async createListing(userId: number, dto: CreateListingDto) {
+  async createListing(userId: number, dto: CreateListingDto, images: Express.Multer.File[] = []) {
     await this.geoValidationService.validateListingLocation(dto);
+
     const listing = await this.repo.create(userId, dto);
 
-    await this.cityQueue.incrementListingCount(dto.cityId);
+    const [_] = await Promise.all([
+      images.length > 0 && this.attachmentService.createMany('LISTING', listing.id, images),
+      this.cityQueue.incrementListingCount(dto.cityId),
+    ]);
 
     return listing;
   }

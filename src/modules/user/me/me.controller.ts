@@ -1,10 +1,21 @@
-import { Controller, Get, Body, UseGuards, Put, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Body,
+  UseGuards,
+  Put,
+  Delete,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 
 import { MeService } from './me.service';
 import { UpdateMeDto } from './dto/me.dto';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from 'src/modules/auth/interfaces/authenticated-user.interface';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageUploadInterceptorOptions } from 'src/modules/storage/upload.config';
 
 @Controller('')
 @UseGuards(JwtAuthGuard)
@@ -21,6 +32,15 @@ export class MeController {
   async updateMe(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateMeDto) {
     const userId = user?.id;
     return this.meService.updateMe(userId, dto);
+  }
+
+  @Put('profile-picture')
+  @UseInterceptors(FileInterceptor('file', imageUploadInterceptorOptions))
+  async updateProfilePicture(
+    @CurrentUser() user: AuthenticatedUser,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.meService.updateProfilePicture(user.id, file);
   }
 
   @Delete()

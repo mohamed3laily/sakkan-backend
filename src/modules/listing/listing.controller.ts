@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   Param,
   ParseIntPipe,
+  UploadedFiles,
 } from '@nestjs/common';
 import { ListingService } from './listing.service';
 import { CreateListingDto } from './dto/create-listing.dto';
@@ -19,6 +20,8 @@ import { PropertyTypeQueryDto } from './dto/property-type-query.dto';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { imageUploadInterceptorOptions } from '../storage/upload.config';
 
 @UseGuards(JwtAuthGuard)
 @Controller('listings')
@@ -33,9 +36,13 @@ export class ListingController {
   }
 
   @Post()
-  async create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateListingDto) {
-    const userId = user.id;
-    return this.service.createListing(userId, dto);
+  @UseInterceptors(FilesInterceptor('images', 6, imageUploadInterceptorOptions))
+  async create(
+    @CurrentUser() user: AuthenticatedUser,
+    @UploadedFiles() images: Express.Multer.File[],
+    @Body() dto: CreateListingDto,
+  ) {
+    return this.service.createListing(user.id, dto, images);
   }
 
   @Public()

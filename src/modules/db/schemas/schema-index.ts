@@ -39,3 +39,7 @@ export * from './monetization/quota-usage';
 export * from './monetization/one-time-credits';
 export * from './monetization/payments';
 export * from './monetization/enums';
+
+// attachments
+export * from './attachments/attachments';
+export * from './attachments/enums';

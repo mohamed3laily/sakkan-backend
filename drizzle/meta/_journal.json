@@ -246,6 +246,20 @@
       "when": 1775491204744,
       "tag": "0034_whole_snowbird",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1775864515944,
+      "tag": "0035_bizarre_hellcat",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1775864810422,
+      "tag": "0036_optimal_sir_ram",
+      "breakpoints": true
     }
   ]
 }

@@ -5,12 +5,14 @@ import { ListingFiltersDto } from './dto/listing-filters.dto';
 import { ListingQueryDto } from './dto/listing-query.dto';
 import { ListingSortDto } from './dto/listing-sort.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { AttachmentQueue } from 'src/modules/attachment/attachment.queue';
 
 @Injectable()
 export class ListingService {
   constructor(
     private listingRepo: ListingRepository,
     private readonly paginationService: PaginationService,
+    private readonly attachmentQueue: AttachmentQueue,
   ) {}
   async getListings(query: ListingQueryDto, userId: number) {
     const { page = 1, limit = 10, sortBy, order, ...filterFields } = query;
@@ -45,6 +47,8 @@ export class ListingService {
     const deleted = await this.listingRepo.deleteById(id, userId);
 
     if (!deleted) throw new NotFoundException('LISTING_NOT_FOUND');
+
+    await this.attachmentQueue.scheduleOrphanCleanup();
 
     return { message: 'LISTING_DELETED' };
   }
