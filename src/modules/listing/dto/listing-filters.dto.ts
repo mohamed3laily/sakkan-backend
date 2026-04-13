@@ -24,6 +24,7 @@ export class ListingFiltersDto {
 
   @IsOptional()
   @IsArray()
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   @Type(() => Number)
   areaIds?: number[];
 
