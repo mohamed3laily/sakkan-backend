@@ -37,41 +37,42 @@ export class CreateListingDto {
   @IsOptional()
   @IsArray()
   @Type(() => Number)
-  @ValidateIf((o) => o.listingType === ListingType.OFFER)
-  @ArrayMaxSize(1)
   areaIds?: number[];
 
   @IsEnum(BudgetType)
   budgetType: BudgetType;
 
   @IsInt()
-  @IsPositive()
   @IsOptional()
+  @Type(() => Number)
   price?: number;
 
   @IsInt()
-  @IsPositive()
   @IsOptional()
+  @Type(() => Number)
   mPrice?: number;
 
   @IsOptional()
   @IsInt()
-  @IsPositive()
+  @Type(() => Number)
   spaceSqm?: number;
 
   @IsOptional()
   @IsInt()
   @IsPositive()
+  @Type(() => Number)
   numberOfRooms?: number;
 
   @IsOptional()
   @IsInt()
   @IsPositive()
+  @Type(() => Number)
   numberOfBathrooms?: number;
 
   @IsOptional()
   @IsInt()
   @IsPositive()
+  @Type(() => Number)
   propertyAge?: number;
 
   @IsOptional()
