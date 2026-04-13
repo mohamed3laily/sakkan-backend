@@ -84,6 +84,11 @@ export class CreateListingDto {
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   isSerious?: boolean;
 
   @IsOptional()
@@ -105,5 +110,6 @@ export class CreateListingDto {
 
   @IsOptional()
   @IsInt()
+  @Type(() => Number)
   agentId?: number;
 }
