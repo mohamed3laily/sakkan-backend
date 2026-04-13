@@ -7,12 +7,10 @@ import {
   MaxLength,
   IsBoolean,
   IsArray,
-  ArrayMaxSize,
-  ValidateIf,
   IsNumber,
 } from 'class-validator';
 import { DealType, ListingType, BudgetType, PaymentMethod } from '../enum/listing.enums';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateListingDto {
   @IsString()
@@ -36,6 +34,7 @@ export class CreateListingDto {
 
   @IsOptional()
   @IsArray()
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   @Type(() => Number)
   areaIds?: number[];
 
