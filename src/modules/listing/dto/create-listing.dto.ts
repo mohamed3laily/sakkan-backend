@@ -36,7 +36,7 @@ export class CreateListingDto {
 
   @IsOptional()
   @IsArray()
-  @IsInt({ each: true })
+  @Type(() => Number)
   @ValidateIf((o) => o.listingType === ListingType.OFFER)
   @ArrayMaxSize(1)
   areaIds?: number[];
