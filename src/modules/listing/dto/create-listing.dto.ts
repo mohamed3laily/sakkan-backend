@@ -76,10 +76,12 @@ export class CreateListingDto {
 
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   latitude?: number;
 
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   longitude?: number;
 
   @IsOptional()
@@ -102,10 +104,20 @@ export class CreateListingDto {
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   contactWhatsapp?: boolean = true;
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   contactPhone?: boolean = false;
 
   @IsOptional()
