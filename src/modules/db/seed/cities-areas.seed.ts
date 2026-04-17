@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DrizzleService } from '../drizzle.service';
-import { cities, areas } from '../schemas/schema-index';
+import { areas, cities } from '../schemas/schema-index';
+
+import * as fs from 'fs';
+import * as path from 'path';
+import * as turf from '@turf/turf';
 
 @Injectable()
 export class CitiesAreasSeed {
@@ -9,111 +13,92 @@ export class CitiesAreasSeed {
   async run() {
     const db = this.drizzle.db;
 
-    console.log('🌱 Seeding Egyptian cities & areas...');
+    console.log('🌱 Seeding Egyptian cities & areas from GeoJSON...');
 
-    /**
-     * 1️⃣ Insert cities (idempotent)
-     */
-    await db
-      .insert(cities)
-      .values([
-        { nameEn: 'Cairo', nameAr: 'القاهرة' },
-        { nameEn: 'Alexandria', nameAr: 'الإسكندرية' },
-        { nameEn: 'Giza', nameAr: 'الجيزة' },
-        { nameEn: 'Dakahlia', nameAr: 'الدقهلية' },
-      ])
-      .onConflictDoNothing();
+    // ─────────────────────────────────────────────
+    // 1️⃣ Load GeoJSON
+    // ─────────────────────────────────────────────
+    //src/modules/city/data/egypt-geo.json
+    const filePath = path.join(__dirname, '../../city/data/egypt-geo.json');
+    const geojson = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 
-    /**
-     * 2️⃣ Fetch city IDs (SOURCE OF TRUTH)
-     */
+    const features = geojson.features;
+
+    // ─────────────────────────────────────────────
+    // 2️⃣ Extract Cities (Governorates)
+    // ─────────────────────────────────────────────
+    const cityMap = new Map<
+      string,
+      { nameEn: string; nameAr: string; lat: number; lng: number; count: number }
+    >();
+
+    for (const feature of features) {
+      const { governorate_en, governorate_ar } = feature.properties;
+
+      const polygon = turf.feature(feature.geometry);
+      const centroid = turf.centroid(polygon);
+      const [lng, lat] = centroid.geometry.coordinates;
+
+      if (!cityMap.has(governorate_en)) {
+        cityMap.set(governorate_en, {
+          nameEn: governorate_en,
+          nameAr: governorate_ar,
+          lat,
+          lng,
+          count: 1,
+        });
+      } else {
+        // average centroid for better city center approximation
+        const existing = cityMap.get(governorate_en)!;
+        existing.lat = (existing.lat * existing.count + lat) / (existing.count + 1);
+        existing.lng = (existing.lng * existing.count + lng) / (existing.count + 1);
+        existing.count++;
+      }
+    }
+
+    const cityValues = Array.from(cityMap.values()).map((c) => ({
+      nameEn: c.nameEn,
+      nameAr: c.nameAr,
+      latitude: c.lat,
+      longitude: c.lng,
+    }));
+
+    await db.insert(cities).values(cityValues).onConflictDoNothing();
+
+    // ─────────────────────────────────────────────
+    // 3️⃣ Fetch City IDs
+    // ─────────────────────────────────────────────
     const cityRows = await db.select().from(cities);
 
-    const cityIdByName = Object.fromEntries(
-      cityRows.map((city) => [city.nameEn, city.id]),
-    ) as Record<string, number>;
+    const cityIdByName = Object.fromEntries(cityRows.map((c) => [c.nameEn, c.id])) as Record<
+      string,
+      number
+    >;
 
-    /**
-     * 3️⃣ Areas (ALL cityId are guaranteed numbers)
-     */
-    await db
-      .insert(areas)
-      .values([
-        // ---------------- Cairo ----------------
-        {
-          cityId: cityIdByName.Cairo,
-          nameEn: 'Nasr City',
-          nameAr: 'مدينة نصر',
-        },
-        {
-          cityId: cityIdByName.Cairo,
-          nameEn: 'Heliopolis',
-          nameAr: 'مصر الجديدة',
-        },
-        {
-          cityId: cityIdByName.Cairo,
-          nameEn: 'Maadi',
-          nameAr: 'المعادي',
-        },
-        {
-          cityId: cityIdByName.Cairo,
-          nameEn: 'Zamalek',
-          nameAr: 'الزمالك',
-        },
-        {
-          cityId: cityIdByName.Cairo,
-          nameEn: 'Shubra',
-          nameAr: 'شبرا',
-        },
+    // ─────────────────────────────────────────────
+    // 4️⃣ Extract Areas
+    // ─────────────────────────────────────────────
+    const areaValues = features.map((feature) => {
+      const { area_en, area_ar, governorate_en } = feature.properties;
 
-        // ---------------- Giza ----------------
-        {
-          cityId: cityIdByName.Giza,
-          nameEn: 'Dokki',
-          nameAr: 'الدقي',
-        },
-        {
-          cityId: cityIdByName.Giza,
-          nameEn: 'Mohandessin',
-          nameAr: 'المهندسين',
-        },
-        {
-          cityId: cityIdByName.Giza,
-          nameEn: '6th of October',
-          nameAr: '6 أكتوبر',
-        },
+      const polygon = turf.feature(feature.geometry);
+      const centroid = turf.centroid(polygon);
+      const [lng, lat] = centroid.geometry.coordinates;
 
-        // ---------------- Alexandria ----------------
-        {
-          cityId: cityIdByName.Alexandria,
-          nameEn: 'Smouha',
-          nameAr: 'سموحة',
-        },
-        {
-          cityId: cityIdByName.Alexandria,
-          nameEn: 'Stanley',
-          nameAr: 'ستانلي',
-        },
+      return {
+        cityId: cityIdByName[governorate_en],
+        nameEn: area_en,
+        nameAr: area_ar,
+        latitude: lat,
+        longitude: lng,
+        geometry: feature.geometry,
+      };
+    });
 
-        // ---------------- Dakahlia ----------------
-        {
-          cityId: cityIdByName.Dakahlia,
-          nameEn: 'Mansoura',
-          nameAr: 'المنصورة',
-        },
-        {
-          cityId: cityIdByName.Dakahlia,
-          nameEn: 'Talkha',
-          nameAr: 'طلخا',
-        },
-        {
-          cityId: cityIdByName.Dakahlia,
-          nameEn: 'Mit Ghamr',
-          nameAr: 'ميت غمر',
-        },
-      ])
-      .onConflictDoNothing();
+    await db.insert(areas).values(areaValues).onConflictDoNothing();
 
-    console.log('✅ Egyptian cities & areas seeded successfully');
+    console.log('✅ Done');
+    console.log(`   Cities: ${cityValues.length}`);
+    console.log(`   Areas: ${areaValues.length}`);
   }
 }

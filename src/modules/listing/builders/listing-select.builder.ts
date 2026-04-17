@@ -4,6 +4,7 @@ import { areas } from '../../db/schemas/cities/areas';
 import { propertyType } from '../../db/schemas/listing/property-type';
 import { sql } from 'drizzle-orm';
 import { users } from 'src/modules/db/schemas/user/user';
+import { attachments } from 'src/modules/db/schemas/schema-index';
 
 export class ListingSelectBuilder {
   static getSelectFields(userId?: number) {
@@ -18,10 +19,35 @@ export class ListingSelectBuilder {
         nameAr: propertyType.nameAr,
         nameEn: propertyType.nameEn,
       },
-      areas: sql<{ id: number; name: string }[]>`
+      attachments: sql<{ id: number; url: string; fileType: string; mimeType: string }[]>`
+        COALESCE(
+          (
+            SELECT json_agg(json_build_object(
+              'id', ${attachments.id},
+              'url', ${attachments.url},
+              'fileType', ${attachments.fileType},
+              'mimeType', ${attachments.mimeType}
+            ))
+            FROM ${attachments}
+            WHERE ${attachments.attachableId} = ${listings.id}
+              AND ${attachments.attachableType} = 'LISTING'
+          ),
+          '[]'
+        )
+      `.as('attachments'),
+      areas: sql<
+        {
+          id: number;
+          nameEn: string;
+          nameAr: string;
+          latitude: number | null;
+          longitude: number | null;
+          geometry: any;
+        }[]
+      >`
       COALESCE(
         (
-          SELECT json_agg(json_build_object('id', ${areas.id}, 'nameEn', ${areas.nameEn}, 'nameAr', ${areas.nameAr}))
+          SELECT json_agg(json_build_object('id', ${areas.id}, 'nameEn', ${areas.nameEn}, 'nameAr', ${areas.nameAr}, 'latitude', ${areas.latitude}, 'longitude', ${areas.longitude}, 'geometry', ${areas.geometry}))
           FROM ${areas}
           WHERE ${areas.id} = ANY(${listings.areaIds})
         ),
@@ -46,6 +72,8 @@ export class ListingSelectBuilder {
         id: cities.id,
         nameEn: cities.nameEn,
         nameAr: cities.nameAr,
+        latitude: cities.latitude,
+        longitude: cities.longitude,
       },
       user: {
         id: users.id,

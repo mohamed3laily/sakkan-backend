@@ -7,10 +7,10 @@ import {
   MaxLength,
   IsBoolean,
   IsArray,
-  ArrayMaxSize,
-  ValidateIf,
+  IsNumber,
 } from 'class-validator';
 import { DealType, ListingType, BudgetType, PaymentMethod } from '../enum/listing.enums';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateListingDto {
   @IsString()
@@ -24,64 +24,73 @@ export class CreateListingDto {
   listingType: ListingType;
 
   @IsInt()
+  @Type(() => Number)
   propertyTypeId: number;
 
   @IsInt()
   @IsPositive()
+  @Type(() => Number)
   cityId: number;
 
   @IsOptional()
   @IsArray()
-  @IsInt({ each: true })
-  @ValidateIf((o) => o.listingType === ListingType.OFFER)
-  @ArrayMaxSize(1)
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  @Type(() => Number)
   areaIds?: number[];
 
   @IsEnum(BudgetType)
   budgetType: BudgetType;
 
   @IsInt()
-  @IsPositive()
   @IsOptional()
+  @Type(() => Number)
   price?: number;
 
   @IsInt()
-  @IsPositive()
   @IsOptional()
+  @Type(() => Number)
   mPrice?: number;
 
   @IsOptional()
   @IsInt()
-  @IsPositive()
+  @Type(() => Number)
   spaceSqm?: number;
 
   @IsOptional()
   @IsInt()
   @IsPositive()
+  @Type(() => Number)
   numberOfRooms?: number;
 
   @IsOptional()
   @IsInt()
   @IsPositive()
+  @Type(() => Number)
   numberOfBathrooms?: number;
 
   @IsOptional()
   @IsInt()
   @IsPositive()
+  @Type(() => Number)
   propertyAge?: number;
 
   @IsOptional()
-  @IsInt()
-  @IsPositive()
+  @IsNumber()
+  @Type(() => Number)
   latitude?: number;
 
   @IsOptional()
-  @IsInt()
-  @IsPositive()
+  @IsNumber()
+  @Type(() => Number)
   longitude?: number;
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   isSerious?: boolean;
 
   @IsOptional()
@@ -95,13 +104,24 @@ export class CreateListingDto {
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   contactWhatsapp?: boolean = true;
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   contactPhone?: boolean = false;
 
   @IsOptional()
   @IsInt()
+  @Type(() => Number)
   agentId?: number;
 }

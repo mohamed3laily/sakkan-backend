@@ -33,7 +33,8 @@ export class ListingFiltersDto {
 
   @IsOptional()
   @IsArray()
-  @IsInt({ each: true })
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  @Type(() => Number)
   areaIds?: number[];
 
   @IsOptional()

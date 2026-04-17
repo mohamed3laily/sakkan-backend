@@ -5,8 +5,8 @@ import {
   UseGuards,
   Put,
   Delete,
-  HttpStatus,
-  HttpCode,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 
 import { MeService } from './me.service';
@@ -14,6 +14,8 @@ import { UpdateMeDto } from './dto/me.dto';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from 'src/modules/auth/interfaces/authenticated-user.interface';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageUploadInterceptorOptions } from 'src/modules/storage/upload.config';
 
 @Controller('')
 @UseGuards(JwtAuthGuard)
@@ -32,10 +34,19 @@ export class MeController {
     return this.meService.updateMe(userId, dto);
   }
 
+  @Put('profile-picture')
+  @UseInterceptors(FileInterceptor('file', imageUploadInterceptorOptions))
+  async updateProfilePicture(
+    @CurrentUser() user: AuthenticatedUser,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.meService.updateProfilePicture(user.id, file);
+  }
+
   @Delete()
-  @HttpCode(HttpStatus.NO_CONTENT)
   async deleteMe(@CurrentUser() user: AuthenticatedUser) {
-    return this.meService.deleteMe(user.id);
+    await this.meService.deleteMe(user.id);
+    return { message: 'ACCOUNT_DELETED' };
   }
 
   @Get('preferences')

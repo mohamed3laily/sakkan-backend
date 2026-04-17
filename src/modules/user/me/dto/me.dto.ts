@@ -39,4 +39,7 @@ export class UpdateMeDto {
   @IsOptional()
   @IsIn(userTypeEnum.enumValues)
   type?: (typeof userTypeEnum.enumValues)[number];
+
+  @IsOptional()
+  profilePicture: string;
 }

@@ -1,4 +1,13 @@
-import { boolean, integer, pgTable, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  doublePrecision,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import {
   budgetTypeEnum,
   dealTypeEnum,
@@ -40,8 +49,8 @@ export const listings = pgTable(
     numberOfRooms: integer('number_of_rooms'),
     numberOfBathrooms: integer('number_of_bathrooms'),
     propertyAge: integer('property_age'),
-    latitude: integer('latitude'),
-    longitude: integer('longitude'),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
     paymentMethod: paymentMethodEnum('payment_method'),
 
     contactWhatsapp: boolean('contact_whatsapp').default(true),

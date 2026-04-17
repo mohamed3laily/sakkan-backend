@@ -10,6 +10,7 @@ import { cities } from 'src/modules/db/schemas/cities/cities';
 import { users } from 'src/modules/db/schemas/user/user';
 import { propertyType } from 'src/modules/db/schemas/listing/property-type';
 import { eq, count, and } from 'drizzle-orm';
+import { attachments } from 'src/modules/db/schemas/attachments/attachments';
 
 @Injectable()
 export class ListingRepository {
@@ -35,6 +36,10 @@ export class ListingRepository {
         .leftJoin(cities, eq(listings.cityId, cities.id))
         .leftJoin(propertyType, eq(listings.propertyTypeId, propertyType.id))
         .leftJoin(users, eq(listings.userId, users.id))
+        .leftJoin(
+          attachments,
+          and(eq(attachments.attachableId, listings.id), eq(attachments.attachableType, 'LISTING')),
+        )
         .where(whereClause)
         .orderBy(orderByClause)
         .limit(limit)
@@ -58,6 +63,10 @@ export class ListingRepository {
       .leftJoin(cities, eq(listings.cityId, cities.id))
       .leftJoin(propertyType, eq(listings.propertyTypeId, propertyType.id))
       .leftJoin(users, eq(listings.userId, users.id))
+      .leftJoin(
+        attachments,
+        and(eq(attachments.attachableId, listings.id), eq(attachments.attachableType, 'LISTING')),
+      )
       .where(and(eq(listings.id, id), eq(listings.userId, userId)))
       .limit(1);
 

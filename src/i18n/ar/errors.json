@@ -2,6 +2,7 @@
   "NOT_FOUND": "المورد غير موجود",
   "AREA_NOT_FOUND": "المنطقة غير موجودة",
   "VALIDATION_ERROR": "فشل التحقق",
+  "INVALID_FILE_TYPE": "نوع الملف غير صالح",
   "NO_QUOTA_OR_CREDITS": "لا يوجد رصيد أو حصة متاحة لهذا الإجراء",
   "INVALID_PAYMOB_HMAC": "توقيع إشعار الدفع غير صالح",
   "PAYMENT_GATEWAY_ERROR": "خطأ في بوابة الدفع",

@@ -4,13 +4,13 @@ import { CreateListingDto } from './dto/create-listing.dto';
 import { DrizzleService } from '../db/drizzle.service';
 import { listings } from '../db/schemas/listing/listing';
 import { cities } from '../db/schemas/cities/cities';
-import { and, eq, count } from 'drizzle-orm';
+import { and, count, eq } from 'drizzle-orm';
 import { ListingFiltersDto } from './dto/listing-filters.dto';
 import { ListingSortDto } from './dto/listing-sort.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { buildListingOrderBy, buildListingWhere } from './builders/listing-query.builder';
 import { ListingSelectBuilder } from './builders/listing-select.builder';
-import { users } from '../db/schemas/schema-index';
+import { attachments, users } from '../db/schemas/schema-index';
 
 @Injectable()
 export class ListingsRepository {
@@ -68,6 +68,10 @@ export class ListingsRepository {
         .leftJoin(cities, eq(listings.cityId, cities.id))
         .leftJoin(propertyType, eq(listings.propertyTypeId, propertyType.id))
         .leftJoin(users, eq(listings.userId, users.id))
+        .leftJoin(
+          attachments,
+          and(eq(attachments.attachableId, listings.id), eq(attachments.attachableType, 'LISTING')),
+        )
         .where(whereClause)
         .orderBy(orderByClause)
         .limit(limit)
@@ -182,6 +186,10 @@ export class ListingsRepository {
       .leftJoin(cities, eq(listings.cityId, cities.id))
       .leftJoin(propertyType, eq(listings.propertyTypeId, propertyType.id))
       .leftJoin(users, eq(listings.userId, users.id))
+      .leftJoin(
+        attachments,
+        and(eq(attachments.attachableId, listings.id), eq(attachments.attachableType, 'LISTING')),
+      )
       .where(eq(listings.id, id))
       .limit(1);
 

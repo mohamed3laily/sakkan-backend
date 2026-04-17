@@ -25,4 +25,3 @@ export const paymentStatusEnum = pgEnum('payment_status', [
 ]);
 
 export const creditTypeEnum = pgEnum('credit_type', ['serious', 'featured']);
-
