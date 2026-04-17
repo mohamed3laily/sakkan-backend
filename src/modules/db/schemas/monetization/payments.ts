@@ -1,6 +1,6 @@
 import { index, integer, jsonb, pgTable, serial, varchar } from 'drizzle-orm/pg-core';
 import { paymentStatusEnum, paymentTypeEnum } from './enums';
-import { users } from '../schema-index';
+import { users } from '../user/user';
 import { timestamps } from '../timestamps';
 
 export const payments = pgTable(

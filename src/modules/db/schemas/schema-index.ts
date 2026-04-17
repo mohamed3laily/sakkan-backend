@@ -38,6 +38,7 @@ export * from './monetization/user-subscriptions';
 export * from './monetization/quota-usage';
 export * from './monetization/one-time-credits';
 export * from './monetization/payments';
+export * from './monetization/user-sessions';
 export * from './monetization/enums';
 
 // attachments

@@ -21,3 +21,7 @@ export const budgetTypeEnum = pgEnum('budget_type', ['MARKET', 'FIXED']);
 export const paymentMethodEnum = pgEnum('payment_method', ['CASH', 'OTHER']);
 
 export const listingStatusEnum = pgEnum('listing_status', ['PUBLISHED', 'UNLISTED', 'PENDING']);
+
+export const listingTierEnum = pgEnum('listing_tier', ['standard', 'serious', 'featured']);
+
+export const listingQuotaSourceEnum = pgEnum('listing_quota_source', ['subscription', 'credits']);

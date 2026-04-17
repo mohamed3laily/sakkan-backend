@@ -15,7 +15,7 @@ import { NoteModule } from './modules/note/note.module';
 import { PreferenceModule } from './modules/preference/preference.module';
 import { AdminModule } from './admin/admin.module';
 import { BullModule } from '@nestjs/bullmq';
-import { MonetizationModule } from './modules/monetization/monetization.module';
+import { BillingModule } from './modules/monetization/billing.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { AttachmentModule } from './modules/attachment/attachment.module';
 
@@ -41,7 +41,7 @@ import { AttachmentModule } from './modules/attachment/attachment.module';
     NoteModule,
     PreferenceModule,
     AdminModule,
-    MonetizationModule,
+    BillingModule,
     StorageModule,
     AttachmentModule,
   ],

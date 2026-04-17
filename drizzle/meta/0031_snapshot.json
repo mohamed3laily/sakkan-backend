@@ -1,5 +1,5 @@
 {
-  "id": "14141274-1c42-43e6-9c59-c7ba4daf9deb",
+  "id": "6b4bf9ac-167e-4565-8f47-eb82c395386e",
   "prevId": "a42905af-483e-4f45-9ef3-18a18d725ff4",
   "version": "7",
   "dialect": "postgresql",
@@ -417,13 +417,13 @@
         },
         "latitude": {
           "name": "latitude",
-          "type": "double precision",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
         "longitude": {
           "name": "longitude",
-          "type": "double precision",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -462,6 +462,40 @@
           "primaryKey": false,
           "notNull": false,
           "default": false
+        },
+        "listing_tier": {
+          "name": "listing_tier",
+          "type": "listing_tier",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'standard'"
+        },
+        "is_featured_ad": {
+          "name": "is_featured_ad",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "featured_expires_at": {
+          "name": "featured_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monetization_payment_id": {
+          "name": "monetization_payment_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quota_source": {
+          "name": "quota_source",
+          "type": "listing_quota_source",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -647,6 +681,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "listings_monetization_payment_id_payments_id_fk": {
+          "name": "listings_monetization_payment_id_payments_id_fk",
+          "tableFrom": "listings",
+          "tableTo": "payments",
+          "columnsFrom": [
+            "monetization_payment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -1627,7 +1674,23 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_quota_usage_user": {
+          "name": "idx_quota_usage_user",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "quota_usage_user_id_users_id_fk": {
           "name": "quota_usage_user_id_users_id_fk",
@@ -1657,7 +1720,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "quota_usage_user_billing_unique": {
+          "name": "quota_usage_user_billing_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "billing_month"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1746,7 +1818,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "one_time_credits_user_type_unique": {
+          "name": "one_time_credits_user_type_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "type"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1863,6 +1944,101 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "public.user_sessions": {
+      "name": "user_sessions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "device_fingerprint": {
+          "name": "device_fingerprint",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_seen_at": {
+          "name": "last_seen_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_user_sessions_user": {
+          "name": "idx_user_sessions_user",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "user_sessions_user_id_users_id_fk": {
+          "name": "user_sessions_user_id_users_id_fk",
+          "tableFrom": "user_sessions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "user_sessions_user_device_unique": {
+          "name": "user_sessions_user_device_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "device_fingerprint"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {
@@ -1892,6 +2068,14 @@
         "BUY"
       ]
     },
+    "public.listing_quota_source": {
+      "name": "listing_quota_source",
+      "schema": "public",
+      "values": [
+        "subscription",
+        "credits"
+      ]
+    },
     "public.listing_status": {
       "name": "listing_status",
       "schema": "public",
@@ -1899,6 +2083,15 @@
         "PUBLISHED",
         "UNLISTED",
         "PENDING"
+      ]
+    },
+    "public.listing_tier": {
+      "name": "listing_tier",
+      "schema": "public",
+      "values": [
+        "standard",
+        "serious",
+        "featured"
       ]
     },
     "public.listing_type": {
@@ -2027,7 +2220,8 @@
       "values": [
         "subscription",
         "featured_single",
-        "featured_bundle"
+        "featured_bundle",
+        "serious_request"
       ]
     },
     "public.subscription_status": {

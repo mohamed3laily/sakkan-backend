@@ -1,6 +1,6 @@
 {
-  "id": "7656df65-ad49-4419-887e-8a5e77d0ef96",
-  "prevId": "3de3da1d-3730-43cd-bd3d-3ac33262323a",
+  "id": "58c0c23c-8d5d-4fcf-bc37-782ddb83930f",
+  "prevId": "1ee603ad-c25b-4ebd-b0c4-f9b0ab562118",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2180,14 +2180,14 @@
       "name": "attachment_entity_type",
       "schema": "public",
       "values": [
-        "listing"
+        "LISTING"
       ]
     },
     "public.attachment_file_type": {
       "name": "attachment_file_type",
       "schema": "public",
       "values": [
-        "image"
+        "IMAGE"
       ]
     }
   },

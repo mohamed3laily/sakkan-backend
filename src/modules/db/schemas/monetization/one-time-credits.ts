@@ -1,6 +1,6 @@
-import { index, integer, pgTable, serial, timestamp, unique } from 'drizzle-orm/pg-core';
+import { index, integer, pgTable, serial, unique } from 'drizzle-orm/pg-core';
 import { creditTypeEnum } from './enums';
-import { users } from '../schema-index';
+import { users } from '../user/user';
 import { timestamps } from '../timestamps';
 
 export const oneTimeCredits = pgTable(

@@ -11,10 +11,13 @@ import {
 import {
   budgetTypeEnum,
   dealTypeEnum,
+  listingQuotaSourceEnum,
   listingStatusEnum,
+  listingTierEnum,
   listingTypeEnum,
   paymentMethodEnum,
 } from './enums';
+import { payments } from '../monetization/payments';
 import { propertyType, users } from '../schema-index';
 import { cities } from '../cities/cities';
 
@@ -54,6 +57,14 @@ export const listings = pgTable(
     contactPhone: boolean('contact_phone').default(false),
     status: listingStatusEnum('status').default('PUBLISHED'),
     isSerious: boolean('is_serious').default(false),
+    listingTier: listingTierEnum('listing_tier').default('standard'),
+    isFeaturedAd: boolean('is_featured_ad').default(false),
+    featuredExpiresAt: timestamp('featured_expires_at', {
+      withTimezone: true,
+      mode: 'string',
+    }),
+    monetizationPaymentId: integer('monetization_payment_id').references(() => payments.id),
+    quotaSource: listingQuotaSourceEnum('quota_source'),
     ...timestamps,
   },
   (table) => ({

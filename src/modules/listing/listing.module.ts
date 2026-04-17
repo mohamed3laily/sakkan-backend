@@ -10,5 +10,6 @@ import { AttachmentModule } from '../attachment/attachment.module';
   imports: [CityModule, AttachmentModule],
   providers: [ListingService, ListingsRepository, GeoValidationService],
   controllers: [ListingController],
+  exports: [ListingsRepository],
 })
 export class ListingModule {}
