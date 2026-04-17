@@ -1,5 +1,9 @@
 {
   "NOT_FOUND": "المورد غير موجود",
   "AREA_NOT_FOUND": "المنطقة غير موجودة",
-  "VALIDATION_ERROR": "فشل التحقق"
+  "VALIDATION_ERROR": "فشل التحقق",
+  "NO_QUOTA_OR_CREDITS": "لا يوجد رصيد أو حصة متاحة لهذا الإجراء",
+  "INVALID_PAYMOB_HMAC": "توقيع إشعار الدفع غير صالح",
+  "PAYMENT_GATEWAY_ERROR": "خطأ في بوابة الدفع",
+  "PAYMENT_FULFILLMENT_FAILED": "تم الدفع لكن تعذر إتمام الخدمة؛ يرجى التواصل مع الدعم"
 }

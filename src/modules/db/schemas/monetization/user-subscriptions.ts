@@ -1,7 +1,7 @@
 import { boolean, index, integer, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { subscriptionStatusEnum } from './enums';
 import { subscriptionPlans } from './subscription-plans';
-import { users } from '../schema-index';
+import { users } from '../user/user';
 import { timestamps } from '../timestamps';
 
 export const userSubscriptions = pgTable(

@@ -27,13 +27,7 @@ export class CityRepository {
     const cityCondition = eq(areas.cityId, cityId);
 
     const filterCondition = name
-      ? and(
-          cityCondition,
-          or(
-            ilike(areas.nameEn, `%${name}%`),
-            ilike(areas.nameAr, `%${name}%`),
-          ),
-        )
+      ? and(cityCondition, or(ilike(areas.nameEn, `%${name}%`), ilike(areas.nameAr, `%${name}%`)))
       : cityCondition;
 
     return this.drizzleService.db

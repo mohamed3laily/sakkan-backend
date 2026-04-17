@@ -4,6 +4,7 @@ import { CitiesAreasSeed } from './seed/cities-areas.seed';
 import { ConfigModule } from '@nestjs/config';
 import { PropertyTypeSeed } from './seed/property-type.seed';
 import { CitiesSeed } from './seed/cities.seed';
+import { SubscriptionPlansSeed } from './seed/subscription-plans.seed';
 
 @Global()
 @Module({
@@ -12,7 +13,7 @@ import { CitiesSeed } from './seed/cities.seed';
       isGlobal: true,
     }),
   ],
-  providers: [DrizzleService, CitiesAreasSeed, PropertyTypeSeed, CitiesSeed],
+  providers: [DrizzleService, CitiesAreasSeed, PropertyTypeSeed, CitiesSeed, SubscriptionPlansSeed],
   exports: [DrizzleService],
 })
 export class DrizzleModule {}

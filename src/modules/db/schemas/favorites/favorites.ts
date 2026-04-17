@@ -15,7 +15,11 @@ export const favorites = pgTable(
     ...timestamps,
   },
   (table) => [
-    unique('unique_user_entity_favorite').on(table.userId, table.favoritableType, table.favoritableId),
+    unique('unique_user_entity_favorite').on(
+      table.userId,
+      table.favoritableType,
+      table.favoritableId,
+    ),
     index('idx_favorites_user').on(table.userId),
     index('idx_favorites_favoritable').on(table.favoritableType, table.favoritableId),
   ],

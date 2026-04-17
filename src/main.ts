@@ -20,10 +20,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.useGlobalInterceptors(
-    new TranslateInterceptor(),
-    new ResponseTranslateInterceptor(),
-  );
+  app.useGlobalInterceptors(new TranslateInterceptor(), new ResponseTranslateInterceptor());
 
   app.useGlobalFilters(new I18nExceptionFilter());
 

@@ -1,0 +1,417 @@
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
+import { eq } from 'drizzle-orm';
+
+import { DrizzleService } from '../../db/drizzle.service';
+import { payments } from '../../db/schemas/monetization/payments';
+import type { PaymobWebhookPayload } from '../types';
+
+import {
+  buildGetTransactionHmacConcatString,
+  buildPostTransactionHmacConcatString,
+} from './paymob-hmac.util';
+
+export type PaymobOrderResult = {
+  paymobOrderId: string;
+  paymentKey: string;
+  paymentUrl: string;
+  internalPaymentId: number;
+};
+
+type CreateOrderParams = {
+  userId: number;
+  amountEgp: number;
+  paymentType: (typeof payments.$inferInsert)['type'];
+  metadata: Record<string, unknown>;
+  billingData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+};
+
+type PaymentRow = typeof payments.$inferSelect;
+
+@Injectable()
+export class PaymobService {
+  private readonly logger = new Logger(PaymobService.name);
+  private readonly apiKey: string;
+  private readonly integrationId: string;
+  private readonly iframeId: string;
+  private readonly hmacSecret: string;
+  private readonly secretKey: string | undefined;
+  private readonly publicKey: string | undefined;
+  private readonly useIntention: boolean;
+  private readonly acceptHost: string;
+  private readonly legacyApiBase: string;
+
+  constructor(
+    private readonly config: ConfigService,
+    private readonly drizzle: DrizzleService,
+  ) {
+    this.integrationId = this.config.getOrThrow('PAYMOB_INTEGRATION_ID');
+    this.acceptHost =
+      this.config.get<string>('PAYMOB_ACCEPT_HOST')?.replace(/\/$/, '') ??
+      'https://accept.paymob.com';
+    this.legacyApiBase = `${this.acceptHost}/api`;
+
+    this.secretKey = this.config.get<string>('PAYMOB_SECRET_KEY');
+    this.publicKey = this.config.get<string>('PAYMOB_PUBLIC_KEY');
+    this.useIntention = Boolean(this.secretKey && this.publicKey);
+
+    const hmacExplicit = this.config.get<string>('PAYMOB_HMAC_SECRET')?.trim();
+    const secretTrimmed = this.secretKey?.trim();
+    this.hmacSecret =
+      hmacExplicit && hmacExplicit.length > 0
+        ? hmacExplicit
+        : secretTrimmed && secretTrimmed.length > 0
+          ? secretTrimmed
+          : this.config.getOrThrow('PAYMOB_HMAC_SECRET');
+
+    if (this.useIntention) {
+      this.apiKey = '';
+      this.iframeId = '';
+    } else {
+      this.apiKey = this.config.getOrThrow('PAYMOB_API_KEY');
+      this.iframeId = this.config.getOrThrow('PAYMOB_IFRAME_ID');
+    }
+  }
+
+  async createOrder(params: CreateOrderParams): Promise<PaymobOrderResult> {
+    const amountPiasters = params.amountEgp * 100;
+
+    const [internalPayment] = await this.drizzle.db
+      .insert(payments)
+      .values({
+        userId: params.userId,
+        type: params.paymentType,
+        status: 'pending',
+        amountPiasters,
+        metadata: params.metadata,
+      })
+      .returning();
+
+    try {
+      if (this.useIntention) {
+        return await this.createPaymentIntention(params, internalPayment, amountPiasters);
+      }
+      return await this.createOrderLegacy(params, internalPayment, amountPiasters);
+    } catch (err) {
+      await this.drizzle.db
+        .update(payments)
+        .set({ status: 'failed', updatedAt: new Date().toISOString() })
+        .where(eq(payments.id, internalPayment.id));
+
+      this.logger.error('Paymob order creation failed', err);
+      throw new InternalServerErrorException('PAYMENT_GATEWAY_ERROR');
+    }
+  }
+
+  /**
+   * Paymob Intention API (Unified Checkout). See Create Intention docs.
+   * Requires PAYMOB_SECRET_KEY, PAYMOB_PUBLIC_KEY, and callback URLs (or APP_PUBLIC_URL).
+   */
+  private async createPaymentIntention(
+    params: CreateOrderParams,
+    internalPayment: PaymentRow,
+    amountPiasters: number,
+  ): Promise<PaymobOrderResult> {
+    const notificationUrl = this.resolveNotificationUrl();
+    const redirectionUrl = this.resolveRedirectionUrl();
+
+    const intentionUrl = `${this.acceptHost}/v1/intention/`;
+    const body = {
+      amount: amountPiasters,
+      currency: 'EGP',
+      payment_methods: [Number(this.integrationId)],
+      items: [
+        {
+          name: this.labelForPaymentType(params.paymentType),
+          amount: amountPiasters,
+          description: `Sakkan ${params.paymentType}`,
+          quantity: 1,
+        },
+      ],
+      billing_data: {
+        apartment: 'NA',
+        first_name: params.billingData.firstName,
+        last_name: params.billingData.lastName,
+        street: 'NA',
+        building: 'NA',
+        phone_number: params.billingData.phone,
+        city: 'NA',
+        country: 'EG',
+        email: params.billingData.email,
+        floor: 'NA',
+        state: 'NA',
+      },
+      extras: { internal_payment_id: internalPayment.id },
+      special_reference: String(internalPayment.id),
+      expiration: 3600,
+      notification_url: notificationUrl,
+      redirection_url: redirectionUrl,
+    };
+
+    const res = await fetch(intentionUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Token ${this.secretKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const rawText = await res.text();
+    if (!res.ok) {
+      this.logger.error(`Paymob intention failed: ${res.status} ${rawText}`);
+      throw new Error(`Paymob intention failed: ${res.status}`);
+    }
+
+    let json: {
+      client_secret?: string;
+      intention_order_id?: number;
+      id?: string;
+    };
+    try {
+      json = JSON.parse(rawText) as typeof json;
+    } catch {
+      this.logger.error(`Paymob intention: invalid JSON ${rawText}`);
+      throw new Error('Paymob intention: invalid response');
+    }
+
+    const clientSecret = json.client_secret;
+    const intentionOrderId = json.intention_order_id;
+
+    if (!clientSecret || intentionOrderId == null) {
+      this.logger.error(`Paymob intention: missing fields ${rawText}`);
+      throw new Error('Paymob intention: missing client_secret or intention_order_id');
+    }
+
+    await this.drizzle.db
+      .update(payments)
+      .set({
+        paymobOrderId: String(intentionOrderId),
+        paymobPaymentKey: clientSecret,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(payments.id, internalPayment.id));
+
+    const paymentUrl = `${this.acceptHost}/unifiedcheckout/?publicKey=${encodeURIComponent(this.publicKey!)}&clientSecret=${encodeURIComponent(clientSecret)}`;
+
+    return {
+      paymobOrderId: String(intentionOrderId),
+      paymentKey: clientSecret,
+      paymentUrl,
+      internalPaymentId: internalPayment.id,
+    };
+  }
+
+  /** Legacy Accept API: auth token + ecommerce order + payment_keys + iframe. */
+  private async createOrderLegacy(
+    params: CreateOrderParams,
+    internalPayment: PaymentRow,
+    amountPiasters: number,
+  ): Promise<PaymobOrderResult> {
+    const authRes = await fetch(`${this.legacyApiBase}/auth/tokens`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: this.apiKey }),
+    });
+    if (!authRes.ok) {
+      throw new Error(`Paymob auth failed: ${authRes.status}`);
+    }
+    const authJson = (await authRes.json()) as { token?: string };
+    const authToken = authJson.token;
+    if (!authToken) {
+      throw new Error('Paymob auth: missing token');
+    }
+
+    const orderRes = await fetch(`${this.legacyApiBase}/ecommerce/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({
+        auth_token: authToken,
+        delivery_needed: false,
+        amount_cents: amountPiasters,
+        currency: 'EGP',
+        merchant_order_id: String(internalPayment.id),
+        items: [],
+      }),
+    });
+    if (!orderRes.ok) {
+      throw new Error(`Paymob order failed: ${orderRes.status}`);
+    }
+    const paymobOrder = (await orderRes.json()) as { id?: number };
+    if (paymobOrder.id == null) {
+      throw new Error('Paymob order: missing id');
+    }
+
+    const keyRes = await fetch(`${this.legacyApiBase}/acceptance/payment_keys`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({
+        auth_token: authToken,
+        amount_cents: amountPiasters,
+        expiration: 3600,
+        order_id: paymobOrder.id,
+        billing_data: {
+          apartment: 'NA',
+          email: params.billingData.email,
+          floor: 'NA',
+          first_name: params.billingData.firstName,
+          street: 'NA',
+          building: 'NA',
+          phone_number: params.billingData.phone,
+          shipping_method: 'NA',
+          postal_code: 'NA',
+          city: 'NA',
+          country: 'EG',
+          last_name: params.billingData.lastName,
+          state: 'NA',
+        },
+        currency: 'EGP',
+        integration_id: Number(this.integrationId),
+      }),
+    });
+    if (!keyRes.ok) {
+      throw new Error(`Paymob payment_keys failed: ${keyRes.status}`);
+    }
+    const keyJson = (await keyRes.json()) as { token?: string };
+    const paymentKey = keyJson.token;
+    if (!paymentKey) {
+      throw new Error('Paymob payment_keys: missing token');
+    }
+
+    await this.drizzle.db
+      .update(payments)
+      .set({
+        paymobOrderId: String(paymobOrder.id),
+        paymobPaymentKey: paymentKey,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(payments.id, internalPayment.id));
+
+    const paymentUrl = `${this.acceptHost}/api/acceptance/iframes/${this.iframeId}?payment_token=${paymentKey}`;
+
+    return {
+      paymobOrderId: String(paymobOrder.id),
+      paymentKey,
+      paymentUrl,
+      internalPaymentId: internalPayment.id,
+    };
+  }
+
+  private resolveNotificationUrl(): string {
+    const explicit = this.config.get<string>('PAYMOB_NOTIFICATION_URL');
+    if (explicit) {
+      return explicit;
+    }
+    const app = this.config.get<string>('APP_PUBLIC_URL');
+    if (!app) {
+      throw new Error(
+        'Paymob Intention requires PAYMOB_NOTIFICATION_URL or APP_PUBLIC_URL (for /v1/payments/paymob-webhook)',
+      );
+    }
+    return `${app.replace(/\/$/, '')}/v1/payments/paymob-webhook`;
+  }
+
+  private resolveRedirectionUrl(): string {
+    const explicit = this.config.get<string>('PAYMOB_REDIRECT_URL');
+    if (explicit) {
+      return explicit;
+    }
+    const app = this.config.get<string>('APP_PUBLIC_URL');
+    if (!app) {
+      throw new Error(
+        'Paymob Intention requires PAYMOB_REDIRECT_URL or APP_PUBLIC_URL (for /v1/payments/paymob-return)',
+      );
+    }
+    return `${app.replace(/\/$/, '')}/v1/payments/paymob-return`;
+  }
+
+  private labelForPaymentType(paymentType: CreateOrderParams['paymentType']): string {
+    const labels: Record<CreateOrderParams['paymentType'], string> = {
+      subscription: 'Subscription',
+      serious_request: 'Serious listing credit',
+      featured_single: 'Featured listing credit',
+      featured_bundle: 'Featured bundle',
+    };
+    return labels[paymentType];
+  }
+
+  verifyWebhookHmac(payload: PaymobWebhookPayload, hmac: string): boolean {
+    if (!hmac) {
+      return false;
+    }
+    const concatenated = buildPostTransactionHmacConcatString(payload.obj);
+
+    const computed = crypto
+      .createHmac('sha512', this.hmacSecret)
+      .update(concatenated)
+      .digest('hex');
+
+    try {
+      return crypto.timingSafeEqual(Buffer.from(computed, 'hex'), Buffer.from(hmac, 'hex'));
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * GET transaction response callback (browser redirect). Same HMAC algorithm; keys are flat (`id`, `order_id` or `order`).
+   */
+  verifyResponseCallbackHmac(query: Record<string, string | string[] | undefined>): boolean {
+    const raw = query['hmac'];
+    const hmac = Array.isArray(raw) ? raw[0] : raw;
+    if (!hmac || typeof hmac !== 'string') {
+      return false;
+    }
+    const concatenated = buildGetTransactionHmacConcatString(query);
+
+    const computed = crypto
+      .createHmac('sha512', this.hmacSecret)
+      .update(concatenated)
+      .digest('hex');
+
+    try {
+      return crypto.timingSafeEqual(Buffer.from(computed, 'hex'), Buffer.from(hmac, 'hex'));
+    } catch {
+      return false;
+    }
+  }
+
+  async findPaymentByPaymobOrder(paymobOrderId: string) {
+    const rows = await this.drizzle.db
+      .select()
+      .from(payments)
+      .where(eq(payments.paymobOrderId, paymobOrderId))
+      .limit(1);
+    return rows[0] ?? null;
+  }
+
+  async markPaymentSuccess(paymentId: number, paymobTransactionId: string) {
+    await this.drizzle.db
+      .update(payments)
+      .set({
+        status: 'success',
+        paymobTransactionId,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(payments.id, paymentId));
+  }
+
+  async markPaymentFailed(paymentId: number) {
+    await this.drizzle.db
+      .update(payments)
+      .set({ status: 'failed', updatedAt: new Date().toISOString() })
+      .where(eq(payments.id, paymentId));
+  }
+}

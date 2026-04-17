@@ -7,7 +7,11 @@ export class FavoriteService {
   constructor(private readonly favoriteRepository: FavoriteRepository) {}
 
   async toggle(userId: number, dto: ToggleFavoriteDto) {
-    const existing = await this.favoriteRepository.findExisting(userId, dto.favoritableType, dto.favoritableId);
+    const existing = await this.favoriteRepository.findExisting(
+      userId,
+      dto.favoritableType,
+      dto.favoritableId,
+    );
 
     if (existing) {
       await this.favoriteRepository.delete(existing.id);

@@ -18,7 +18,10 @@ export const reports = pgTable(
     ...timestamps,
   },
   (table) => ({
-    entityCompositeIdx: index('idx_reports_entity_composite').on(table.reportableType, table.reportableId),
+    entityCompositeIdx: index('idx_reports_entity_composite').on(
+      table.reportableType,
+      table.reportableId,
+    ),
   }),
 );
 

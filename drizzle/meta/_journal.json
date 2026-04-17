@@ -218,6 +218,34 @@
       "when": 1774371187005,
       "tag": "0030_thick_lady_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1776371173993,
+      "tag": "0031_bent_miss_america",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1776413643856,
+      "tag": "0032_smiling_terrax",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1776415000000,
+      "tag": "0033_plan_display_i18n",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1776418282711,
+      "tag": "0034_closed_invisible_woman",
+      "breakpoints": true
     }
   ]
 }
