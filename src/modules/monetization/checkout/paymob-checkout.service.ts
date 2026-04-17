@@ -4,7 +4,7 @@ import { UserRepo } from '../../user/user.repo';
 import type { CreditProduct } from '../credits/credits.service';
 import { CreditsService } from '../credits/credits.service';
 import type { PurchaseCreditsDto, SubscribeDto } from '../dto';
-import { PaymobService } from '../paymob/paymob.service';
+import { PaymobService, type PaymobOrderResult } from '../paymob/paymob.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 
 @Injectable()
@@ -46,10 +46,11 @@ export class PaymobCheckoutService {
     });
 
     return {
-      paymentUrl: result.paymentUrl,
       internalPaymentId: result.internalPaymentId,
       amount: pricing.egp,
       credits: pricing.credits,
+      paymentUrl: result.paymentUrl,
+      paymob: this.paymobForFlutter(result),
     };
   }
 
@@ -71,8 +72,9 @@ export class PaymobCheckoutService {
     });
 
     return {
-      paymentUrl: result.paymentUrl,
       internalPaymentId: result.internalPaymentId,
+      paymentUrl: result.paymentUrl,
+      paymob: this.paymobForFlutter(result),
       plan: {
         name: plan.name,
         displayNameEn: plan.displayNameEn,
@@ -80,6 +82,20 @@ export class PaymobCheckoutService {
         amount: plan.priceEgp,
         billingPeriod: plan.billingPeriod,
       },
+    };
+  }
+
+  /**
+   * Fields aligned with Paymob Flutter plugin: `Paymob.pay(publicKey:, clientSecret:)`.
+   * Use `unifiedCheckoutUrl` in a WebView if you skip the native SDK.
+   */
+  private paymobForFlutter(result: PaymobOrderResult) {
+    return {
+      publicKey: result.publicKey,
+      clientSecret: result.clientSecret,
+      unifiedCheckoutUrl: result.paymentUrl,
+      checkoutFlow: result.checkoutFlow,
+      paymobOrderId: result.paymobOrderId,
     };
   }
 

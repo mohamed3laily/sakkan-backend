@@ -12,11 +12,20 @@ import {
   buildPostTransactionHmacConcatString,
 } from './paymob-hmac.util';
 
+export type PaymobCheckoutFlow = 'intention' | 'legacy_iframe';
+
 export type PaymobOrderResult = {
   paymobOrderId: string;
+  /** Stored on `payments.paymob_payment_key`; Intention: `client_secret`. */
   paymentKey: string;
   paymentUrl: string;
   internalPaymentId: number;
+  /** Flutter `paymob` SDK: `Paymob.pay(publicKey:, clientSecret:)` — same as Intention `client_secret`. */
+  clientSecret: string;
+  /** Flutter / Unified Checkout — `null` when legacy iframe-only and no public key configured. */
+  publicKey: string | null;
+  /** `intention`: prefer native SDK + optional WebView with `paymentUrl`; `legacy_iframe`: WebView `paymentUrl` only (token is not an Intention secret). */
+  checkoutFlow: PaymobCheckoutFlow;
 };
 
 type CreateOrderParams = {
@@ -205,6 +214,9 @@ export class PaymobService {
       paymentKey: clientSecret,
       paymentUrl,
       internalPaymentId: internalPayment.id,
+      clientSecret,
+      publicKey: this.publicKey ?? null,
+      checkoutFlow: 'intention',
     };
   }
 
@@ -306,6 +318,9 @@ export class PaymobService {
       paymentKey,
       paymentUrl,
       internalPaymentId: internalPayment.id,
+      clientSecret: paymentKey,
+      publicKey: this.publicKey ?? null,
+      checkoutFlow: 'legacy_iframe',
     };
   }
 
