@@ -169,6 +169,19 @@ export class SubscriptionService {
       .where(and(eq(userSessions.id, sessionId), eq(userSessions.userId, userId)));
   }
 
+  /**
+   * Remove all subscription rows for this user (including history). Intended for local/staging
+   * testing only; `quota_usage` rows for those subscriptions are cascade-deleted.
+   */
+  async deleteAllSubscriptionsForTesting(userId: number): Promise<{ removed: number }> {
+    const deleted = await this.drizzle.db
+      .delete(userSubscriptions)
+      .where(eq(userSubscriptions.userId, userId))
+      .returning({ id: userSubscriptions.id });
+
+    return { removed: deleted.length };
+  }
+
   getActiveDevices(userId: number) {
     return this.drizzle.db
       .select()

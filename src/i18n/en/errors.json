@@ -6,5 +6,4 @@
   "NO_QUOTA_OR_CREDITS": "No quota or credits available for this action",
   "INVALID_PAYMOB_HMAC": "Invalid payment callback signature",
   "PAYMENT_GATEWAY_ERROR": "Payment gateway error",
-  "PAYMENT_FULFILLMENT_FAILED": "Payment succeeded but fulfillment failed; please contact support"
-}
+  "PAYMENT_FULFILLMENT_FAILED": "Payment succeeded but fulfillment failed; please contact support"}
