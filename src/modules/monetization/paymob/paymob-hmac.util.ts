@@ -142,33 +142,30 @@ function getQueryParam(query: Record<string, unknown>, key: string): string | un
  * GET transaction response callback: query params (flat or nested via `qs`).
  * Uses `id` and `order_id` (Paymob docs); some samples use `order` for order id — accept both.
  */
-export function buildGetTransactionHmacConcatString(query: Record<string, unknown>): string {
-  const q = (key: string): string | undefined => getQueryParam(query, key);
+export function buildGetTransactionHmacConcatString(
+  query: Record<string, unknown>,
+): string {
+  const q = (k: string) => {
+    const v = query[k];
+    if (v === undefined || v === null) return '';
+    if (Array.isArray(v)) return String(v[0] ?? '');
+    return String(v);
+  };
 
-  const orderId =
-    q('order_id') ??
-    q('order') ??
-    (() => {
-      const ord = query['order'];
-      if (ord && typeof ord === 'object' && !Array.isArray(ord) && 'id' in ord) {
-        const id = (ord as { id: unknown }).id;
-        return id !== undefined && id !== null ? String(id) : undefined;
-      }
-      return undefined;
-    })();
+  const orderId = q('order_id') || q('order');
 
-  const segments: unknown[] = [
+  const vals = [
     q('amount_cents'),
     q('created_at'),
     q('currency'),
-    q('error_occured') ?? q('error_occurred'),
+    q('error_occured'),
     q('has_parent_transaction'),
     q('id'),
     q('integration_id'),
     q('is_3d_secure'),
     q('is_auth'),
     q('is_capture'),
-    q('is_refunded') ?? q('is_refund'),
+    q('is_refunded'),
     q('is_standalone_payment'),
     q('is_voided'),
     orderId,
@@ -179,5 +176,6 @@ export function buildGetTransactionHmacConcatString(query: Record<string, unknow
     q('source_data.type'),
     q('success'),
   ];
-  return segments.map(hmacSegment).join('');
+
+  return vals.join('');
 }

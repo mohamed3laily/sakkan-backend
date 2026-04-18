@@ -47,14 +47,17 @@ export class PaymobService {
   private readonly apiKey: string;
   private readonly integrationId: string;
   private readonly iframeId: string;
-  /** Accept **Secret Key** (`PAYMOB_SECRET_KEY`): Intention API `Authorization: Token …` and transaction callback HMAC (SHA-512, [docs](https://developers.paymob.com/paymob-docs/developers/webhook-callbacks-and-hmac/hmac-transaction-callback)). */
+  /** Accept **Secret Key** (`PAYMOB_SECRET_KEY`): Intention / legacy API `Authorization: Token …` (not used for callback HMAC; that uses `PAYMOB_HMAC_SECRET` only). */
   private readonly secretKey: string;
   private readonly publicKey: string | undefined;
   private readonly useIntention: boolean;
   private readonly acceptHost: string;
   private readonly legacyApiBase: string;
-  /** Try in order: secret key, then API key (some Accept setups sign callbacks with the API key). */
+  /**
+   * Transaction callback HMAC (POST processed + GET response): SHA-512 over Paymob’s concat string using **`PAYMOB_HMAC_SECRET` only** ([docs](https://developers.paymob.com/paymob-docs/developers/webhook-callbacks-and-hmac/hmac-transaction-callback)).
+   */
   private readonly webhookHmacSecrets: readonly string[];
+  private readonly webhookHmacSecretLabels: readonly string[];
 
   constructor(
     private readonly config: ConfigService,
@@ -78,15 +81,21 @@ export class PaymobService {
       this.iframeId = this.config.getOrThrow('PAYMOB_IFRAME_ID');
     }
 
-    const apiKeyForHmac = this.config.get<string>('PAYMOB_API_KEY')?.trim() ?? '';
-    const hmacCandidates: string[] = [this.secretKey];
-    if (apiKeyForHmac.length > 0 && !hmacCandidates.includes(apiKeyForHmac)) {
-      hmacCandidates.push(apiKeyForHmac);
+    const hmacSecret = (
+      this.config.get<string>('PAYMOB_HMAC_SECRET') ||
+      process.env.PAYMOB_HMAC_SECRET ||
+      ''
+    ).trim();
+    if (hmacSecret.length === 0) {
+      throw new Error(
+        'PAYMOB_HMAC_SECRET is required and must be non-empty (Accept HMAC secret for transaction callbacks).',
+      );
     }
-    this.webhookHmacSecrets = hmacCandidates;
-    this.logger.debug(
-      `Paymob HMAC verification will try ${hmacCandidates.length} credential(s): PAYMOB_SECRET_KEY${hmacCandidates.length > 1 ? ' then PAYMOB_API_KEY' : ''}`,
-    );
+
+    this.webhookHmacSecrets = [hmacSecret];
+    this.webhookHmacSecretLabels = ['PAYMOB_HMAC_SECRET'];
+
+    this.logger.log('Paymob transaction callback HMAC uses PAYMOB_HMAC_SECRET only (SHA-512).');
   }
 
   async createOrder(params: CreateOrderParams): Promise<PaymobOrderResult> {
@@ -465,65 +474,76 @@ export class PaymobService {
       return false;
     }
 
-    const labels = ['PAYMOB_SECRET_KEY', 'PAYMOB_API_KEY'] as const;
-
     for (let i = 0; i < this.webhookHmacSecrets.length; i++) {
       const secret = this.webhookHmacSecrets[i];
-      const computed = crypto
-        .createHmac('sha512', secret)
-        .update(concatenated)
-        .digest('hex')
-        .toLowerCase();
+      for (const keyMaterial of this.hmacKeyVariants(secret)) {
+        const computed = crypto
+          .createHmac('sha512', keyMaterial)
+          .update(concatenated)
+          .digest('hex')
+          .toLowerCase();
 
-      if (computed.length !== normalizedReceived.length) {
-        continue;
-      }
-
-      try {
-        if (
-          crypto.timingSafeEqual(
-            Buffer.from(computed, 'hex'),
-            Buffer.from(normalizedReceived, 'hex'),
-          )
-        ) {
-          if (i > 0) {
-            this.logger.warn(
-              `Paymob HMAC ${context}: matched using ${labels[i] ?? `candidate[${i}]`} — prefer setting PAYMOB_SECRET_KEY to that same value so webhook and Intention use one credential.`,
-            );
-          }
-          return true;
+        if (computed.length !== normalizedReceived.length) {
+          continue;
         }
-      } catch {
-        /* invalid hex — try next secret */
+
+        try {
+          if (
+            crypto.timingSafeEqual(
+              Buffer.from(computed, 'hex'),
+              Buffer.from(normalizedReceived, 'hex'),
+            )
+          ) {
+            return true;
+          }
+        } catch {
+          /* invalid hex — try next variant */
+        }
       }
     }
 
-    const firstComputed = crypto
-      .createHmac('sha512', this.webhookHmacSecrets[0])
-      .update(concatenated)
-      .digest('hex')
-      .toLowerCase();
+    const primarySecret = this.webhookHmacSecrets[0];
+    const firstComputed = primarySecret
+      ? crypto
+          .createHmac('sha512', this.hmacKeyVariants(primarySecret)[0])
+          .update(concatenated)
+          .digest('hex')
+          .toLowerCase()
+      : '';
 
     const cfgInt = this.integrationId;
     const payloadInt = meta?.integrationId;
     this.logger.warn(
-      `Paymob HMAC ${context} mismatch after trying ${this.webhookHmacSecrets.length} credential(s): order=${meta?.orderId} txn=${meta?.txnId} payloadIntegration=${payloadInt} PAYMOB_INTEGRATION_ID=${cfgInt} concatLen=${concatenated.length} secretKeyChars=${this.secretKey.length} computedPrefix=${firstComputed.slice(0, 16)} receivedPrefix=${normalizedReceived.slice(0, 16)}`,
+      `Paymob HMAC ${context} mismatch (PAYMOB_HMAC_SECRET): order=${meta?.orderId} txn=${meta?.txnId} payloadIntegration=${payloadInt} PAYMOB_INTEGRATION_ID=${cfgInt} concatLen=${concatenated.length} hmacSecretChars=${primarySecret?.length ?? 0} computedPrefix=${firstComputed.slice(0, 16)} receivedPrefix=${normalizedReceived.slice(0, 16)}`,
     );
     if (payloadInt !== undefined && String(payloadInt) !== String(cfgInt)) {
       this.logger.warn(
         `Paymob HMAC: payload integration_id (${payloadInt}) !== PAYMOB_INTEGRATION_ID (${cfgInt}). Use test/live keys from the same Accept mode.`,
       );
-    } else if (this.webhookHmacSecrets.length > 1) {
-      this.logger.warn(
-        'Paymob HMAC: tried PAYMOB_SECRET_KEY and PAYMOB_API_KEY; if both fail, confirm Settings → Secret Key matches the mode (test/live) that created this transaction, and that .env has no quotes/extra spaces.',
-      );
     } else {
       this.logger.warn(
-        'Paymob HMAC: add PAYMOB_API_KEY to .env temporarily — if verification then succeeds, your account signs callbacks with the API key; otherwise re-copy the Secret Key from Accept (test vs live).',
+        'Paymob HMAC: confirm PAYMOB_HMAC_SECRET matches the HMAC secret from Accept (same test/live mode as the integration) and the callback concat matches Paymob docs.',
       );
     }
 
     return false;
+  }
+
+  /** Dashboard hex HMAC keys: try UTF-8 string and, for even-length hex, decoded bytes. */
+  private hmacKeyVariants(secret: string): readonly (string | Buffer)[] {
+    const variants: (string | Buffer)[] = [secret];
+    const t = secret.trim();
+    if (/^[0-9a-fA-F]+$/.test(t) && t.length >= 2 && t.length % 2 === 0) {
+      try {
+        const buf = Buffer.from(t, 'hex');
+        if (buf.length > 0) {
+          variants.push(buf);
+        }
+      } catch {
+        /* ignore invalid hex */
+      }
+    }
+    return variants;
   }
 
   async findPaymentByPaymobOrder(paymobOrderId: string) {
