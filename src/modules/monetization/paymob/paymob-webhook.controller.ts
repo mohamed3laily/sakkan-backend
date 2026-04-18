@@ -33,11 +33,12 @@ export class PaymobWebhookController {
   @Post('paymob-webhook')
   @HttpCode(HttpStatus.OK)
   async handleWebhook(@Body() payload: PaymobWebhookPayload, @Query('hmac') hmac: string) {
+    const hmacStr = hmac ?? '';
     this.logger.log(
-      `Paymob webhook received: type=${payload.type} order=${payload.obj?.order?.id}`,
+      `Paymob webhook received: type=${payload.type} txn=${payload.obj?.id} order=${payload.obj?.order?.id} integration=${payload.obj?.integration_id} hmacQuery=${hmacStr ? `present(len=${hmacStr.length})` : 'MISSING'} hasObj=${Boolean(payload.obj)}`,
     );
 
-    await this.webhookService.handleWebhook(payload, hmac ?? '');
+    await this.webhookService.handleWebhook(payload, hmacStr);
 
     return { received: true };
   }
@@ -51,6 +52,12 @@ export class PaymobWebhookController {
     @Query() query: Record<string, string | string[] | undefined>,
     @Res() res: Response,
   ): void {
+    const hmacRaw = query['hmac'];
+    const hmacLen =
+      typeof hmacRaw === 'string' ? hmacRaw.length : Array.isArray(hmacRaw) ? hmacRaw[0]?.length ?? 0 : 0;
+    this.logger.log(
+      `Paymob return URL hit: hmac=${hmacLen ? `present(len=${hmacLen})` : 'MISSING'} queryKeys=${Object.keys(query).length}`,
+    );
     if (!this.paymobService.verifyResponseCallbackHmac(query)) {
       throw new UnauthorizedException('INVALID_PAYMOB_HMAC');
     }

@@ -30,7 +30,6 @@ export class PaymobWebhookService {
     }
 
     if (!this.paymobService.verifyWebhookHmac(payload, hmac)) {
-      this.logger.warn('Paymob webhook HMAC verification failed');
       throw new UnauthorizedException('INVALID_PAYMOB_HMAC');
     }
 
