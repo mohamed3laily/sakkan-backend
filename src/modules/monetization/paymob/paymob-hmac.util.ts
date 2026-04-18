@@ -23,7 +23,10 @@ function hmacSegment(value: unknown): string {
   return '';
 }
 
-/** `order` may be `{ id }` or a raw id on some callback shapes. */
+/**
+ * HMAC segment for Paymob `order.id` (POST): nested `order`, scalar `order`, or top-level `order_id`
+ * when Accept omits a nested order object on some flows.
+ */
 function orderIdForHmac(obj: Record<string, unknown>): unknown {
   const order = obj['order'];
   if (typeof order === 'number' || typeof order === 'string') {
@@ -31,6 +34,9 @@ function orderIdForHmac(obj: Record<string, unknown>): unknown {
   }
   if (order && typeof order === 'object' && !Array.isArray(order) && 'id' in order) {
     return (order as { id: unknown }).id;
+  }
+  if (obj['order_id'] != null) {
+    return obj['order_id'];
   }
   return undefined;
 }
@@ -48,38 +54,43 @@ export function paymobOrderIdFromTransactionObj(obj: Record<string, unknown>): s
  * POST transaction processed callback: transaction object (`payload.obj`) as plain JSON.
  * Reads fields loosely so minor payload shape differences still match Paymob’s concat rules.
  */
-export function buildPostTransactionHmacConcatFromRaw(obj: Record<string, unknown>): string {
-  const sourceRaw = obj['source_data'];
-  const source =
-    sourceRaw && typeof sourceRaw === 'object' && !Array.isArray(sourceRaw)
-      ? (sourceRaw as Record<string, unknown>)
-      : null;
+export function buildPostTransactionHmacConcatFromRaw(obj: any): string {
+  const source = obj.source_data || {};
+  const orderId =
+    typeof obj.order === 'object'
+      ? obj.order?.id
+      : obj.order;
 
-  const isRefunded = obj['is_refunded'] ?? obj['is_refund'];
-
-  const segments: unknown[] = [
-    obj['amount_cents'],
-    obj['created_at'],
-    obj['currency'],
-    obj['error_occured'],
-    obj['has_parent_transaction'],
-    obj['id'],
-    obj['integration_id'],
-    obj['is_3d_secure'],
-    obj['is_auth'],
-    obj['is_capture'],
-    isRefunded ?? false,
-    obj['is_standalone_payment'],
-    obj['is_voided'],
-    orderIdForHmac(obj),
-    obj['owner'],
-    obj['pending'],
-    source?.['pan'],
-    source?.['sub_type'],
-    source?.['type'],
-    obj['success'],
+  const vals = [
+    obj.amount_cents,
+    obj.created_at,
+    obj.currency,
+    obj.error_occured,
+    obj.has_parent_transaction,
+    obj.id,
+    obj.integration_id,
+    obj.is_3d_secure,
+    obj.is_auth,
+    obj.is_capture,
+    obj.is_refunded,
+    obj.is_standalone_payment,
+    obj.is_voided,
+    orderId,
+    obj.owner,
+    obj.pending,
+    source.pan,
+    source.sub_type,
+    source.type,
+    obj.success,
   ];
-  return segments.map(hmacSegment).join('');
+
+  return vals
+    .map(v => {
+      if (v === null || v === undefined) return '';
+      if (typeof v === 'boolean') return v ? 'true' : 'false';
+      return String(v);
+    })
+    .join('');
 }
 
 /**
@@ -91,27 +102,66 @@ export function buildPostTransactionHmacConcatString(obj: PaymobWebhookPayload['
 }
 
 /**
- * GET transaction response callback: flat query params.
+ * Read a Paymob response-callback query value. Supports:
+ * - Flat keys (`source_data.pan`) when the framework keeps them literal
+ * - Nested objects from Express `qs` (`source_data: { pan, type, sub_type }`)
+ */
+function getQueryParam(query: Record<string, unknown>, key: string): string | undefined {
+  const direct = query[key];
+  if (direct !== undefined && direct !== null) {
+    if (typeof direct === 'string') {
+      return direct;
+    }
+    if (typeof direct === 'number' || typeof direct === 'boolean') {
+      return String(direct);
+    }
+    if (Array.isArray(direct)) {
+      const first = direct[0];
+      if (first !== undefined && first !== null) {
+        return String(first);
+      }
+    }
+  }
+
+  const dot = key.indexOf('.');
+  if (dot > 0) {
+    const parentKey = key.slice(0, dot);
+    const childKey = key.slice(dot + 1);
+    const parent = query[parentKey];
+    if (parent && typeof parent === 'object' && !Array.isArray(parent)) {
+      const child = (parent as Record<string, unknown>)[childKey];
+      if (child !== undefined && child !== null) {
+        return String(child as string | number | boolean);
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * GET transaction response callback: query params (flat or nested via `qs`).
  * Uses `id` and `order_id` (Paymob docs); some samples use `order` for order id — accept both.
  */
-export function buildGetTransactionHmacConcatString(
-  query: Record<string, string | string[] | undefined>,
-): string {
-  const q = (key: string): string | undefined => {
-    const v = query[key];
-    if (v === undefined) {
-      return undefined;
-    }
-    return Array.isArray(v) ? v[0] : v;
-  };
+export function buildGetTransactionHmacConcatString(query: Record<string, unknown>): string {
+  const q = (key: string): string | undefined => getQueryParam(query, key);
 
-  const orderId = q('order_id') ?? q('order');
+  const orderId =
+    q('order_id') ??
+    q('order') ??
+    (() => {
+      const ord = query['order'];
+      if (ord && typeof ord === 'object' && !Array.isArray(ord) && 'id' in ord) {
+        const id = (ord as { id: unknown }).id;
+        return id !== undefined && id !== null ? String(id) : undefined;
+      }
+      return undefined;
+    })();
 
   const segments: unknown[] = [
     q('amount_cents'),
     q('created_at'),
     q('currency'),
-    q('error_occured'),
+    q('error_occured') ?? q('error_occurred'),
     q('has_parent_transaction'),
     q('id'),
     q('integration_id'),
