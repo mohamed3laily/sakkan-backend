@@ -13,10 +13,18 @@ import {
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 
-import type { PaymobWebhookPayload } from '../types';
+import { paymobOrderIdFromTransactionObj } from './paymob-hmac.util';
 import { PaymobService } from './paymob.service';
 import { PaymobWebhookService } from './paymob-webhook.service';
 
+/**
+ * Paymob Accept callbacks (configure URLs on the integration in the dashboard).
+ *
+ * - **Transaction processed** (server-side): POST JSON body with `type` and `obj` (transaction details: `id`, `success`, `order.id`, etc.). Paymob appends **`hmac` as a query parameter** on the same request — verify with SHA-512 over the fixed field concatenation from `obj`, then compare to that `hmac` ([HMAC](https://developers.paymob.com/paymob-docs/developers/webhook-callbacks-and-hmac/hmac)).
+ * - **Transaction response** (client redirect): GET with the same logical fields as flat query params plus `hmac` — for UX only; POST processed callback is the source of truth for fulfillment.
+ *
+ * @see https://developers.paymob.com/paymob-docs/developers/webhook-callbacks-and-hmac/transaction-callbacks
+ */
 @Controller('payments')
 export class PaymobWebhookController {
   private readonly logger = new Logger(PaymobWebhookController.name);
@@ -28,14 +36,29 @@ export class PaymobWebhookController {
   ) {}
 
   /**
-   * Server-side transaction processed callback (POST JSON + `hmac` query param).
+   * Transaction **processed** callback: POST JSON + `?hmac=` (HMAC is in the query string, not only in the body).
    */
   @Post('paymob-webhook')
   @HttpCode(HttpStatus.OK)
-  async handleWebhook(@Body() payload: PaymobWebhookPayload, @Query('hmac') hmac: string) {
+  async handleWebhook(@Body() payload: unknown, @Query('hmac') hmac: string) {
     const hmacStr = hmac ?? '';
+    let orderLog = '?';
+    let txnLog = '?';
+    let intLog = '?';
+    let typeLog = '?';
+    if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+      const body = payload as Record<string, unknown>;
+      typeLog = String(body['type'] ?? '?');
+      const obj = body['obj'];
+      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+        const o = obj as Record<string, unknown>;
+        txnLog = String(o['id'] ?? '?');
+        intLog = String(o['integration_id'] ?? '?');
+        orderLog = paymobOrderIdFromTransactionObj(o) ?? '?';
+      }
+    }
     this.logger.log(
-      `Paymob webhook received: type=${payload.type} txn=${payload.obj?.id} order=${payload.obj?.order?.id} integration=${payload.obj?.integration_id} hmacQuery=${hmacStr ? `present(len=${hmacStr.length})` : 'MISSING'} hasObj=${Boolean(payload.obj)}`,
+      `Paymob webhook received: type=${typeLog} txn=${txnLog} order=${orderLog} integration=${intLog} hmacQuery=${hmacStr ? `present(len=${hmacStr.length})` : 'MISSING'}`,
     );
 
     await this.webhookService.handleWebhook(payload, hmacStr);
@@ -44,8 +67,8 @@ export class PaymobWebhookController {
   }
 
   /**
-   * Browser redirect after payment (GET query params + `hmac`). Verifies signature only; does not fulfill (POST webhook does).
-   * Set `PAYMOB_FRONTEND_RETURN_URL` to redirect users to the app; otherwise returns JSON.
+   * Transaction **response** callback: GET query parameters (same keys as the processed callback `obj`, flattened) + `hmac`.
+   * We only verify HMAC here for the redirect UX; subscription/credits fulfillment runs on the POST processed webhook.
    */
   @Get('paymob-return')
   paymobReturn(
