@@ -1,13 +1,17 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Post,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -27,6 +31,7 @@ export class SubscriptionsController {
     private readonly checkoutService: PaymobCheckoutService,
     private readonly subscriptionService: SubscriptionService,
     private readonly walletService: SubscriptionWalletService,
+    private readonly config: ConfigService,
   ) {}
 
   @Post('purchase/credits')
@@ -62,5 +67,15 @@ export class SubscriptionsController {
   ) {
     await this.subscriptionService.revokeDevice(user.id, sessionId);
     return { success: true };
+  }
+
+  /**
+   * Testing only: deletes **all** `user_subscriptions` rows for the current user (and cascaded quota usage).
+   * Disabled unless `SUBSCRIPTION_TEST_RESET_ENABLED=true` in the environment.
+   */
+  @Post('testing/reset-subscription')
+  resetSubscriptionForTesting(@CurrentUser() user: AuthenticatedUser) {
+
+    return this.subscriptionService.deleteAllSubscriptionsForTesting(user.id);
   }
 }
