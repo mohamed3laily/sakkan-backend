@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-import type { PaymobWebhookPayload } from '../types';
+import { paymobOrderIdFromTransactionObj } from './paymob-hmac.util';
 import { PaymobService } from './paymob.service';
 import { PaymentFulfillmentService } from './payment-fulfillment.service';
 
@@ -18,14 +18,35 @@ export class PaymobWebhookService {
     private readonly fulfillment: PaymentFulfillmentService,
   ) {}
 
-  async handleWebhook(payload: PaymobWebhookPayload, hmac: string): Promise<void> {
-    if (payload.type !== 'TRANSACTION') {
-      this.logger.log(`Paymob webhook ignored (type=${String(payload.type)})`);
+  async handleWebhook(payload: unknown, hmac: string): Promise<void> {
+    const type =
+      payload &&
+      typeof payload === 'object' &&
+      !Array.isArray(payload) &&
+      typeof (payload as Record<string, unknown>)['type'] === 'string'
+        ? (payload as Record<string, unknown>)['type']
+        : undefined;
+
+    if (type !== 'TRANSACTION') {
+      this.logger.log(`Paymob webhook ignored (type=${String(type)})`);
       return;
     }
 
-    if (!payload.obj?.order?.id) {
-      this.logger.warn('Paymob TRANSACTION webhook missing obj.order');
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      this.logger.warn('Paymob webhook: invalid body');
+      return;
+    }
+
+    const objRaw = (payload as Record<string, unknown>)['obj'];
+    if (!objRaw || typeof objRaw !== 'object' || Array.isArray(objRaw)) {
+      this.logger.warn('Paymob TRANSACTION webhook missing obj');
+      return;
+    }
+
+    const obj = objRaw as Record<string, unknown>;
+    const orderIdStr = paymobOrderIdFromTransactionObj(obj);
+    if (!orderIdStr) {
+      this.logger.warn('Paymob TRANSACTION webhook missing order id');
       return;
     }
 
@@ -33,12 +54,10 @@ export class PaymobWebhookService {
       throw new UnauthorizedException('INVALID_PAYMOB_HMAC');
     }
 
-    const obj = payload.obj;
-
-    const payment = await this.paymobService.findPaymentByPaymobOrder(String(obj.order.id));
+    const payment = await this.paymobService.findPaymentByPaymobOrder(orderIdStr);
 
     if (!payment) {
-      this.logger.warn(`No internal payment found for Paymob order ${obj.order.id}`);
+      this.logger.warn(`No internal payment found for Paymob order ${orderIdStr}`);
       return;
     }
 
@@ -47,13 +66,17 @@ export class PaymobWebhookService {
       return;
     }
 
-    if (!obj.success || obj.error_occured) {
+    const success = obj['success'];
+    const errorOccured = obj['error_occured'];
+    const txnId = obj['id'];
+
+    if (success !== true || errorOccured === true) {
       await this.paymobService.markPaymentFailed(payment.id);
       this.logger.log(`Payment ${payment.id} marked as failed`);
       return;
     }
 
-    await this.paymobService.markPaymentSuccess(payment.id, String(obj.id));
+    await this.paymobService.markPaymentSuccess(payment.id, String(txnId));
 
     try {
       switch (payment.type) {
