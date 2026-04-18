@@ -175,4 +175,54 @@ describe('paymob-hmac.util', () => {
 
     expect(buildGetTransactionHmacConcatString(query)).toBe(PAYMOB_DOC_SAMPLE_CONCAT);
   });
+
+  it('buildGetTransactionHmacConcatString reads nested source_data (Express qs style)', () => {
+    const query: Record<string, unknown> = {
+      amount_cents: '100000',
+      created_at: '2024-06-13T11:33:44.592345',
+      currency: 'EGP',
+      error_occured: 'false',
+      has_parent_transaction: 'false',
+      id: '192036465',
+      integration_id: '4097558',
+      is_3d_secure: 'true',
+      is_auth: 'false',
+      is_capture: 'false',
+      is_refunded: 'false',
+      is_standalone_payment: 'true',
+      is_voided: 'false',
+      order_id: '217503754',
+      owner: '302852',
+      pending: 'false',
+      source_data: { pan: '2346', sub_type: 'MasterCard', type: 'card' },
+      success: 'true',
+    };
+
+    expect(buildGetTransactionHmacConcatString(query)).toBe(PAYMOB_DOC_SAMPLE_CONCAT);
+  });
+
+  it('buildGetTransactionHmacConcatString accepts error_occurred spelling', () => {
+    const query: Record<string, unknown> = {
+      amount_cents: '100000',
+      created_at: '2024-06-13T11:33:44.592345',
+      currency: 'EGP',
+      error_occurred: 'false',
+      has_parent_transaction: 'false',
+      id: '192036465',
+      integration_id: '4097558',
+      is_3d_secure: 'true',
+      is_auth: 'false',
+      is_capture: 'false',
+      is_refunded: 'false',
+      is_standalone_payment: 'true',
+      is_voided: 'false',
+      order_id: '217503754',
+      owner: '302852',
+      pending: 'false',
+      source_data: { pan: '2346', sub_type: 'MasterCard', type: 'card' },
+      success: 'true',
+    };
+
+    expect(buildGetTransactionHmacConcatString(query)).toBe(PAYMOB_DOC_SAMPLE_CONCAT);
+  });
 });
