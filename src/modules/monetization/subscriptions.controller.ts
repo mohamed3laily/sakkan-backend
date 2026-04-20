@@ -69,10 +69,7 @@ export class SubscriptionsController {
     return { success: true };
   }
 
-  /**
-   * Testing only: deletes **all** `user_subscriptions` rows for the current user (and cascaded quota usage).
-   * Disabled unless `SUBSCRIPTION_TEST_RESET_ENABLED=true` in the environment.
-   */
+ 
   @Post('testing/reset-subscription')
   resetSubscriptionForTesting(@CurrentUser() user: AuthenticatedUser) {
 
