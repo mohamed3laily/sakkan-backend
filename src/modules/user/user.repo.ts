@@ -98,6 +98,7 @@ export class UserRepo {
         },
         contactViaWhatsapp: users.contactViaWhatsapp,
         contactViaPhone: users.contactViaPhone,
+        phone: users.phone,
         avgRating: users.avgRating,
         reviewsCount: users.reviewsCount,
         createdAt: users.createdAt,

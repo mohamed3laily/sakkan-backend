@@ -72,6 +72,8 @@ export class ListingSelectBuilder {
         id: cities.id,
         nameEn: cities.nameEn,
         nameAr: cities.nameAr,
+        latitude: cities.latitude,
+        longitude: cities.longitude,
       },
       user: {
         id: users.id,
