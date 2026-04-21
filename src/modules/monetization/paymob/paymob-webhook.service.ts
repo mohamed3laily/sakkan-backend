@@ -76,21 +76,34 @@ export class PaymobWebhookService {
       return;
     }
 
-    await this.paymobService.markPaymentSuccess(payment.id, String(txnId));
+    const txnIdStr = String(txnId);
 
     try {
       switch (payment.type) {
         case 'subscription':
           await this.fulfillment.fulfillSubscription(payment);
+          await this.paymobService.markPaymentSuccess(payment.id, txnIdStr);
           break;
         case 'serious_request':
-          await this.fulfillment.fulfillSeriousRequest(payment);
+          await this.paymobService.finalizePendingPaymentWithFulfillment(
+            payment.id,
+            txnIdStr,
+            (tx) => this.fulfillment.fulfillSeriousRequestTx(tx, payment),
+          );
           break;
         case 'featured_single':
-          await this.fulfillment.fulfillFeaturedSingle(payment);
+          await this.paymobService.finalizePendingPaymentWithFulfillment(
+            payment.id,
+            txnIdStr,
+            (tx) => this.fulfillment.fulfillFeaturedSingleTx(tx, payment),
+          );
           break;
         case 'featured_bundle':
-          await this.fulfillment.fulfillFeaturedBundle(payment);
+          await this.paymobService.finalizePendingPaymentWithFulfillment(
+            payment.id,
+            txnIdStr,
+            (tx) => this.fulfillment.fulfillFeaturedBundleTx(tx, payment),
+          );
           break;
         default: {
           const unknownType = payment.type as unknown;
