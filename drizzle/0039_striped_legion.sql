@@ -1,0 +1,1 @@
+ALTER TABLE "one_time_credits" ADD CONSTRAINT "one_time_credits_user_type_unique" UNIQUE("user_id","type");
