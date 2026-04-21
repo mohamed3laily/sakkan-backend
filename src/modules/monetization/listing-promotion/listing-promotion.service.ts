@@ -87,10 +87,16 @@ export class ListingPromotionService {
    * Bypasses ownership check (payment already verified the user owns this listing).
    */
   async promoteToPremiumByPayment(listingId: number, paymentId: number) {
-    const listing = await this.listingsRepository.findOwnerAndType(listingId);
+    return this.drizzle.db.transaction((tx) =>
+      this.promoteToPremiumByPaymentInTx(tx, listingId, paymentId),
+    );
+  }
+
+  async promoteToPremiumByPaymentInTx(tx: AppTransaction, listingId: number, paymentId: number) {
+    const listing = await this.listingsRepository.findOwnerAndTypeInTx(tx, listingId);
     if (!listing) return null;
 
-    await this.listingsRepository.publishAsPremium(listingId, null, paymentId, 'credits');
+    await this.listingsRepository.publishAsPremiumInTx(tx, listingId, null, paymentId, 'credits');
     return { listingId };
   }
 

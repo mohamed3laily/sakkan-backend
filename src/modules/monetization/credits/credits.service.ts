@@ -4,6 +4,7 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import { DrizzleService } from '../../db/drizzle.service';
 import { creditProducts } from '../../db/schemas/monetization/credit-products';
 import { oneTimeCredits } from '../../db/schemas/monetization/one-time-credits';
+import type { AppTransaction } from '../monetization-db.types';
 import type { CreditType } from '../types';
 
 export type CreditProductRow = typeof creditProducts.$inferSelect;
@@ -52,7 +53,19 @@ export class CreditsService {
     amount: number,
     paymentId: number,
   ): Promise<{ newBalance: number }> {
-    const result = await this.drizzle.db
+    return this.drizzle.db.transaction((tx) =>
+      this.addCreditsTx(tx, userId, type, amount, paymentId),
+    );
+  }
+
+  async addCreditsTx(
+    tx: AppTransaction,
+    userId: number,
+    type: CreditType,
+    amount: number,
+    paymentId: number,
+  ): Promise<{ newBalance: number }> {
+    const result = await tx
       .insert(oneTimeCredits)
       .values({
         userId,

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { payments } from '../../db/schemas/monetization/payments';
 import { CreditsService } from '../credits/credits.service';
+import type { AppTransaction } from '../monetization-db.types';
 import { ListingPromotionService } from '../listing-promotion/listing-promotion.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 
@@ -37,13 +38,14 @@ export class PaymentFulfillmentService {
     this.logger.log(`Subscription activated: user=${payment.userId} plan=${planId}`);
   }
 
-  async fulfillSeriousRequest(payment: PaymentRow) {
+  async fulfillSeriousRequestTx(tx: AppTransaction, payment: PaymentRow) {
     const { listing_id: listingId } = this.getCreditsMeta(payment.metadata);
 
-    await this.creditsService.addCredits(payment.userId, 'serious', 1, payment.id);
+    await this.creditsService.addCreditsTx(tx, payment.userId, 'serious', 1, payment.id);
 
     if (listingId != null) {
-      const result = await this.listingPromotionService.promoteToPremiumByPayment(
+      const result = await this.listingPromotionService.promoteToPremiumByPaymentInTx(
+        tx,
         listingId,
         payment.id,
       );
@@ -55,13 +57,14 @@ export class PaymentFulfillmentService {
     }
   }
 
-  async fulfillFeaturedSingle(payment: PaymentRow) {
+  async fulfillFeaturedSingleTx(tx: AppTransaction, payment: PaymentRow) {
     const { listing_id: listingId } = this.getCreditsMeta(payment.metadata);
 
-    await this.creditsService.addCredits(payment.userId, 'featured', 1, payment.id);
+    await this.creditsService.addCreditsTx(tx, payment.userId, 'featured', 1, payment.id);
 
     if (listingId != null) {
-      const result = await this.listingPromotionService.promoteToPremiumByPayment(
+      const result = await this.listingPromotionService.promoteToPremiumByPaymentInTx(
+        tx,
         listingId,
         payment.id,
       );
@@ -73,8 +76,8 @@ export class PaymentFulfillmentService {
     }
   }
 
-  async fulfillFeaturedBundle(payment: PaymentRow) {
-    await this.creditsService.addCredits(payment.userId, 'featured', 15, payment.id);
+  async fulfillFeaturedBundleTx(tx: AppTransaction, payment: PaymentRow) {
+    await this.creditsService.addCreditsTx(tx, payment.userId, 'featured', 15, payment.id);
 
     this.logger.log(`Featured bundle activated: user=${payment.userId} +15 credits`);
   }

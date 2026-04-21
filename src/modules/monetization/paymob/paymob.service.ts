@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 
 import { DrizzleService } from '../../db/drizzle.service';
 import { payments } from '../../db/schemas/monetization/payments';
+import type { AppTransaction } from '../monetization-db.types';
 import {
   buildGetTransactionHmacConcatString,
   buildPostTransactionHmacConcatFromRaw,
@@ -564,6 +565,39 @@ export class PaymobService {
         updatedAt: new Date().toISOString(),
       })
       .where(eq(payments.id, paymentId));
+  }
+
+  /**
+   * Locks the payment row (`FOR UPDATE`), runs fulfillment on `pending` only, then sets `success`
+   * in the same DB transaction. If `run` throws, the payment stays `pending` so Paymob can retry.
+   * Duplicate webhooks see non-pending status and skip `run` (no double credits).
+   */
+  async finalizePendingPaymentWithFulfillment(
+    paymentId: number,
+    paymobTransactionId: string,
+    run: (tx: AppTransaction) => Promise<void>,
+  ): Promise<void> {
+    await this.drizzle.db.transaction(async (tx) => {
+      const rows = await tx.select().from(payments).where(eq(payments.id, paymentId)).for('update');
+      const p = rows[0];
+      if (!p || p.status !== 'pending') {
+        this.logger.log(
+          `Payment ${paymentId} skip fulfill (status=${p?.status ?? 'missing'}) — already handled`,
+        );
+        return;
+      }
+
+      await run(tx);
+
+      await tx
+        .update(payments)
+        .set({
+          status: 'success',
+          paymobTransactionId,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(payments.id, paymentId));
+    });
   }
 
   async markPaymentFailed(paymentId: number) {
