@@ -6,6 +6,7 @@ import {
   ListingType,
   PaymentMethod,
 } from 'src/modules/listing/enum/listing.enums';
+import { ListingTier } from 'src/modules/listing/dto/listing-filters.dto';
 
 export class ListingFiltersDto {
   @IsOptional()
@@ -74,13 +75,8 @@ export class ListingFiltersDto {
   numberOfBathrooms?: number;
 
   @IsOptional()
-  @IsBoolean()
-  @Transform(({ value }) => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    return value;
-  })
-  isSerious?: boolean;
+  @IsEnum(ListingTier)
+  listingTier?: ListingTier;
 
   @IsOptional()
   @IsString()

@@ -26,7 +26,7 @@ function buildBasicFilters(f: ListingFiltersDto) {
     whenDefined(f.listingType, (v) => eq(listings.listingType, v)),
     whenDefined(f.propertyTypeId, (v) => eq(listings.propertyTypeId, v)),
     whenDefined(f.cityId, (v) => eq(listings.cityId, v)),
-    whenDefined(f.isSerious, (v) => eq(listings.isSerious, v)),
+    whenDefined(f.listingTier, (v) => eq(listings.listingTier, v)),
     whenDefined(f.budgetType, (v) => eq(listings.budgetType, v)),
     whenDefined(f.paymentMethod, (v) => eq(listings.paymentMethod, v)),
     whenDefined(f.numberOfRooms, (v) => eq(listings.numberOfRooms, v)),
@@ -97,8 +97,8 @@ export function buildListingOrderBy(sort: ListingSortDto): SQL {
       return direction(listings.price);
     case ListingSortBy.SPACE:
       return direction(listings.spaceSqm);
-    case ListingSortBy.IS_SERIOUS:
-      return direction(listings.isSerious);
+    case ListingSortBy.LISTING_TIER:
+      return direction(listings.listingTier);
     case ListingSortBy.CREATED_AT:
     default:
       return direction(listings.createdAt);

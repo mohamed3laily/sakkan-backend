@@ -66,7 +66,8 @@ export class ListingSelectBuilder {
       paymentMethod: listings.paymentMethod,
       contactWhatsapp: listings.contactWhatsapp,
       contactPhone: listings.contactPhone,
-      isSerious: listings.isSerious,
+      listingTier: listings.listingTier,
+      premiumExpiresAt: listings.premiumExpiresAt,
       createdAt: listings.createdAt,
       city: {
         id: cities.id,

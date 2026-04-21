@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 
 import { ListingModule } from '../listing/listing.module';
 import { UserModule } from '../user/user.module';
 import { PaymobCheckoutService } from './checkout/paymob-checkout.service';
 import { CreditsService } from './credits/credits.service';
+import { ListingExpiryService } from './expiry/listing-expiry.service';
 import { ListingPromotionController } from './listing-promotion/listing-promotion.controller';
 import { ListingPromotionService } from './listing-promotion/listing-promotion.service';
 import { PaymentFulfillmentService } from './paymob/payment-fulfillment.service';
@@ -15,11 +16,8 @@ import { SubscriptionsController } from './subscriptions.controller';
 import { SubscriptionWalletService } from './subscription/subscription-wallet.service';
 import { SubscriptionService } from './subscription/subscription.service';
 
-/**
- * Billing: subscriptions, credits/quota, listing promotion, Paymob checkout + webhooks.
- */
 @Module({
-  imports: [UserModule, ListingModule, PaymentsModule],
+  imports: [UserModule, forwardRef(() => ListingModule), PaymentsModule],
   controllers: [SubscriptionsController, ListingPromotionController, PaymobWebhookController],
   providers: [
     QuotaService,
@@ -30,7 +28,14 @@ import { SubscriptionService } from './subscription/subscription.service';
     ListingPromotionService,
     PaymentFulfillmentService,
     PaymobWebhookService,
+    ListingExpiryService,
   ],
-  exports: [QuotaService, CreditsService, SubscriptionService, PaymentsModule],
+  exports: [
+    QuotaService,
+    CreditsService,
+    SubscriptionService,
+    PaymentsModule,
+    ListingPromotionService,
+  ],
 })
 export class BillingModule {}

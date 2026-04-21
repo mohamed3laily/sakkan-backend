@@ -14,7 +14,7 @@ export const quotaUsage = pgTable(
       .notNull()
       .references(() => userSubscriptions.id, { onDelete: 'cascade' }),
     billingMonth: varchar('billing_month', { length: 7 }).notNull(),
-    seriousRequestUsed: integer('serious_request_used').notNull().default(0),
+    seriousRequestViewsUsed: integer('serious_request_views_used').notNull().default(0),
     featuredAdUsed: integer('featured_ad_used').notNull().default(0),
     ...timestamps,
   },

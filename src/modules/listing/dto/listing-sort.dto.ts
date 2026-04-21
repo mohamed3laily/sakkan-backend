@@ -4,7 +4,7 @@ export enum ListingSortBy {
   CREATED_AT = 'createdAt',
   PRICE = 'price',
   SPACE = 'spaceSqm',
-  IS_SERIOUS = 'isSerious',
+  LISTING_TIER = 'listingTier',
 }
 
 export enum SortOrder {

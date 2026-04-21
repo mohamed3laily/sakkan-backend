@@ -1,6 +1,6 @@
 import { PropertyTypeQueryDto } from './dto/property-type-query.dto';
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { ListingsRepository } from './listing.repo';
 import { ListingFiltersDto } from './dto/listing-filters.dto';
@@ -11,6 +11,8 @@ import { PaginationService } from 'src/common/services/pagination.service';
 import { CityQueue } from '../city/city.queue';
 import { GeoValidationService } from './geo-validation.service';
 import { AttachmentService } from '../attachment/attachment.service';
+import { DrizzleService } from '../db/drizzle.service';
+import { ListingPromotionService } from '../monetization/listing-promotion/listing-promotion.service';
 
 @Injectable()
 export class ListingService {
@@ -20,15 +22,27 @@ export class ListingService {
     private readonly cityQueue: CityQueue,
     private readonly geoValidationService: GeoValidationService,
     private readonly attachmentService: AttachmentService,
+    private readonly drizzle: DrizzleService,
+    @Inject(forwardRef(() => ListingPromotionService))
+    private readonly listingPromotionService: ListingPromotionService,
   ) {}
 
   async createListing(userId: number, dto: CreateListingDto, images: Express.Multer.File[] = []) {
     await this.geoValidationService.validateListingLocation(dto);
 
-    const listing = await this.repo.create(userId, dto);
+    const listing =
+      dto.makePremium === true
+        ? await this.drizzle.db.transaction(async (tx) => {
+            const row = await this.repo.createInTx(tx, userId, dto);
+            await this.listingPromotionService.promoteToPremiumInTransaction(tx, row.id, userId, null);
+            return row;
+          })
+        : await this.repo.create(userId, dto);
 
-    const [_] = await Promise.all([
-      images.length > 0 && this.attachmentService.createMany('LISTING', listing.id, images),
+    await Promise.all([
+      images.length > 0
+        ? this.attachmentService.createMany('LISTING', listing.id, images)
+        : Promise.resolve(),
       this.cityQueue.incrementListingCount(dto.cityId),
     ]);
 

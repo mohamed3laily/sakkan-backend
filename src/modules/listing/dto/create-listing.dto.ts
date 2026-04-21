@@ -85,15 +85,6 @@ export class CreateListingDto {
   longitude?: number;
 
   @IsOptional()
-  @IsBoolean()
-  @Transform(({ value }) => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    return value;
-  })
-  isSerious?: boolean;
-
-  @IsOptional()
   @IsEnum(PaymentMethod)
   paymentMethod?: PaymentMethod;
 
@@ -124,4 +115,14 @@ export class CreateListingDto {
   @IsInt()
   @Type(() => Number)
   agentId?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }: { value: unknown }): boolean | undefined => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    if (value === true || value === false) return value;
+    return undefined;
+  })
+  makePremium?: boolean;
 }

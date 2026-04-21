@@ -1,9 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { payments } from '../../db/schemas/monetization/payments';
-import { ListingsRepository } from '../../listing/listing.repo';
 import { CreditsService } from '../credits/credits.service';
-import { QuotaService } from '../quota/quota.service';
+import { ListingPromotionService } from '../listing-promotion/listing-promotion.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 
 type PaymentRow = typeof payments.$inferSelect;
@@ -18,8 +17,7 @@ export class PaymentFulfillmentService {
   constructor(
     private readonly creditsService: CreditsService,
     private readonly subscriptionService: SubscriptionService,
-    private readonly quotaService: QuotaService,
-    private readonly listingsRepository: ListingsRepository,
+    private readonly listingPromotionService: ListingPromotionService,
   ) {}
 
   async fulfillSubscription(payment: PaymentRow) {
@@ -45,16 +43,11 @@ export class PaymentFulfillmentService {
     await this.creditsService.addCredits(payment.userId, 'serious', 1, payment.id);
 
     if (listingId != null) {
-      const ownerId = await this.listingsRepository.findOwnerId(listingId);
-      if (ownerId !== payment.userId) {
-        this.logger.warn(
-          `Serious publish skipped: listing ${listingId} does not belong to user ${payment.userId}`,
-        );
-        return;
-      }
-      await this.quotaService.checkAndDeduct(payment.userId, 'serious');
-      const row = await this.listingsRepository.publishAsSeriousByPayment(listingId, payment.id);
-      if (!row) {
+      const result = await this.listingPromotionService.promoteToPremiumByPayment(
+        listingId,
+        payment.id,
+      );
+      if (!result) {
         this.logger.warn(
           `Serious publish skipped: listing ${listingId} not found for payment ${payment.id}`,
         );
@@ -68,16 +61,11 @@ export class PaymentFulfillmentService {
     await this.creditsService.addCredits(payment.userId, 'featured', 1, payment.id);
 
     if (listingId != null) {
-      const ownerId = await this.listingsRepository.findOwnerId(listingId);
-      if (ownerId !== payment.userId) {
-        this.logger.warn(
-          `Featured publish skipped: listing ${listingId} does not belong to user ${payment.userId}`,
-        );
-        return;
-      }
-      await this.quotaService.checkAndDeduct(payment.userId, 'featured');
-      const row = await this.listingsRepository.publishAsFeaturedByPayment(listingId, payment.id);
-      if (!row) {
+      const result = await this.listingPromotionService.promoteToPremiumByPayment(
+        listingId,
+        payment.id,
+      );
+      if (!result) {
         this.logger.warn(
           `Featured publish skipped: listing ${listingId} not found for payment ${payment.id}`,
         );

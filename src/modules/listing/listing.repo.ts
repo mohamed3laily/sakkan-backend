@@ -11,6 +11,9 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { buildListingOrderBy, buildListingWhere } from './builders/listing-query.builder';
 import { ListingSelectBuilder } from './builders/listing-select.builder';
 import { attachments, users } from '../db/schemas/schema-index';
+import type { AppTransaction } from '../monetization/monetization-db.types';
+
+const PREMIUM_EXPIRY_DAYS = 15;
 
 @Injectable()
 export class ListingsRepository {
@@ -40,7 +43,37 @@ export class ListingsRepository {
         propertyAge: dto.propertyAge,
         contactWhatsapp: dto.contactWhatsapp,
         contactPhone: dto.contactPhone,
-        isSerious: dto.isSerious,
+        agentId: dto.agentId,
+      })
+      .returning();
+
+    return listing;
+  }
+
+  async createInTx(tx: AppTransaction, userId: number, dto: CreateListingDto) {
+    const [listing] = await tx
+      .insert(listings)
+      .values({
+        userId,
+        title: dto.title,
+        dealType: dto.dealType,
+        listingType: dto.listingType,
+        propertyTypeId: dto.propertyTypeId,
+        cityId: dto.cityId,
+        areaIds: dto.areaIds ?? [],
+        budgetType: dto.budgetType,
+        price: dto.price,
+        spaceSqm: dto.spaceSqm,
+        numberOfRooms: dto.numberOfRooms,
+        numberOfBathrooms: dto.numberOfBathrooms,
+        paymentMethod: dto.paymentMethod,
+        description: dto.description,
+        mPrice: dto.mPrice,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        propertyAge: dto.propertyAge,
+        contactWhatsapp: dto.contactWhatsapp,
+        contactPhone: dto.contactPhone,
         agentId: dto.agentId,
       })
       .returning();
@@ -86,86 +119,93 @@ export class ListingsRepository {
     };
   }
 
-  async publishAsSerious(
+  /**
+   * Promote a listing to premium tier (15-day expiry).
+   * Ownership is validated via `ownerUserId` if provided; pass `null` to skip
+   * (e.g. when called from a webhook handler that has already verified ownership).
+   */
+  async publishAsPremium(
     listingId: number,
-    ownerUserId: number,
+    ownerUserId: number | null,
     monetizationPaymentId: number | null,
     quotaSource: 'subscription' | 'credits',
   ) {
+    const premiumExpiresAt = new Date();
+    premiumExpiresAt.setUTCDate(premiumExpiresAt.getUTCDate() + PREMIUM_EXPIRY_DAYS);
+
+    const whereClause =
+      ownerUserId !== null
+        ? and(eq(listings.id, listingId), eq(listings.userId, ownerUserId))
+        : eq(listings.id, listingId);
+
     const [row] = await this.drizzleService.db
       .update(listings)
       .set({
-        listingTier: 'serious',
-        isSerious: true,
+        listingTier: 'premium',
+        premiumExpiresAt: premiumExpiresAt.toISOString(),
         status: 'PUBLISHED',
         monetizationPaymentId,
         quotaSource,
       })
-      .where(and(eq(listings.id, listingId), eq(listings.userId, ownerUserId)))
+      .where(whereClause)
       .returning({ id: listings.id });
 
     return row ?? null;
   }
 
-  async publishAsFeatured(
+  async publishAsPremiumInTx(
+    tx: AppTransaction,
     listingId: number,
-    ownerUserId: number,
+    ownerUserId: number | null,
     monetizationPaymentId: number | null,
     quotaSource: 'subscription' | 'credits',
   ) {
-    const featuredExpiresAt = new Date();
-    featuredExpiresAt.setUTCDate(featuredExpiresAt.getUTCDate() + 30);
+    const premiumExpiresAt = new Date();
+    premiumExpiresAt.setUTCDate(premiumExpiresAt.getUTCDate() + PREMIUM_EXPIRY_DAYS);
 
-    const [row] = await this.drizzleService.db
+    const whereClause =
+      ownerUserId !== null
+        ? and(eq(listings.id, listingId), eq(listings.userId, ownerUserId))
+        : eq(listings.id, listingId);
+
+    const [row] = await tx
       .update(listings)
       .set({
-        listingTier: 'featured',
-        isFeaturedAd: true,
-        featuredExpiresAt: featuredExpiresAt.toISOString(),
+        listingTier: 'premium',
+        premiumExpiresAt: premiumExpiresAt.toISOString(),
         status: 'PUBLISHED',
         monetizationPaymentId,
         quotaSource,
       })
-      .where(and(eq(listings.id, listingId), eq(listings.userId, ownerUserId)))
+      .where(whereClause)
       .returning({ id: listings.id });
 
     return row ?? null;
   }
 
-  async publishAsSeriousByPayment(listingId: number, monetizationPaymentId: number) {
-    const [row] = await this.drizzleService.db
-      .update(listings)
-      .set({
-        listingTier: 'serious',
-        isSerious: true,
-        status: 'PUBLISHED',
-        monetizationPaymentId,
-        quotaSource: 'credits',
-      })
+  async findOwnerAndType(
+    listingId: number,
+  ): Promise<{ userId: number; listingType: string } | null> {
+    const rows = await this.drizzleService.db
+      .select({ userId: listings.userId, listingType: listings.listingType })
+      .from(listings)
       .where(eq(listings.id, listingId))
-      .returning({ id: listings.id });
+      .limit(1);
 
-    return row ?? null;
+    return rows[0] ?? null;
   }
 
-  async publishAsFeaturedByPayment(listingId: number, monetizationPaymentId: number) {
-    const featuredExpiresAt = new Date();
-    featuredExpiresAt.setUTCDate(featuredExpiresAt.getUTCDate() + 30);
-
-    const [row] = await this.drizzleService.db
-      .update(listings)
-      .set({
-        listingTier: 'featured',
-        isFeaturedAd: true,
-        featuredExpiresAt: featuredExpiresAt.toISOString(),
-        status: 'PUBLISHED',
-        monetizationPaymentId,
-        quotaSource: 'credits',
-      })
+  async findOwnerAndTypeInTx(
+    tx: AppTransaction,
+    listingId: number,
+  ): Promise<{ userId: number; listingType: string } | null> {
+    const rows = await tx
+      .select({ userId: listings.userId, listingType: listings.listingType })
+      .from(listings)
       .where(eq(listings.id, listingId))
-      .returning({ id: listings.id });
+      .limit(1);
 
-    return row ?? null;
+    return rows[0] ?? null;
   }
 
   async findOwnerId(listingId: number): Promise<number | null> {
