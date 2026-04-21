@@ -203,7 +203,7 @@ export class QuotaService {
     const available = creditRow ? creditRow.totalCredits - creditRow.usedCredits : 0;
 
     if (available <= 0) {
-      throw new ConflictException('NO_CREDITS');
+      throw new ConflictException('NO_QUOTA_OR_CREDITS');
     }
 
     await tx

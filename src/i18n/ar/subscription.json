@@ -1,3 +1,4 @@
 {
-    "CREDIT_PRODUCT_NOT_FOUND": "المنتج غير موجود"
+    "CREDIT_PRODUCT_NOT_FOUND": "المنتج غير موجود",
+    "NO_QUOTA_OR_CREDITS": "لا يوجد رصيد أو حصة متاحة لهذا الإجراء"
 }
