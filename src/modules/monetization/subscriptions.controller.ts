@@ -1,10 +1,7 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
-  HttpCode,
-  HttpStatus,
   Param,
   ParseIntPipe,
   Post,
@@ -17,6 +14,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { PaymobCheckoutService } from './checkout/paymob-checkout.service';
+import { CreditsService } from './credits/credits.service';
 import type { PurchaseCreditsDto, SubscribeDto } from './dto';
 import { SubscriptionService } from './subscription/subscription.service';
 import { SubscriptionWalletService } from './subscription/subscription-wallet.service';
@@ -31,6 +29,7 @@ export class SubscriptionsController {
     private readonly checkoutService: PaymobCheckoutService,
     private readonly subscriptionService: SubscriptionService,
     private readonly walletService: SubscriptionWalletService,
+    private readonly creditsService: CreditsService,
     private readonly config: ConfigService,
   ) {}
 
@@ -48,6 +47,12 @@ export class SubscriptionsController {
   @Public()
   getPlans() {
     return this.subscriptionService.getActivePlans();
+  }
+
+  @Get('credit-products')
+  @Public()
+  getCreditProducts() {
+    return this.creditsService.getActiveProducts();
   }
 
   @Get('wallet')
@@ -69,10 +74,8 @@ export class SubscriptionsController {
     return { success: true };
   }
 
- 
   @Post('testing/reset-subscription')
   resetSubscriptionForTesting(@CurrentUser() user: AuthenticatedUser) {
-
     return this.subscriptionService.deleteAllSubscriptionsForTesting(user.id);
   }
 }

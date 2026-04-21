@@ -56,10 +56,8 @@ export const listings = pgTable(
     contactWhatsapp: boolean('contact_whatsapp').default(true),
     contactPhone: boolean('contact_phone').default(false),
     status: listingStatusEnum('status').default('PUBLISHED'),
-    isSerious: boolean('is_serious').default(false),
     listingTier: listingTierEnum('listing_tier').default('standard'),
-    isFeaturedAd: boolean('is_featured_ad').default(false),
-    featuredExpiresAt: timestamp('featured_expires_at', {
+    premiumExpiresAt: timestamp('premium_expires_at', {
       withTimezone: true,
       mode: 'string',
     }),

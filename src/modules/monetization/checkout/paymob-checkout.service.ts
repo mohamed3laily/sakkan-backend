@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { UserRepo } from '../../user/user.repo';
-import type { CreditProduct } from '../credits/credits.service';
 import { CreditsService } from '../credits/credits.service';
 import type { PurchaseCreditsDto, SubscribeDto } from '../dto';
 import { PaymobService, type PaymobOrderResult } from '../paymob/paymob.service';
@@ -22,33 +21,33 @@ export class PaymobCheckoutService {
       throw new NotFoundException('NOT_FOUND');
     }
 
-    const pricing = this.creditsService.getPricing(dto.product as CreditProduct);
+    const product = await this.creditsService.getProduct(dto.productKey);
+
     const billing = this.buildBillingData(profile.phone, profile.firstName, profile.lastName);
 
     const paymentType =
-      dto.product === 'featured_bundle'
+      dto.productKey === 'featured_bundle'
         ? 'featured_bundle'
-        : dto.product === 'serious_single'
+        : dto.productKey === 'serious_single'
           ? 'serious_request'
           : 'featured_single';
 
     const result = await this.paymobService.createOrder({
       userId,
-      amountEgp: pricing.egp,
+      amountEgp: product.priceEgp,
       paymentType,
       metadata: {
-        credit_type: pricing.type,
-        credits_to_add: pricing.credits,
-        listing_id: dto.listingId ?? null,
-        product: dto.product,
+        credit_type: product.creditType,
+        credits_to_add: product.credits,
+        product: dto.productKey,
       },
       billingData: billing,
     });
 
     return {
       internalPaymentId: result.internalPaymentId,
-      amount: pricing.egp,
-      credits: pricing.credits,
+      amount: product.priceEgp,
+      credits: product.credits,
       paymentUrl: result.paymentUrl,
       paymob: this.paymobForFlutter(result),
     };

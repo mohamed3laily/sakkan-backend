@@ -1,13 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ListingService } from './listing.service';
 import { ListingController } from './listing.controller';
 import { ListingsRepository } from './listing.repo';
 import { CityModule } from '../city/city.module';
 import { GeoValidationService } from './geo-validation.service';
 import { AttachmentModule } from '../attachment/attachment.module';
+import { BillingModule } from '../monetization/billing.module';
 
 @Module({
-  imports: [CityModule, AttachmentModule],
+  imports: [CityModule, AttachmentModule, forwardRef(() => BillingModule)],
   providers: [ListingService, ListingsRepository, GeoValidationService],
   controllers: [ListingController],
   exports: [ListingsRepository],

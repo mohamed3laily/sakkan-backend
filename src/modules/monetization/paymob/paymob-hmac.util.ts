@@ -56,10 +56,7 @@ export function paymobOrderIdFromTransactionObj(obj: Record<string, unknown>): s
  */
 export function buildPostTransactionHmacConcatFromRaw(obj: any): string {
   const source = obj.source_data || {};
-  const orderId =
-    typeof obj.order === 'object'
-      ? obj.order?.id
-      : obj.order;
+  const orderId = typeof obj.order === 'object' ? obj.order?.id : obj.order;
 
   const vals = [
     obj.amount_cents,
@@ -85,7 +82,7 @@ export function buildPostTransactionHmacConcatFromRaw(obj: any): string {
   ];
 
   return vals
-    .map(v => {
+    .map((v) => {
       if (v === null || v === undefined) return '';
       if (typeof v === 'boolean') return v ? 'true' : 'false';
       return String(v);
@@ -142,9 +139,7 @@ function getQueryParam(query: Record<string, unknown>, key: string): string | un
  * GET transaction response callback: query params (flat or nested via `qs`).
  * Uses `id` and `order_id` (Paymob docs); some samples use `order` for order id — accept both.
  */
-export function buildGetTransactionHmacConcatString(
-  query: Record<string, unknown>,
-): string {
+export function buildGetTransactionHmacConcatString(query: Record<string, unknown>): string {
   const q = (k: string) => {
     const v = query[k];
     if (v === undefined || v === null) return '';

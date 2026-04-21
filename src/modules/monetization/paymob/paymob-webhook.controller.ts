@@ -77,7 +77,11 @@ export class PaymobWebhookController {
   ): void {
     const hmacRaw = query['hmac'];
     const hmacLen =
-      typeof hmacRaw === 'string' ? hmacRaw.length : Array.isArray(hmacRaw) ? hmacRaw[0]?.length ?? 0 : 0;
+      typeof hmacRaw === 'string'
+        ? hmacRaw.length
+        : Array.isArray(hmacRaw)
+          ? (hmacRaw[0]?.length ?? 0)
+          : 0;
     this.logger.log(
       `Paymob return URL hit: hmac=${hmacLen ? `present(len=${hmacLen})` : 'MISSING'} queryKeys=${Object.keys(query).length}`,
     );

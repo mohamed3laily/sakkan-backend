@@ -13,11 +13,10 @@ export class SubscriptionWalletService {
   ) {}
 
   async getWalletOverview(userId: number) {
-    const [sub, balances, featuredCheck, seriousCheck] = await Promise.all([
+    const [sub, balances, featuredCheck] = await Promise.all([
       this.subscriptionService.getActiveSubscription(userId),
       this.creditsService.getAllBalances(userId),
-      this.quotaService.check(userId, 'featured'),
-      this.quotaService.check(userId, 'serious'),
+      this.quotaService.checkFeaturedPublish(userId),
     ]);
 
     return {
@@ -31,8 +30,7 @@ export class SubscriptionWalletService {
           }
         : null,
       credits: balances,
-      featured: featuredCheck,
-      serious: seriousCheck,
+      featuredPublish: featuredCheck,
     };
   }
 }

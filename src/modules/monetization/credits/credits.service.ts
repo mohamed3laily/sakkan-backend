@@ -1,23 +1,50 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { and, eq, sql } from 'drizzle-orm';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { and, asc, eq, sql } from 'drizzle-orm';
 
 import { DrizzleService } from '../../db/drizzle.service';
+import { creditProducts } from '../../db/schemas/monetization/credit-products';
 import { oneTimeCredits } from '../../db/schemas/monetization/one-time-credits';
 import type { CreditType } from '../types';
 
-export const CREDIT_PRICES = {
-  serious_single: { egp: 99, credits: 1, type: 'serious' as CreditType },
-  featured_single: { egp: 99, credits: 1, type: 'featured' as CreditType },
-  featured_bundle: { egp: 999, credits: 15, type: 'featured' as CreditType },
-} as const;
-
-export type CreditProduct = keyof typeof CREDIT_PRICES;
+export type CreditProductRow = typeof creditProducts.$inferSelect;
 
 @Injectable()
 export class CreditsService {
   private readonly logger = new Logger(CreditsService.name);
 
   constructor(private readonly drizzle: DrizzleService) {}
+
+  async getProduct(key: string): Promise<CreditProductRow> {
+    const rows = await this.drizzle.db
+      .select()
+      .from(creditProducts)
+      .where(and(eq(creditProducts.key, key), eq(creditProducts.isActive, true)))
+      .limit(1);
+
+    if (!rows[0]) {
+      throw new NotFoundException('CREDIT_PRODUCT_NOT_FOUND');
+    }
+
+    return rows[0];
+  }
+
+  async getActiveProducts() {
+    return this.drizzle.db
+      .select({
+        id: creditProducts.id,
+        key: creditProducts.key,
+        displayNameEn: creditProducts.displayNameEn,
+        displayNameAr: creditProducts.displayNameAr,
+        creditType: creditProducts.creditType,
+        credits: creditProducts.credits,
+        priceEgp: creditProducts.priceEgp,
+        isActive: creditProducts.isActive,
+        sortOrder: creditProducts.sortOrder,
+      })
+      .from(creditProducts)
+      .where(eq(creditProducts.isActive, true))
+      .orderBy(asc(creditProducts.sortOrder));
+  }
 
   async addCredits(
     userId: number,
@@ -82,9 +109,5 @@ export class CreditsService {
       result[row.type] = Math.max(0, row.totalCredits - row.usedCredits);
     }
     return result;
-  }
-
-  getPricing(product: CreditProduct) {
-    return CREDIT_PRICES[product];
   }
 }

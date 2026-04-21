@@ -3,6 +3,11 @@ import { Transform, Type } from 'class-transformer';
 
 import { BudgetType, DealType, ListingType, PaymentMethod } from '../enum/listing.enums';
 
+export enum ListingTier {
+  STANDARD = 'standard',
+  PREMIUM = 'premium',
+}
+
 export class ListingFiltersDto {
   @IsOptional()
   @IsEnum(DealType)
@@ -70,13 +75,8 @@ export class ListingFiltersDto {
   numberOfBathrooms?: number;
 
   @IsOptional()
-  @IsBoolean()
-  @Transform(({ value }) => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    return value;
-  })
-  isSerious?: boolean;
+  @IsEnum(ListingTier)
+  listingTier?: ListingTier;
 
   @IsOptional()
   @IsString()

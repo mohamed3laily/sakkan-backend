@@ -33,12 +33,14 @@ export * from './preferences/enums';
 export * from './admins/admins';
 
 // monetization
+export * from './monetization/credit-products';
 export * from './monetization/subscription-plans';
 export * from './monetization/user-subscriptions';
 export * from './monetization/quota-usage';
 export * from './monetization/one-time-credits';
 export * from './monetization/payments';
 export * from './monetization/user-sessions';
+export * from './monetization/serious-request-unlocks';
 export * from './monetization/enums';
 
 // attachments
