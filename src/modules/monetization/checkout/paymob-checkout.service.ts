@@ -42,6 +42,7 @@ export class PaymobCheckoutService {
         product: dto.productKey,
       },
       billingData: billing,
+      redirectionUrl: dto.redirectionUrl,
     });
 
     return {
