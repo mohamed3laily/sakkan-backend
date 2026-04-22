@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { and, asc, count, eq, ilike, notInArray, or, sql } from 'drizzle-orm';
-import { cities, users } from '../db/schemas/schema-index';
+import { cities, subscriptionPlans, userSubscriptions, users } from '../db/schemas/schema-index';
 import { DrizzleService } from '../db/drizzle.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { reviews } from '../db/schemas/reviews/reviews';
@@ -65,9 +65,19 @@ export class UserRepo {
           },
           createdAt: users.createdAt,
           hasReviewed: this.hasReviewedExpr(currentUserId),
+          isVerified: sql<boolean>`COALESCE(${subscriptionPlans.hasVerifiedBadge}, false)`,
         })
         .from(users)
         .leftJoin(cities, eq(users.cityId, cities.id))
+        .leftJoin(
+          userSubscriptions,
+          and(
+            eq(userSubscriptions.userId, users.id),
+            eq(userSubscriptions.status, 'active'),
+            sql`${userSubscriptions.periodEnd} > NOW()`,
+          ),
+        )
+        .leftJoin(subscriptionPlans, eq(subscriptionPlans.id, userSubscriptions.planId))
         .where(whereClause)
         .orderBy(asc(users.firstName))
         .limit(limit)
@@ -103,6 +113,7 @@ export class UserRepo {
         reviewsCount: users.reviewsCount,
         createdAt: users.createdAt,
         hasReviewed: this.hasReviewedExpr(currentUserId),
+        isVerified: sql<boolean>`COALESCE(${subscriptionPlans.hasVerifiedBadge}, false)`,
         recentReviewers: sql<
           { id: number; firstName: string; lastName: string; profilePicture: string | null }[]
         >`(
@@ -120,6 +131,15 @@ export class UserRepo {
       })
       .from(users)
       .leftJoin(cities, eq(users.cityId, cities.id))
+      .leftJoin(
+        userSubscriptions,
+        and(
+          eq(userSubscriptions.userId, users.id),
+          eq(userSubscriptions.status, 'active'),
+          sql`${userSubscriptions.periodEnd} > NOW()`,
+        ),
+      )
+      .leftJoin(subscriptionPlans, eq(subscriptionPlans.id, userSubscriptions.planId))
       .where(and(eq(users.id, id)))
       .limit(1);
 

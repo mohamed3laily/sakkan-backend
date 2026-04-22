@@ -35,6 +35,7 @@ export class TranslateInterceptor implements NestInterceptor {
 
   private translateItem(item: unknown, lang: string): unknown {
     if (!item || typeof item !== 'object') return item;
+    if (item instanceof Date) return item;
 
     const record = item as Record<string, unknown>;
     const working: Record<string, unknown> = { ...record };

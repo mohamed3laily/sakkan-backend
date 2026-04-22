@@ -38,6 +38,7 @@ type CreateOrderParams = {
     email: string;
     phone: string;
   };
+  redirectionUrl?: string;
 };
 
 type PaymentRow = typeof payments.$inferSelect;
@@ -58,7 +59,6 @@ export class PaymobService {
    * Transaction callback HMAC (POST processed + GET response): SHA-512 over Paymob’s concat string using **`PAYMOB_HMAC_SECRET` only** ([docs](https://developers.paymob.com/paymob-docs/developers/webhook-callbacks-and-hmac/hmac-transaction-callback)).
    */
   private readonly webhookHmacSecrets: readonly string[];
-  private readonly webhookHmacSecretLabels: readonly string[];
 
   constructor(
     private readonly config: ConfigService,
@@ -82,11 +82,7 @@ export class PaymobService {
       this.iframeId = this.config.getOrThrow('PAYMOB_IFRAME_ID');
     }
 
-    const hmacSecret = (
-      this.config.get<string>('PAYMOB_HMAC_SECRET') ||
-      process.env.PAYMOB_HMAC_SECRET ||
-      ''
-    ).trim();
+    const hmacSecret = (this.config.get<string>('PAYMOB_HMAC_SECRET') ?? '').trim();
     if (hmacSecret.length === 0) {
       throw new Error(
         'PAYMOB_HMAC_SECRET is required and must be non-empty (Accept HMAC secret for transaction callbacks).',
@@ -94,7 +90,6 @@ export class PaymobService {
     }
 
     this.webhookHmacSecrets = [hmacSecret];
-    this.webhookHmacSecretLabels = ['PAYMOB_HMAC_SECRET'];
 
     this.logger.log('Paymob transaction callback HMAC uses PAYMOB_HMAC_SECRET only (SHA-512).');
   }
@@ -129,18 +124,13 @@ export class PaymobService {
     }
   }
 
-  /**
-   * Paymob Intention API (Unified Checkout). See Create Intention docs.
-   * Requires PAYMOB_SECRET_KEY, PAYMOB_PUBLIC_KEY, and callback URLs (or APP_PUBLIC_URL).
-   */
   private async createPaymentIntention(
     params: CreateOrderParams,
     internalPayment: PaymentRow,
     amountPiasters: number,
   ): Promise<PaymobOrderResult> {
     const notificationUrl = this.resolveNotificationUrl();
-    const redirectionUrl = this.resolveRedirectionUrl();
-
+    const redirectionUrl = params.redirectionUrl ?? this.resolveRedirectionUrl();
     const intentionUrl = `${this.acceptHost}/v1/intention/`;
     const body = {
       amount: amountPiasters,
@@ -192,7 +182,6 @@ export class PaymobService {
     let json: {
       client_secret?: string;
       intention_order_id?: number;
-      id?: string;
     };
     try {
       json = JSON.parse(rawText) as typeof json;
@@ -541,7 +530,7 @@ export class PaymobService {
           variants.push(buf);
         }
       } catch {
-        /* ignore invalid hex */
+        
       }
     }
     return variants;

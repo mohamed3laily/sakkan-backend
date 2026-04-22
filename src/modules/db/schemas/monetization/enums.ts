@@ -6,7 +6,6 @@ export const subscriptionStatusEnum = pgEnum('subscription_status', [
   'active',
   'cancelled',
   'expired',
-  'past_due',
   'pending',
 ]);
 

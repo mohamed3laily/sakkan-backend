@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { DrizzleService } from 'src/modules/db/drizzle.service';
 import { users } from 'src/modules/db/schemas/user/user';
 import { cities } from 'src/modules/db/schemas/cities/cities';
-import { eq } from 'drizzle-orm';
+import { subscriptionPlans, userSubscriptions } from 'src/modules/db/schemas/schema-index';
+import { and, eq, sql } from 'drizzle-orm';
 import { UpdateMeDto } from './dto/me.dto';
 
 @Injectable()
@@ -31,9 +32,19 @@ export class MeRepository {
         contactViaPhone: users.contactViaPhone,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
+        isVerified: sql<boolean>`COALESCE(${subscriptionPlans.hasVerifiedBadge}, false)`,
       })
       .from(users)
       .leftJoin(cities, eq(users.cityId, cities.id))
+      .leftJoin(
+        userSubscriptions,
+        and(
+          eq(userSubscriptions.userId, users.id),
+          eq(userSubscriptions.status, 'active'),
+          sql`${userSubscriptions.periodEnd} > NOW()`,
+        ),
+      )
+      .leftJoin(subscriptionPlans, eq(subscriptionPlans.id, userSubscriptions.planId))
       .where(eq(users.id, userId))
       .limit(1);
     return user || null;

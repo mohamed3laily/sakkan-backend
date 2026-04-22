@@ -4,13 +4,13 @@ import { CreateListingDto } from './dto/create-listing.dto';
 import { DrizzleService } from '../db/drizzle.service';
 import { listings } from '../db/schemas/listing/listing';
 import { cities } from '../db/schemas/cities/cities';
-import { and, count, eq } from 'drizzle-orm';
+import { and, count, eq, sql } from 'drizzle-orm';
 import { ListingFiltersDto } from './dto/listing-filters.dto';
 import { ListingSortDto } from './dto/listing-sort.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { buildListingOrderBy, buildListingWhere } from './builders/listing-query.builder';
 import { ListingSelectBuilder } from './builders/listing-select.builder';
-import { attachments, users } from '../db/schemas/schema-index';
+import { attachments, subscriptionPlans, userSubscriptions, users } from '../db/schemas/schema-index';
 import type { AppTransaction } from '../monetization/monetization-db.types';
 
 const PREMIUM_EXPIRY_DAYS = 15;
@@ -101,6 +101,15 @@ export class ListingsRepository {
         .leftJoin(cities, eq(listings.cityId, cities.id))
         .leftJoin(propertyType, eq(listings.propertyTypeId, propertyType.id))
         .leftJoin(users, eq(listings.userId, users.id))
+        .leftJoin(
+          userSubscriptions,
+          and(
+            eq(userSubscriptions.userId, listings.userId),
+            eq(userSubscriptions.status, 'active'),
+            sql`${userSubscriptions.periodEnd} > NOW()`,
+          ),
+        )
+        .leftJoin(subscriptionPlans, eq(subscriptionPlans.id, userSubscriptions.planId))
         .leftJoin(
           attachments,
           and(eq(attachments.attachableId, listings.id), eq(attachments.attachableType, 'LISTING')),
@@ -226,6 +235,15 @@ export class ListingsRepository {
       .leftJoin(cities, eq(listings.cityId, cities.id))
       .leftJoin(propertyType, eq(listings.propertyTypeId, propertyType.id))
       .leftJoin(users, eq(listings.userId, users.id))
+      .leftJoin(
+        userSubscriptions,
+        and(
+          eq(userSubscriptions.userId, listings.userId),
+          eq(userSubscriptions.status, 'active'),
+          sql`${userSubscriptions.periodEnd} > NOW()`,
+        ),
+      )
+      .leftJoin(subscriptionPlans, eq(subscriptionPlans.id, userSubscriptions.planId))
       .leftJoin(
         attachments,
         and(eq(attachments.attachableId, listings.id), eq(attachments.attachableType, 'LISTING')),
