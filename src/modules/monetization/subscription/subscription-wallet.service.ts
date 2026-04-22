@@ -18,6 +18,10 @@ export class SubscriptionWalletService {
       this.creditsService.getAllBalances(userId),
     ]);
 
+    const quotas = sub
+      ? await this.quotaService.getWalletQuotasForActiveSubscription(userId, sub)
+      : null;
+
     return {
       subscription: sub
         ? {
@@ -26,6 +30,7 @@ export class SubscriptionWalletService {
             status: sub.subscription.status,
             periodEnd: sub.subscription.periodEnd,
             deviceLimit: sub.plan.deviceLimit,
+            quotas,
           }
         : null,
       credits: balances,

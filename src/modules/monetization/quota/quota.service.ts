@@ -8,45 +8,25 @@ import { seriousRequestUnlocks } from '../../db/schemas/monetization/serious-req
 import { subscriptionPlans } from '../../db/schemas/monetization/subscription-plans';
 import { userSubscriptions } from '../../db/schemas/monetization/user-subscriptions';
 import type { AppTransaction } from '../monetization-db.types';
+import type {
+  ActiveSubscriptionForWalletQuotas,
+  FeaturedPublishCheck,
+  FeaturedPublishResult,
+  SeriousPublishResult,
+  SeriousViewCheck,
+  SeriousViewResult,
+  WalletSubscriptionQuotas,
+} from './quota.types';
 
-export type FeaturedPublishResult = {
-  source: 'subscription' | 'credits';
-  remainingAfter: { subscriptionQuota: number; purchasedCredits: number };
-};
-
-export type SeriousPublishResult = {
-  source: 'credits';
-  remainingAfter: { purchasedCredits: number };
-};
-
-export type SeriousViewResult = {
-  alreadyUnlocked: boolean;
-  remainingViews: number;
-};
-
-export type FeaturedPublishCheck =
-  | {
-      allowed: true;
-      source: 'subscription' | 'credits';
-      totalAvailable: number;
-      breakdown: { subscriptionQuota: number; purchasedCredits: number; resetDate: string | null };
-    }
-  | {
-      allowed: false;
-      reason: 'no_subscription_no_credits' | 'quota_exhausted';
-      subscriptionInfo: {
-        planNameEn: string;
-        planNameAr: string;
-        quotaTotal: number;
-        quotaUsed: number;
-        resetDate: string;
-      } | null;
-      creditsBalance: number;
-    };
-
-export type SeriousViewCheck =
-  | { allowed: true; remainingViews: number; resetDate: string | null }
-  | { allowed: false; reason: 'no_subscription' | 'view_quota_exhausted' };
+export type {
+  ActiveSubscriptionForWalletQuotas,
+  FeaturedPublishCheck,
+  FeaturedPublishResult,
+  SeriousPublishResult,
+  SeriousViewCheck,
+  SeriousViewResult,
+  WalletSubscriptionQuotas,
+} from './quota.types';
 
 @Injectable()
 export class QuotaService {
@@ -306,6 +286,34 @@ export class QuotaService {
 
       return { alreadyUnlocked: false, remainingViews: quotaLimit - used - 1 };
     });
+  }
+
+  async getWalletQuotasForActiveSubscription(
+    userId: number,
+    sub: ActiveSubscriptionForWalletQuotas,
+  ): Promise<WalletSubscriptionQuotas> {
+    const billingMonth = this.getCurrentBillingMonth(
+      sub.subscription.periodStart,
+      sub.subscription.periodEnd,
+    );
+    const usage = await this.drizzle.db
+      .select()
+      .from(quotaUsage)
+      .where(and(eq(quotaUsage.userId, userId), eq(quotaUsage.billingMonth, billingMonth)))
+      .limit(1);
+
+    const row = usage[0];
+    const featuredLimit = sub.plan.featuredAdQuotaPerMonth;
+    const featuredUsed = row?.featuredAdUsed ?? 0;
+
+    return {
+      billingMonth,
+      featured: {
+        limit: featuredLimit,
+        used: featuredUsed,
+        remaining: Math.max(0, featuredLimit - featuredUsed),
+      },
+    };
   }
 
   // ── Private helpers ──────────────────────────────────────────────────────
