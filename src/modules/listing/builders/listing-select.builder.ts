@@ -4,7 +4,7 @@ import { areas } from '../../db/schemas/cities/areas';
 import { propertyType } from '../../db/schemas/listing/property-type';
 import { sql } from 'drizzle-orm';
 import { users } from 'src/modules/db/schemas/user/user';
-import { attachments } from 'src/modules/db/schemas/schema-index';
+import { attachments, subscriptionPlans } from 'src/modules/db/schemas/schema-index';
 
 export class ListingSelectBuilder {
   static getSelectFields(userId?: number) {
@@ -83,6 +83,7 @@ export class ListingSelectBuilder {
         phone: users.phone,
         profilePicture: users.profilePicture,
         type: users.type,
+        isVerified: sql<boolean>`COALESCE(${subscriptionPlans.hasVerifiedBadge}, false)`,
       },
       isFavorited: userId
         ? sql<boolean>`EXISTS (SELECT 1 FROM favorites WHERE favorites.user_id = ${userId} AND favorites.favoritable_type = 'LISTING' AND favorites.favoritable_id = ${listings.id})`.as(

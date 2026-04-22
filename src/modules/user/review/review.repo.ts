@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { and, count, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import { users } from 'src/modules/db/schemas/schema-index';
+import { subscriptionPlans, userSubscriptions, users } from 'src/modules/db/schemas/schema-index';
 import { DrizzleService } from 'src/modules/db/drizzle.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { reviews } from 'src/modules/db/schemas/reviews/reviews';
@@ -42,10 +42,20 @@ export class ReviewRepo {
             firstName: reviewer.firstName,
             lastName: reviewer.lastName,
             profilePicture: reviewer.profilePicture,
+            isVerified: sql<boolean>`COALESCE(${subscriptionPlans.hasVerifiedBadge}, false)`,
           },
         })
         .from(reviews)
         .innerJoin(reviewer, eq(reviewer.id, reviews.reviewerId))
+        .leftJoin(
+          userSubscriptions,
+          and(
+            eq(userSubscriptions.userId, reviewer.id),
+            eq(userSubscriptions.status, 'active'),
+            sql`${userSubscriptions.periodEnd} > NOW()`,
+          ),
+        )
+        .leftJoin(subscriptionPlans, eq(subscriptionPlans.id, userSubscriptions.planId))
         .where(whereClause)
         .orderBy(reviews.createdAt)
         .limit(limit)
