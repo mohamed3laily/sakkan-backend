@@ -1,8 +1,9 @@
-import { boolean, index, integer, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, jsonb, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { subscriptionStatusEnum } from './enums';
 import { subscriptionPlans } from './subscription-plans';
 import { users } from '../user/user';
 import { timestamps } from '../timestamps';
+import type { SubscriptionPlanSnapshot } from '../../../monetization/types/plan.types';
 
 export const userSubscriptions = pgTable(
   'user_subscriptions',
@@ -22,6 +23,8 @@ export const userSubscriptions = pgTable(
     paymobSubscriptionId: varchar('paymob_subscription_id', { length: 255 }),
     cancelledAt: timestamp('cancelled_at'),
     cancellationReason: varchar('cancellation_reason', { length: 500 }),
+    paidEgp: integer('paid_egp'),
+    planSnapshot: jsonb('plan_snapshot').$type<SubscriptionPlanSnapshot | null>(),
     ...timestamps,
   },
   (table) => ({

@@ -28,7 +28,7 @@ export class CreditProductsSeed {
       {
         key: 'featured_single',
         displayNameEn: 'Featured Ad',
-        displayNameAr: 'إعلان مميز',
+        displayNameAr: 'إعلان مميز (فردى)',
         creditType: 'featured',
         credits: 1,
         priceEgp: 99,
@@ -37,8 +37,8 @@ export class CreditProductsSeed {
       },
       {
         key: 'featured_bundle',
-        displayNameEn: 'Featured Bundle (15 ads)',
-        displayNameAr: 'باقة إعلانات مميزة (15 إعلان)',
+        displayNameEn: 'Featured Bundle',
+        displayNameAr: 'باقة إعلانات مميزة',
         creditType: 'featured',
         credits: 15,
         priceEgp: 999,

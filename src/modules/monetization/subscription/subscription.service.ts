@@ -5,7 +5,7 @@ import { DrizzleService } from '../../db/drizzle.service';
 import { subscriptionPlans } from '../../db/schemas/monetization/subscription-plans';
 import { userSessions } from '../../db/schemas/monetization/user-sessions';
 import { userSubscriptions } from '../../db/schemas/monetization/user-subscriptions';
-import type { PlanDto } from '../types';
+import { toPlanSnapshot, type PlanDto } from '../types';
 
 @Injectable()
 export class SubscriptionService {
@@ -52,8 +52,11 @@ export class SubscriptionService {
     planId: number;
     paymentId: number;
     paymobOrderId: string;
+    paidAmountPiasters: number;
   }) {
     const plan = await this.getPlanById(params.planId);
+    const planSnapshot = toPlanSnapshot(plan);
+    const paidEgp = Math.floor(params.paidAmountPiasters / 100);
 
     await this.drizzle.db
       .update(userSubscriptions)
@@ -80,6 +83,8 @@ export class SubscriptionService {
         periodEnd,
         autoRenew: true,
         paymobOrderId: params.paymobOrderId,
+        paidEgp,
+        planSnapshot,
       })
       .returning();
 

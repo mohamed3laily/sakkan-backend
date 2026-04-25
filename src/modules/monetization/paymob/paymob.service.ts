@@ -529,9 +529,7 @@ export class PaymobService {
         if (buf.length > 0) {
           variants.push(buf);
         }
-      } catch {
-        
-      }
+      } catch {}
     }
     return variants;
   }

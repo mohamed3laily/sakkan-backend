@@ -3,10 +3,12 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { RequestResetDto, ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { RegisterDto } from './dto/register.dto';
@@ -15,6 +17,8 @@ import { PhoneUtils } from './utils/phone.utils';
 
 @Injectable()
 export class AuthService {
+  private static readonly BCRYPT_SALT_ROUNDS = 10;
+
   constructor(
     private authRepo: AuthRepo,
     private jwtService: JwtService,
@@ -30,7 +34,7 @@ export class AuthService {
       throw new ConflictException('PHONE_EXISTS');
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await this.hashPassword(password);
     const verifyPhoneToken = this.generateVerifyPhoneToken();
     const verifyPhoneTokenExpiry = new Date(Date.now() + 10 * 60 * 1000);
     const [newUser] = await this.authRepo.insertUser(
@@ -124,7 +128,7 @@ export class AuthService {
       throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await this.comparePassword(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
@@ -149,13 +153,13 @@ export class AuthService {
     try {
       normalizedPhone = PhoneUtils.normalizePhone(phone);
     } catch {
-      return { message: 'PHONE_WRONG' };
+      throw new BadRequestException('PHONE_WRONG');
     }
 
     const user = await this.authRepo.getUserByPhone(normalizedPhone);
 
     if (!user) {
-      return { message: 'PHONE_NOT_FOUND' };
+      throw new NotFoundException('PHONE_NOT_FOUND');
     }
 
     const resetToken = this.generateResetToken();
@@ -208,7 +212,7 @@ export class AuthService {
       throw new BadRequestException('RESET_TOKEN_EXPIRED');
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await this.hashPassword(newPassword);
 
     await this.authRepo.updateUser(user.id, {
       password: hashedPassword,
@@ -217,6 +221,37 @@ export class AuthService {
     });
 
     return { message: 'RESET_SUCCESS' };
+  }
+
+  async changePassword(userId: number, changePasswordDto: ChangePasswordDto) {
+    const { currentPassword, newPassword } = changePasswordDto;
+
+    if (currentPassword === newPassword) {
+      throw new BadRequestException('NEW_PASSWORD_SAME');
+    }
+
+    const user = await this.authRepo.getUserById(userId);
+    if (!user) {
+      throw new NotFoundException('USER_NOT_FOUND');
+    }
+
+    const isCurrentValid = await this.comparePassword(currentPassword, user.password);
+    if (!isCurrentValid) {
+      throw new UnauthorizedException('INVALID_CURRENT_PASSWORD');
+    }
+
+    const hashedPassword = await this.hashPassword(newPassword);
+    await this.authRepo.updateUser(userId, { password: hashedPassword });
+
+    return { message: 'PASSWORD_CHANGED' };
+  }
+
+  private async hashPassword(plain: string): Promise<string> {
+    return bcrypt.hash(plain, AuthService.BCRYPT_SALT_ROUNDS);
+  }
+
+  private async comparePassword(plain: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(plain, hash);
   }
 
   private generateToken(userId: number, phone: string): string {
