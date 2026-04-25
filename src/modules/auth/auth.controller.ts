@@ -43,6 +43,11 @@ export class AuthController {
     return this.authService.requestPasswordReset(requestResetDto);
   }
 
+  @Post('resend-reset-otp')
+  async resendResetOtp(@Body() requestResetDto: RequestResetDto) {
+    return this.authService.resendResetOtp(requestResetDto);
+  }
+
   @Post('verify-reset-otp')
   async verifyReset(@Body() dto: VerifyResetDto) {
     return this.authService.verifyResetToken(dto.phone, dto.token);

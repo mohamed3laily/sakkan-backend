@@ -175,6 +175,34 @@ export class AuthService {
     return { message: 'RESET_SENT' };
   }
 
+  async resendResetOtp(requestResetDto: RequestResetDto) {
+    const { phone } = requestResetDto;
+    let normalizedPhone: string;
+    try {
+      normalizedPhone = PhoneUtils.normalizePhone(phone);
+    } catch {
+      throw new BadRequestException('PHONE_WRONG');
+    }
+
+    const user = await this.authRepo.getUserByPhone(normalizedPhone);
+
+    if (!user) {
+      throw new NotFoundException('PHONE_NOT_FOUND');
+    }
+
+    const resetToken = this.generateResetToken();
+    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
+
+    await this.authRepo.updateUser(user.id, {
+      resetToken,
+      resetTokenExpiry,
+    });
+
+    // TODO: Send reset token via SMS provider
+
+    return { message: 'RESET_RESENT' };
+  }
+
   async verifyResetToken(phone: string, token: string) {
     const normalizedPhone = PhoneUtils.normalizePhone(phone);
 

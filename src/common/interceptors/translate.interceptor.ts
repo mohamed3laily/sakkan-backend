@@ -8,6 +8,11 @@ const BILINGUAL_PAIRS: BilingualPair[] = [
   { enKey: 'nameEn', arKey: 'nameAr', outKey: 'name' },
   { enKey: 'displayNameEn', arKey: 'displayNameAr', outKey: 'displayName' },
   { enKey: 'planNameEn', arKey: 'planNameAr', outKey: 'planName' },
+  {
+    enKey: 'termsAndConditionsEn',
+    arKey: 'termsAndConditionsAr',
+    outKey: 'termsAndConditions',
+  },
 ];
 
 @Injectable()

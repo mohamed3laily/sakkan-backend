@@ -46,6 +46,7 @@ export class MeService {
 
     const updated = await this.meRepo.updateMe(userId, {
       phone: normalized,
+      verifiedPhoneAt: null,
     });
     if (!updated) {
       throw new NotFoundException('USER_NOT_FOUND');
