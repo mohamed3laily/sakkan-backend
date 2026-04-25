@@ -10,8 +10,9 @@ import {
 } from '@nestjs/common';
 
 import { MeService } from './me.service';
-import { UpdateMeDto } from './dto/me.dto';
+import { ChangePhoneDto, UpdateMeDto } from './dto/me.dto';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
+import { AllowUnverified } from 'src/modules/auth/decorators/allow-unverified.decorator';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from 'src/modules/auth/interfaces/authenticated-user.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -32,6 +33,11 @@ export class MeController {
   async updateMe(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateMeDto) {
     const userId = user?.id;
     return this.meService.updateMe(userId, dto);
+  }
+
+  @Put('phone')
+  async changePhone(@CurrentUser() user: AuthenticatedUser, @Body() dto: ChangePhoneDto) {
+    return this.meService.changePhone(user.id, dto);
   }
 
   @Put('profile-picture')

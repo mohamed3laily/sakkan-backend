@@ -1,5 +1,5 @@
 import { SocialMediaLinks } from 'src/modules/db/schemas/user/user';
-import { IsOptional, IsString, IsObject, IsIn } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsObject, IsIn } from 'class-validator';
 import { userTypeEnum } from 'src/modules/db/schemas/user/enums';
 
 export class UpdateMeDto {
@@ -43,3 +43,13 @@ export class UpdateMeDto {
   @IsOptional()
   profilePicture: string;
 }
+
+export class ChangePhoneDto {
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
+}
+
+export type MeRepositoryUpdate = Partial<UpdateMeDto> & {
+  phone?: string;
+};
