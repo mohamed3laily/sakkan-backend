@@ -9,6 +9,7 @@ export const appSettings = pgTable('app_settings', {
   id: serial('id').primaryKey(),
   phones: varchar('phones', { length: 32 }).array().notNull(),
   email: varchar('email', { length: 255 }).notNull(),
-  termsAndConditions: text('terms_and_conditions').notNull(),
+  termsAndConditionsEn: text('terms_and_conditions_en').notNull(),
+  termsAndConditionsAr: text('terms_and_conditions_ar').notNull(),
   ...timestamps,
 });

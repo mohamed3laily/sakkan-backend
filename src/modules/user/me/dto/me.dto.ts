@@ -52,4 +52,5 @@ export class ChangePhoneDto {
 
 export type MeRepositoryUpdate = Partial<UpdateMeDto> & {
   phone?: string;
+  verifiedPhoneAt?: Date | null;
 };

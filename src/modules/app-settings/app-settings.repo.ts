@@ -12,7 +12,8 @@ export class AppSettingsRepository {
       .select({
         phones: appSettings.phones,
         email: appSettings.email,
-        termsAndConditions: appSettings.termsAndConditions,
+        termsAndConditionsEn: appSettings.termsAndConditionsEn,
+        termsAndConditionsAr: appSettings.termsAndConditionsAr,
       })
       .from(appSettings)
       .limit(1);
