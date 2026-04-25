@@ -51,4 +51,5 @@ export type ActiveSubscriptionForWalletQuotas = {
 export type WalletSubscriptionQuotas = {
   billingMonth: string;
   featured: { limit: number; used: number; remaining: number };
+  seriousRequestViews: { limit: number; used: number; remaining: number };
 };
