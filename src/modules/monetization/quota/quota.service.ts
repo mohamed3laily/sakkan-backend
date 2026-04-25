@@ -296,6 +296,8 @@ export class QuotaService {
     const row = usage[0];
     const featuredLimit = sub.plan.featuredAdQuotaPerMonth;
     const featuredUsed = row?.featuredAdUsed ?? 0;
+    const seriousViewLimit = sub.plan.seriousRequestViewsQuotaPerMonth;
+    const seriousViewUsed = row?.seriousRequestViewsUsed ?? 0;
 
     return {
       billingMonth,
@@ -303,6 +305,11 @@ export class QuotaService {
         limit: featuredLimit,
         used: featuredUsed,
         remaining: Math.max(0, featuredLimit - featuredUsed),
+      },
+      seriousRequestViews: {
+        limit: seriousViewLimit,
+        used: seriousViewUsed,
+        remaining: Math.max(0, seriousViewLimit - seriousViewUsed),
       },
     };
   }
