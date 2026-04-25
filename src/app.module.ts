@@ -19,6 +19,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { BillingModule } from './modules/monetization/billing.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { AttachmentModule } from './modules/attachment/attachment.module';
+import { AppSettingsModule } from './modules/app-settings/app-settings.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { AttachmentModule } from './modules/attachment/attachment.module';
     BillingModule,
     StorageModule,
     AttachmentModule,
+    AppSettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

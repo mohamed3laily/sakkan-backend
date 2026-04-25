@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { MeRepository } from './me.repo';
 import { ChangePhoneDto, UpdateMeDto } from './dto/me.dto';
 import { PhoneUtils } from 'src/modules/auth/utils/phone.utils';
@@ -30,7 +35,7 @@ export class MeService {
     }
 
     const current = await this.meRepo.getMe(userId);
-    if (current!.phone === normalized) {
+    if (current.phone === normalized) {
       return current;
     }
 

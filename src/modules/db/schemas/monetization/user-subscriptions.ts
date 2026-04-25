@@ -1,4 +1,13 @@
-import { boolean, index, integer, jsonb, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  serial,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { subscriptionStatusEnum } from './enums';
 import { subscriptionPlans } from './subscription-plans';
 import { users } from '../user/user';

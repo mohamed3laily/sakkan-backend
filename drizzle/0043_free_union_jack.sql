@@ -1,0 +1,1 @@
+ALTER TABLE "app_settings" ALTER COLUMN "phone" SET DATA TYPE varchar(32)[] USING ARRAY[phone];

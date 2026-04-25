@@ -15,7 +15,7 @@ import { AdminJwtAuthGuard } from '../auth/guards/admin-jwt-auth.guard';
 import { UpdateListingStatusDto } from './dto/update-listing-status.dto';
 
 @UseGuards(AdminJwtAuthGuard)
-@Controller('')
+@Controller('admin/listings')
 export class ListingsController {
   constructor(private readonly service: ListingsService) {}
 
