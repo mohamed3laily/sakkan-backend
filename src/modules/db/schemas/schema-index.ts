@@ -1,3 +1,6 @@
+// app
+export * from './app/app-settings';
+
 // users
 export * from './user/user';
 export * from './user/enums';

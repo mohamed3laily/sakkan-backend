@@ -22,14 +22,19 @@ export class SubscriptionWalletService {
       ? await this.quotaService.getWalletQuotasForActiveSubscription(userId, sub)
       : null;
 
+    const snap = sub?.subscription.planSnapshot;
+
     return {
       subscription: sub
         ? {
-            planNameEn: sub.plan.displayNameEn,
-            planNameAr: sub.plan.displayNameAr,
+            planNameEn: snap?.displayNameEn ?? sub.plan.displayNameEn,
+            planNameAr: snap?.displayNameAr ?? sub.plan.displayNameAr,
+            priceEgp: snap?.priceEgp ?? sub.plan.priceEgp,
+            billingPeriod: snap?.billingPeriod ?? sub.plan.billingPeriod,
+            deviceLimit: snap?.deviceLimit ?? sub.plan.deviceLimit,
+            paidEgp: sub.subscription.paidEgp,
             status: sub.subscription.status,
             periodEnd: sub.subscription.periodEnd,
-            deviceLimit: sub.plan.deviceLimit,
             quotas,
           }
         : null,

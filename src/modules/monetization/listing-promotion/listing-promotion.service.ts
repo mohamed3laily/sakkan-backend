@@ -13,13 +13,11 @@ export class ListingPromotionService {
     private readonly drizzle: DrizzleService,
   ) {}
 
-
   async promoteToPremium(listingId: number, userId: number, paymentId: number | null = null) {
     return this.drizzle.db.transaction((tx) =>
       this.promoteToPremiumInTransaction(tx, listingId, userId, paymentId),
     );
   }
-
 
   async promoteToPremiumInTransaction(
     tx: AppTransaction,
@@ -60,7 +58,10 @@ export class ListingPromotionService {
     }
 
     if (listing.listingType === 'REQUEST') {
-      const deduction = await this.quotaService.checkAndDeductForSeriousRequestPublishTx(tx, userId);
+      const deduction = await this.quotaService.checkAndDeductForSeriousRequestPublishTx(
+        tx,
+        userId,
+      );
 
       const row = await this.listingsRepository.publishAsPremiumInTx(
         tx,

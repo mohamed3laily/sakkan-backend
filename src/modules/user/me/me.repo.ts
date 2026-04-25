@@ -4,7 +4,7 @@ import { users } from 'src/modules/db/schemas/user/user';
 import { cities } from 'src/modules/db/schemas/cities/cities';
 import { subscriptionPlans, userSubscriptions } from 'src/modules/db/schemas/schema-index';
 import { and, eq, sql } from 'drizzle-orm';
-import { UpdateMeDto } from './dto/me.dto';
+import type { MeRepositoryUpdate } from './dto/me.dto';
 
 @Injectable()
 export class MeRepository {
@@ -50,7 +50,16 @@ export class MeRepository {
     return user || null;
   }
 
-  async updateMe(userId: number, dto: UpdateMeDto) {
+  async findUserIdByPhone(phone: string): Promise<number | null> {
+    const [row] = await this.drizzle.db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.phone, phone))
+      .limit(1);
+    return row?.id ?? null;
+  }
+
+  async updateMe(userId: number, dto: MeRepositoryUpdate) {
     const [user] = await this.drizzle.db
       .update(users)
       .set(dto)

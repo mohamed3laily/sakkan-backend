@@ -14,6 +14,12 @@ export class AuthRepo {
     });
   }
 
+  async getUserById(id: number) {
+    return this.drizzleService.db.query.users.findFirst({
+      where: eq(users.id, id),
+    });
+  }
+
   async insertUser(
     userData: RegisterDto,
     verifyPhoneToken?: string,

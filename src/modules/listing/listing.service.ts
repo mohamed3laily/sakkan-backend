@@ -34,7 +34,12 @@ export class ListingService {
       dto.makePremium === true
         ? await this.drizzle.db.transaction(async (tx) => {
             const row = await this.repo.createInTx(tx, userId, dto);
-            await this.listingPromotionService.promoteToPremiumInTransaction(tx, row.id, userId, null);
+            await this.listingPromotionService.promoteToPremiumInTransaction(
+              tx,
+              row.id,
+              userId,
+              null,
+            );
             return row;
           })
         : await this.repo.create(userId, dto);

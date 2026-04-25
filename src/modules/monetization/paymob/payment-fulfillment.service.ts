@@ -33,6 +33,7 @@ export class PaymentFulfillmentService {
       planId,
       paymentId: payment.id,
       paymobOrderId: payment.paymobOrderId ?? '',
+      paidAmountPiasters: payment.amountPiasters,
     });
 
     this.logger.log(`Subscription activated: user=${payment.userId} plan=${planId}`);

@@ -10,7 +10,12 @@ import { ListingSortDto } from './dto/listing-sort.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { buildListingOrderBy, buildListingWhere } from './builders/listing-query.builder';
 import { ListingSelectBuilder } from './builders/listing-select.builder';
-import { attachments, subscriptionPlans, userSubscriptions, users } from '../db/schemas/schema-index';
+import {
+  attachments,
+  subscriptionPlans,
+  userSubscriptions,
+  users,
+} from '../db/schemas/schema-index';
 import type { AppTransaction } from '../monetization/monetization-db.types';
 
 const PREMIUM_EXPIRY_DAYS = 15;
