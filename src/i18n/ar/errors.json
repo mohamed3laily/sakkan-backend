@@ -5,4 +5,7 @@
   "INVALID_FILE_TYPE": "نوع الملف غير صالح",
   "INVALID_PAYMOB_HMAC": "توقيع إشعار الدفع غير صالح",
   "PAYMENT_GATEWAY_ERROR": "خطأ في بوابة الدفع",
-  "PAYMENT_FULFILLMENT_FAILED": "تم الدفع لكن تعذر إتمام الخدمة؛ يرجى التواصل مع الدعم"}
+  "PAYMENT_FULFILLMENT_FAILED": "تم الدفع لكن تعذر إتمام الخدمة؛ يرجى التواصل مع الدعم",
+  "NO_SUBSCRIPTION": "يلزم وجود اشتراك نشط لعرض بيانات التواصل",
+  "VIEW_QUOTA_EXHAUSTED": "لقد استنفدتَ جميع مشاهدات طلبات الجدية لهذه الفاتورة"
+}

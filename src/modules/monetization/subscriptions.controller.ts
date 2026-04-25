@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Post,
@@ -16,6 +18,7 @@ import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.in
 import { PaymobCheckoutService } from './checkout/paymob-checkout.service';
 import { CreditsService } from './credits/credits.service';
 import type { PurchaseCreditsDto, SubscribeDto } from './dto';
+import { ListingPromotionService } from './listing-promotion/listing-promotion.service';
 import { SubscriptionService } from './subscription/subscription.service';
 import { SubscriptionWalletService } from './subscription/subscription-wallet.service';
 import { Public } from 'src/common/decorators/public.decorator';
@@ -31,6 +34,7 @@ export class SubscriptionsController {
     private readonly walletService: SubscriptionWalletService,
     private readonly creditsService: CreditsService,
     private readonly config: ConfigService,
+    private readonly listingPromotionService: ListingPromotionService,
   ) {}
 
   @Post('purchase/credits')
@@ -77,5 +81,14 @@ export class SubscriptionsController {
   @Post('testing/reset-subscription')
   resetSubscriptionForTesting(@CurrentUser() user: AuthenticatedUser) {
     return this.subscriptionService.deleteAllSubscriptionsForTesting(user.id);
+  }
+
+  @Post('listings/:id/reveal-serious')
+  @HttpCode(HttpStatus.OK)
+  revealSeriousRequest(
+    @Param('id', ParseIntPipe) listingId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.listingPromotionService.revealSeriousRequest(listingId, user.id);
   }
 }

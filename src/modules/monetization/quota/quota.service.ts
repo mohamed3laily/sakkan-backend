@@ -4,10 +4,10 @@ import { and, eq, sql } from 'drizzle-orm';
 import { DrizzleService } from '../../db/drizzle.service';
 import { oneTimeCredits } from '../../db/schemas/monetization/one-time-credits';
 import { quotaUsage } from '../../db/schemas/monetization/quota-usage';
-import { seriousRequestUnlocks } from '../../db/schemas/monetization/serious-request-unlocks';
 import { subscriptionPlans } from '../../db/schemas/monetization/subscription-plans';
 import { userSubscriptions } from '../../db/schemas/monetization/user-subscriptions';
 import type { AppTransaction } from '../monetization-db.types';
+import { SeriousRequestUnlockRepository } from './serious-request-unlock.repository';
 import type {
   ActiveSubscriptionForWalletQuotas,
   FeaturedPublishCheck,
@@ -30,7 +30,10 @@ export type {
 
 @Injectable()
 export class QuotaService {
-  constructor(private readonly drizzle: DrizzleService) {}
+  constructor(
+    private readonly drizzle: DrizzleService,
+    private readonly seriousRequestUnlockRepository: SeriousRequestUnlockRepository,
+  ) {}
 
   // ── Featured ad (OFFER) publish ──────────────────────────────────────────
 
@@ -231,20 +234,8 @@ export class QuotaService {
   ): Promise<SeriousViewResult> {
     return this.drizzle.db.transaction(async (tx) => {
       // Re-viewing an already-unlocked listing is free.
-      const existing = await tx
-        .select()
-        .from(seriousRequestUnlocks)
-        .where(
-          and(
-            eq(seriousRequestUnlocks.userId, userId),
-            eq(seriousRequestUnlocks.listingId, listingId),
-          ),
-        )
-        .limit(1);
-
-      if (existing[0]) {
-        const remaining = await this.getRemainingViewQuotaTx(tx, userId);
-        return { alreadyUnlocked: true, remainingViews: remaining };
+      if (await this.seriousRequestUnlockRepository.isUnlockedTx(tx, listingId, userId)) {
+        return { alreadyUnlocked: true };
       }
 
       const sub = await this.getActiveSubscriptionTx(tx, userId);
@@ -282,7 +273,7 @@ export class QuotaService {
           },
         });
 
-      await tx.insert(seriousRequestUnlocks).values({ userId, listingId });
+      await this.seriousRequestUnlockRepository.createUnlockTx(tx, listingId, userId);
 
       return { alreadyUnlocked: false, remainingViews: quotaLimit - used - 1 };
     });
@@ -419,21 +410,6 @@ export class QuotaService {
 
     const used = usage[0]?.featuredAdUsed ?? 0;
     return Math.max(0, sub.plan.featuredAdQuotaPerMonth - used);
-  }
-
-  private async getRemainingViewQuotaTx(tx: AppTransaction, userId: number): Promise<number> {
-    const sub = await this.getActiveSubscriptionTx(tx, userId);
-    if (!sub) return 0;
-
-    const billingMonth = this.getCurrentBillingMonth(sub.periodStart, sub.periodEnd);
-    const usage = await tx
-      .select()
-      .from(quotaUsage)
-      .where(and(eq(quotaUsage.userId, userId), eq(quotaUsage.billingMonth, billingMonth)))
-      .limit(1);
-
-    const used = usage[0]?.seriousRequestViewsUsed ?? 0;
-    return Math.max(0, sub.plan.seriousRequestViewsQuotaPerMonth - used);
   }
 
   private getCurrentBillingMonth(periodStart: Date | string, periodEnd: Date | string): string {
