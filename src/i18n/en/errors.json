@@ -5,4 +5,7 @@
   "INVALID_FILE_TYPE": "Invalid file type",
   "INVALID_PAYMOB_HMAC": "Invalid payment callback signature",
   "PAYMENT_GATEWAY_ERROR": "Payment gateway error",
-  "PAYMENT_FULFILLMENT_FAILED": "Payment succeeded but fulfillment failed; please contact support"}
+  "PAYMENT_FULFILLMENT_FAILED": "Payment succeeded but fulfillment failed; please contact support",
+  "NO_SUBSCRIPTION": "An active subscription is required to view this contact",
+  "VIEW_QUOTA_EXHAUSTED": "You have used all serious request views for this billing period"
+}

@@ -11,10 +11,13 @@ export type SeriousPublishResult = {
   remainingAfter: { purchasedCredits: number };
 };
 
-export type SeriousViewResult = {
-  alreadyUnlocked: boolean;
-  remainingViews: number;
-};
+/**
+ * Reveal-serious response: re-unlock is free, so `remainingViews` is only
+ * meaningful after a fresh unlock consumed quota.
+ */
+export type SeriousViewResult =
+  | { alreadyUnlocked: true }
+  | { alreadyUnlocked: false; remainingViews: number };
 
 export type FeaturedPublishCheck =
   | {

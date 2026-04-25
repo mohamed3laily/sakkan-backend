@@ -1,5 +1,6 @@
 {
   "LISTING_DELETED": "Listing deleted",
   "LISTING_NOT_FOUND": "Listing not found",
-  "LOCATION_VALIDATION_FAILED": "Location is outside the selected area"
+  "LOCATION_VALIDATION_FAILED": "Location is outside the selected area",
+  "NOT_A_REQUEST_LISTING": "This action only applies to request listings"
 }
