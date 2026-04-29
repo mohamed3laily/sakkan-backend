@@ -44,4 +44,8 @@ export class AuthRepo {
       where: eq(users.resetToken, token),
     });
   }
+
+  async deleteUserById(id: number) {
+    return this.drizzleService.db.delete(users).where(eq(users.id, id));
+  }
 }

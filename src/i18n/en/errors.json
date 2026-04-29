@@ -7,5 +7,6 @@
   "PAYMENT_GATEWAY_ERROR": "Payment gateway error",
   "PAYMENT_FULFILLMENT_FAILED": "Payment succeeded but fulfillment failed; please contact support",
   "NO_SUBSCRIPTION": "An active subscription is required to view this contact",
-  "VIEW_QUOTA_EXHAUSTED": "You have used all serious request views for this billing period"
+  "VIEW_QUOTA_EXHAUSTED": "You have used all serious request views for this billing period",
+  "SMS_SEND_FAILED": "Could not send SMS; please try again later"
 }

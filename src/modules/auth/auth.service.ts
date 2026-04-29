@@ -7,21 +7,25 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { RequestResetDto, ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { RegisterDto } from './dto/register.dto';
 import { AuthRepo } from './auth.repo';
+import { TorvoSmsService } from '../sms/torvo-sms.service';
 import { PhoneUtils } from './utils/phone.utils';
 
 @Injectable()
 export class AuthService {
   private static readonly BCRYPT_SALT_ROUNDS = 10;
+  private static readonly OTP_LENGTH = 5;
 
   constructor(
     private authRepo: AuthRepo,
     private jwtService: JwtService,
+    private torvoSms: TorvoSmsService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -48,6 +52,14 @@ export class AuthService {
       verifyPhoneToken,
       verifyPhoneTokenExpiry,
     );
+    try {
+      await this.torvoSms.sendQuickSms(
+        normalizedPhone,
+        this.torvoSms.buildPhoneVerificationMessage(verifyPhoneToken),
+      );
+    } catch (err) {
+      throw err;
+    }
     const token = this.generateToken(newUser.id, newUser.phone);
 
     return {
@@ -108,6 +120,11 @@ export class AuthService {
       verifyPhoneToken,
       verifyPhoneTokenExpiry,
     });
+
+    await this.torvoSms.sendQuickSms(
+      normalizedPhone,
+      this.torvoSms.buildPhoneVerificationMessage(verifyPhoneToken),
+    );
 
     return { message: 'VERIFY_OTP_SENT' };
   }
@@ -170,7 +187,10 @@ export class AuthService {
       resetTokenExpiry,
     });
 
-    // TODO: Send reset token via SMS provider
+    await this.torvoSms.sendQuickSms(
+      normalizedPhone,
+      this.torvoSms.buildPasswordResetMessage(resetToken),
+    );
 
     return { message: 'RESET_SENT' };
   }
@@ -198,7 +218,10 @@ export class AuthService {
       resetTokenExpiry,
     });
 
-    // TODO: Send reset token via SMS provider
+    await this.torvoSms.sendQuickSms(
+      normalizedPhone,
+      this.torvoSms.buildPasswordResetMessage(resetToken),
+    );
 
     return { message: 'RESET_RESENT' };
   }
@@ -288,11 +311,15 @@ export class AuthService {
   }
 
   private generateResetToken(): string {
-    // TODO: Replace with cryptographically secure generator
-    return '11111';
+    return this.generateNumericOtp(AuthService.OTP_LENGTH);
   }
+
   private generateVerifyPhoneToken(): string {
-    // TODO: Replace with cryptographically secure generator
-    return '11111';
+    return this.generateNumericOtp(AuthService.OTP_LENGTH);
+  }
+
+  private generateNumericOtp(digits: number): string {
+    const max = 10 ** digits;
+    return String(crypto.randomInt(0, max)).padStart(digits, '0');
   }
 }

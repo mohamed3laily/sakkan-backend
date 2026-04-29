@@ -9,10 +9,12 @@ import { DrizzleModule } from 'src/modules/db/drizzle.module';
 import type { StringValue } from 'ms';
 import { AuthRepo } from './auth.repo';
 import { UserModule } from '../user/user.module';
+import { SmsModule } from '../sms/sms.module';
 
 @Module({
   imports: [
     DrizzleModule,
+    SmsModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
