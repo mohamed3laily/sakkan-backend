@@ -10,7 +10,7 @@ import {
   real,
 } from 'drizzle-orm/pg-core';
 import { timestamps } from '../timestamps';
-import { userTypeEnum } from './enums';
+import { userLanguageEnum, userTypeEnum } from './enums';
 import { cities } from '../schema-index';
 
 export type SelectUser = typeof users.$inferSelect;
@@ -51,5 +51,7 @@ export const users = pgTable('users', {
   resetToken: text('reset_token'),
   resetTokenExpiry: timestamp('reset_token_expiry'),
   deactivatedAt: timestamp('deactivated_at'),
+  language: userLanguageEnum('language').default('AR').notNull(),
+  fcmToken: text('fcm_token'),
   ...timestamps,
 });

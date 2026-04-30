@@ -23,7 +23,9 @@ export class MeService {
   }
 
   async updateMe(userId: number, dto: UpdateMeDto) {
-    return this.meRepo.updateMe(userId, dto);
+    await this.meRepo.updateMe(userId, dto);
+    const profile = await this.meRepo.getMe(userId);
+    return profile;
   }
 
   async changePhone(userId: number, dto: ChangePhoneDto) {

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CityRepository } from './city.repo';
 
 @Injectable()
@@ -11,5 +11,9 @@ export class CityService {
 
   async getAreasByCity(cityId: number, name?: string) {
     return this.repo.findCityAreas(cityId, name);
+  }
+
+  async findCityById(id: number) {
+    return this.repo.findCityById(id);
   }
 }

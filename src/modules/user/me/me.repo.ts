@@ -4,7 +4,7 @@ import { users } from 'src/modules/db/schemas/user/user';
 import { cities } from 'src/modules/db/schemas/cities/cities';
 import { subscriptionPlans, userSubscriptions } from 'src/modules/db/schemas/schema-index';
 import { and, eq, sql } from 'drizzle-orm';
-import type { MeRepositoryUpdate } from './dto/me.dto';
+import type {  UpdateMeDto } from './dto/me.dto';
 
 @Injectable()
 export class MeRepository {
@@ -30,6 +30,8 @@ export class MeRepository {
         },
         contactViaWhatsapp: users.contactViaWhatsapp,
         contactViaPhone: users.contactViaPhone,
+        language: users.language,
+        fcmToken: users.fcmToken,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
         isVerified: sql<boolean>`COALESCE(${subscriptionPlans.hasVerifiedBadge}, false)`,
@@ -59,7 +61,7 @@ export class MeRepository {
     return row?.id ?? null;
   }
 
-  async updateMe(userId: number, dto: MeRepositoryUpdate) {
+  async updateMe(userId: number, dto: UpdateMeDto) {
     const [user] = await this.drizzle.db
       .update(users)
       .set(dto)
@@ -77,6 +79,8 @@ export class MeRepository {
         socialMediaLinks: users.socialMediaLinks,
         contactViaWhatsapp: users.contactViaWhatsapp,
         contactViaPhone: users.contactViaPhone,
+        language: users.language,
+        fcmToken: users.fcmToken,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
       });

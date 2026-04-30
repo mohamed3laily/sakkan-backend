@@ -7,10 +7,20 @@ import { GeoValidationService } from './geo-validation.service';
 import { AttachmentModule } from '../attachment/attachment.module';
 import { BillingModule } from '../monetization/billing.module';
 import { ContactGateInterceptor } from './interceptors/contact-gate.interceptor';
+import { NotificationModule } from '../notification/notification.module';
+import { ListingCreatedNotificationService } from './listing-created-notification.service';
+import { ListingPostCreateService } from './listing-post-create.service';
 
 @Module({
-  imports: [CityModule, AttachmentModule, forwardRef(() => BillingModule)],
-  providers: [ListingService, ListingsRepository, GeoValidationService, ContactGateInterceptor],
+  imports: [CityModule, AttachmentModule, forwardRef(() => BillingModule), NotificationModule],
+  providers: [
+    ListingService,
+    ListingsRepository,
+    GeoValidationService,
+    ContactGateInterceptor,
+    ListingCreatedNotificationService,
+    ListingPostCreateService,
+  ],
   controllers: [ListingController],
   exports: [ListingsRepository],
 })
