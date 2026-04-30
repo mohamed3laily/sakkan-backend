@@ -8,23 +8,21 @@ import { ListingSortDto } from './dto/listing-sort.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { ListingQueryDto } from './dto/listing-query.dto';
 import { PaginationService } from 'src/common/services/pagination.service';
-import { CityQueue } from '../city/city.queue';
-import { GeoValidationService } from './geo-validation.service';
-import { AttachmentService } from '../attachment/attachment.service';
 import { DrizzleService } from '../db/drizzle.service';
+import { GeoValidationService } from './geo-validation.service';
 import { ListingPromotionService } from '../monetization/listing-promotion/listing-promotion.service';
+import { ListingPostCreateService } from './listing-post-create.service';
 
 @Injectable()
 export class ListingService {
   constructor(
     private readonly repo: ListingsRepository,
     private readonly paginationService: PaginationService,
-    private readonly cityQueue: CityQueue,
     private readonly geoValidationService: GeoValidationService,
-    private readonly attachmentService: AttachmentService,
     private readonly drizzle: DrizzleService,
     @Inject(forwardRef(() => ListingPromotionService))
     private readonly listingPromotionService: ListingPromotionService,
+    private readonly listingPostCreate: ListingPostCreateService,
   ) {}
 
   async createListing(userId: number, dto: CreateListingDto, images: Express.Multer.File[] = []) {
@@ -44,12 +42,12 @@ export class ListingService {
           })
         : await this.repo.create(userId, dto);
 
-    await Promise.all([
-      images.length > 0
-        ? this.attachmentService.createMany('LISTING', listing.id, images)
-        : Promise.resolve(),
-      this.cityQueue.incrementListingCount(dto.cityId),
-    ]);
+    await this.listingPostCreate.run({
+      listingId: listing.id,
+      dto,
+      creatorUserId: userId,
+      images,
+    });
 
     return listing;
   }

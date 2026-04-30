@@ -20,6 +20,7 @@ import { BillingModule } from './modules/monetization/billing.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { AttachmentModule } from './modules/attachment/attachment.module';
 import { AppSettingsModule } from './modules/app-settings/app-settings.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { AppSettingsModule } from './modules/app-settings/app-settings.module';
     StorageModule,
     AttachmentModule,
     AppSettingsModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

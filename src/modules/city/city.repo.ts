@@ -3,7 +3,6 @@ import { and, eq, ilike, or } from 'drizzle-orm';
 import { cities } from '../db/schemas/cities/cities';
 import { areas } from '../db/schemas/cities/areas';
 import { DrizzleService } from '../db/drizzle.service';
-import { geometry } from 'drizzle-orm/pg-core';
 
 @Injectable()
 export class CityRepository {
@@ -26,6 +25,19 @@ export class CityRepository {
       .from(cities)
       .orderBy(cities.id)
       .where(conditions);
+  }
+
+  async findCityById(id: number) {
+    const [row] = await this.drizzleService.db
+      .select({
+        id: cities.id,
+        nameEn: cities.nameEn,
+        nameAr: cities.nameAr,
+      })
+      .from(cities)
+      .where(eq(cities.id, id))
+      .limit(1);
+    return row ?? null;
   }
 
   async findCityAreas(cityId: number, name?: string) {

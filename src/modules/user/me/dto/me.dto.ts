@@ -1,6 +1,14 @@
 import { SocialMediaLinks } from 'src/modules/db/schemas/user/user';
-import { IsNotEmpty, IsOptional, IsString, IsObject, IsIn } from 'class-validator';
-import { userTypeEnum } from 'src/modules/db/schemas/user/enums';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsObject,
+  IsIn,
+  MaxLength,
+  IsDate,
+} from 'class-validator';
+import { userTypeEnum, userLanguageEnum, type UserLanguage } from 'src/modules/db/schemas/user/enums';
 
 export class UpdateMeDto {
   @IsOptional()
@@ -41,7 +49,24 @@ export class UpdateMeDto {
   type?: (typeof userTypeEnum.enumValues)[number];
 
   @IsOptional()
-  profilePicture: string;
+  @IsIn(userLanguageEnum.enumValues)
+  language?: UserLanguage;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(4096)
+  fcmToken?: string;
+
+  @IsOptional()
+  @IsString()
+  profilePicture?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  verifiedPhoneAt?: Date | null;
 }
 
 export class ChangePhoneDto {
@@ -50,7 +75,5 @@ export class ChangePhoneDto {
   phone: string;
 }
 
-export type MeRepositoryUpdate = Partial<UpdateMeDto> & {
-  phone?: string;
-  verifiedPhoneAt?: Date | null;
-};
+
+
