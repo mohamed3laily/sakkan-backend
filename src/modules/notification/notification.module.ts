@@ -10,6 +10,7 @@ import { NotificationProcessor } from './jobs/notification.processor';
 import { NotificationQueue } from './jobs/notification.queue';
 import { NotificationRepository } from './repositories/notification.repository';
 import { NotificationService } from './services/notification.service';
+import { TodoReminderScheduler } from './jobs/todo-reminder.scheduler';
 
 @Module({
   imports: [BullModule.registerQueue({ name: QUEUES.NOTIFICATION })],
@@ -21,6 +22,7 @@ import { NotificationService } from './services/notification.service';
     NotificationRepository,
     NotificationProcessor,
     NotificationQueue,
+    TodoReminderScheduler,
   ],
   exports: [NotificationQueue],
 })

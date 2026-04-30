@@ -8,7 +8,11 @@ import {
   MaxLength,
   IsDate,
 } from 'class-validator';
-import { userTypeEnum, userLanguageEnum, type UserLanguage } from 'src/modules/db/schemas/user/enums';
+import {
+  userTypeEnum,
+  userLanguageEnum,
+  type UserLanguage,
+} from 'src/modules/db/schemas/user/enums';
 
 export class UpdateMeDto {
   @IsOptional()
@@ -74,6 +78,3 @@ export class ChangePhoneDto {
   @IsNotEmpty()
   phone: string;
 }
-
-
-

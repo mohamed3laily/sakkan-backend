@@ -13,6 +13,8 @@ const BILINGUAL_PAIRS: BilingualPair[] = [
     arKey: 'termsAndConditionsAr',
     outKey: 'termsAndConditions',
   },
+  { enKey: 'titleEn', arKey: 'titleAr', outKey: 'title' },
+  { enKey: 'bodyEn', arKey: 'bodyAr', outKey: 'body' },
 ];
 
 @Injectable()

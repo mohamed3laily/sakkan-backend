@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, desc, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, ne, or, sql } from 'drizzle-orm';
 
 import { DrizzleService } from '../../db/drizzle.service';
 import {
@@ -8,10 +8,19 @@ import {
   type SelectNotification,
 } from '../../db/schemas/notifications/notifications';
 import { preferences } from '../../db/schemas/preferences/preferences';
+import { todos } from '../../db/schemas/todos/todos';
 import { users } from '../../db/schemas/user/user';
 
 export type PushTargetUser = {
   id: number;
+  fcmToken: string | null;
+  language: string;
+};
+
+export type TodoReminderRow = {
+  id: number;
+  title: string;
+  userId: number;
   fcmToken: string | null;
   language: string;
 };
@@ -53,7 +62,7 @@ export class NotificationRepository {
     return { data, total };
   }
 
-  async markAllAsRead(userId: number){
+  async markAllAsRead(userId: number) {
     return this.drizzle.db
       .update(notifications)
       .set({ readAt: new Date() })
@@ -137,5 +146,32 @@ export class NotificationRepository {
       return '';
     }
     return `${row.firstName} ${row.lastName}`.trim();
+  }
+
+  async findTodosDueInTwoHours(): Promise<TodoReminderRow[]> {
+    const now = Date.now();
+    const windowStart = new Date(now + 110 * 60 * 1000).toISOString();
+    const windowEnd = new Date(now + 120 * 60 * 1000).toISOString();
+
+    return this.drizzle.db
+      .select({
+        id: todos.id,
+        title: todos.title,
+        userId: todos.userId,
+        fcmToken: users.fcmToken,
+        language: users.language,
+      })
+      .from(todos)
+      .innerJoin(users, eq(todos.userId, users.id))
+      .where(
+        and(
+          isNull(todos.doneAt),
+          isNull(users.deactivatedAt),
+          eq(todos.remindMe, true),
+          isNotNull(todos.dueDate),
+          gte(todos.dueDate, windowStart),
+          lt(todos.dueDate, windowEnd),
+        ),
+      );
   }
 }

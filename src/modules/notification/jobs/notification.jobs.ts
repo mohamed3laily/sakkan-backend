@@ -21,7 +21,15 @@ export type DispatchListingRequestPayload = {
   requesterUserId: number;
 };
 
+export type DispatchTodoReminderPayload = {
+  type: 'TODO_REMINDER';
+  todoId: number;
+  userId: number;
+  todoTitle: string;
+};
+
 export type NotificationJobPayload =
   | DispatchPreferenceMatchPayload
   | DispatchSeriousListingPayload
-  | DispatchListingRequestPayload;
+  | DispatchListingRequestPayload
+  | DispatchTodoReminderPayload;
