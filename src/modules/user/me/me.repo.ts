@@ -4,7 +4,7 @@ import { users } from 'src/modules/db/schemas/user/user';
 import { cities } from 'src/modules/db/schemas/cities/cities';
 import { subscriptionPlans, userSubscriptions } from 'src/modules/db/schemas/schema-index';
 import { and, eq, sql } from 'drizzle-orm';
-import type {  UpdateMeDto } from './dto/me.dto';
+import type { UpdateMeDto } from './dto/me.dto';
 
 @Injectable()
 export class MeRepository {

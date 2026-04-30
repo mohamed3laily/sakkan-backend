@@ -18,9 +18,9 @@ export class NotificationService {
     return this.paginationService.createPaginatedResponse(data, total, page, limit);
   }
 
-  async markAllAsRead(userId: number)  {
-     await this.repo.markAllAsRead(userId);
-     return { message: 'ALL_NOTIFICATIONS_MARKED_AS_READ' };
+  async markAllAsRead(userId: number) {
+    await this.repo.markAllAsRead(userId);
+    return { message: 'ALL_NOTIFICATIONS_MARKED_AS_READ' };
   }
 
   async getUnreadCount(userId: number): Promise<{ count: number }> {

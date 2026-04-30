@@ -15,12 +15,12 @@ interface BilingualMessage<TData> {
 }
 
 export const NOTIFICATION_MESSAGES: Record<
-NotifiableType,
+  NotifiableType,
   BilingualMessage<Record<string, string>>
 > = {
   LISTING_PREFERENCE_MATCH: {
     ar: (d) => ({
-      title: "طلب جديد قد يهمك",
+      title: 'طلب جديد قد يهمك',
       body: `تم نشر طلب جديد قد يهمك بناء على اهتماماتك`,
     }),
     en: (d) => ({
@@ -31,7 +31,7 @@ NotifiableType,
 
   SERIOUS_LISTING_CREATED: {
     ar: (d) => ({
-      title: "طلب جاد قد يهمك",
+      title: 'طلب جاد قد يهمك',
       body: `نشر طلب جاد قد يهمكو تواصل مع الطالب الأن`,
     }),
     en: (d) => ({
@@ -48,6 +48,17 @@ NotifiableType,
     en: (d) => ({
       title: 'New listing request',
       body: `${d.requesterName} created a listing request and asked for your help.`,
+    }),
+  },
+
+  TODO_REMINDER: {
+    ar: (d) => ({
+      title: 'تذكير بمهمة',
+      body: `موعد المهمة "${d.todoTitle}" بعد ساعتين.`,
+    }),
+    en: (d) => ({
+      title: 'Task reminder',
+      body: `Your task "${d.todoTitle}" is due in 2 hours.`,
     }),
   },
 };

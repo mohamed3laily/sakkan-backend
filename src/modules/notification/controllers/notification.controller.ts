@@ -1,4 +1,6 @@
-import { Controller, Get, Patch, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+
+import { TranslateInterceptor } from 'src/common/interceptors/translate.interceptor';
 
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -8,6 +10,7 @@ import { NotificationQueryDto } from '../dto/notification-query.dto';
 import { NotificationService } from '../services/notification.service';
 
 @UseGuards(JwtAuthGuard)
+@UseInterceptors(TranslateInterceptor)
 @Controller('notifications')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}

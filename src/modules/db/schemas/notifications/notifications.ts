@@ -7,6 +7,7 @@ export const notifiableTypeEnum = pgEnum('notification_type', [
   'LISTING_PREFERENCE_MATCH',
   'SERIOUS_LISTING_CREATED',
   'LISTING_REQUEST_RECEIVED',
+  'TODO_REMINDER',
 ]);
 
 export type NotifiableType = (typeof notifiableTypeEnum.enumValues)[number];
