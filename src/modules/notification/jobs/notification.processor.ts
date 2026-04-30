@@ -15,8 +15,9 @@ import {
   type PushTargetUser,
 } from '../repositories/notification.repository';
 
+import type { FcmPayload, NotifiableMeta } from '../types/notification.types';
+
 import { type NotificationJobPayload } from './notification.jobs';
-import type { FcmPayload, NotifiableMeta } from './notification.types';
 
 @Processor(QUEUES.NOTIFICATION)
 export class NotificationProcessor extends WorkerHost {
