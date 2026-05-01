@@ -13,6 +13,11 @@ const BILINGUAL_PAIRS: BilingualPair[] = [
     arKey: 'termsAndConditionsAr',
     outKey: 'termsAndConditions',
   },
+  {
+    enKey: 'privacyPolicyEn',
+    arKey: 'privacyPolicyAr',
+    outKey: 'privacyPolicy',
+  },
   { enKey: 'titleEn', arKey: 'titleAr', outKey: 'title' },
   { enKey: 'bodyEn', arKey: 'bodyAr', outKey: 'body' },
 ];

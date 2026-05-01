@@ -11,5 +11,7 @@ export const appSettings = pgTable('app_settings', {
   email: varchar('email', { length: 255 }).notNull(),
   termsAndConditionsEn: text('terms_and_conditions_en').notNull(),
   termsAndConditionsAr: text('terms_and_conditions_ar').notNull(),
+  privacyPolicyEn: text('privacy_policy_en'),
+  privacyPolicyAr: text('privacy_policy_ar'),
   ...timestamps,
 });
