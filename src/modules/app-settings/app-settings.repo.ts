@@ -14,6 +14,8 @@ export class AppSettingsRepository {
         email: appSettings.email,
         termsAndConditionsEn: appSettings.termsAndConditionsEn,
         termsAndConditionsAr: appSettings.termsAndConditionsAr,
+        privacyPolicyEn: appSettings.privacyPolicyEn,
+        privacyPolicyAr: appSettings.privacyPolicyAr,
       })
       .from(appSettings)
       .limit(1);
