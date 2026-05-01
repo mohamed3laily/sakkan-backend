@@ -3,12 +3,14 @@ import { Injectable } from '@nestjs/common';
 import { DrizzleService } from '../drizzle.service';
 import { appSettings } from '../schemas/app/app-settings';
 
+import { PRIVACY_AR, PRIVACY_EN } from './app-settings-privacy.strings';
+
 const TERMS_EN = `TERMS AND CONDITIONS
 
 Last updated: 25 April 2026
 
 1. INTRODUCTION
-These Terms and Conditions ("Terms") govern your access to and use of the Sakkan mobile application and related services (the "Service"), operated by us. By creating an account, listing a property, or otherwise using the Service, you agree to be bound by these Terms. If you do not agree, you must not use the Service.
+These Terms and Conditions ("Terms") govern your access to and use of the Sakan mobile application and related services (the "Service"), operated by us. By creating an account, listing a property, or otherwise using the Service, you agree to be bound by these Terms. If you do not agree, you must not use the Service.
 
 2. ELIGIBILITY AND ACCOUNTS
 You must be at least 18 years old and legally able to enter into a contract. You are responsible for the accuracy of information you provide, including your name, contact details, and verification materials. You must keep your login credentials secure and notify us immediately of any unauthorized use.
@@ -40,7 +42,7 @@ We may update these Terms from time to time. We will post the revised Terms in t
 10. CONTACT
 For questions about these Terms, contact us using the support phone number and email shown in the app settings.
 
-By using Sakkan, you acknowledge that you have read and understood these Terms and agree to be bound by them.`;
+By using Sakan, you acknowledge that you have read and understood these Terms and agree to be bound by them.`;
 
 const TERMS_AR = `الشروط والأحكام
 
@@ -95,9 +97,11 @@ export class AppSettingsSeed {
     await db.insert(appSettings).values({
       id: 1,
       phones: ['+201559005418'],
-      email: 'Sakan.Offical7@gmail.com',
+      email: 'sakan.support.team@gmail.com',
       termsAndConditionsEn: TERMS_EN,
       termsAndConditionsAr: TERMS_AR,
+      privacyPolicyEn: PRIVACY_EN,
+      privacyPolicyAr: PRIVACY_AR,
     });
 
     console.log('App settings seeded');
