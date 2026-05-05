@@ -1,3 +1,4 @@
 {
-  "ALL_NOTIFICATIONS_MARKED_AS_READ": "All notifications have been read"
+  "ALL_NOTIFICATIONS_MARKED_AS_READ": "All notifications have been read",
+  "NOTIFICATION_TEST_QUEUED": "Test notification has been queued"
 }

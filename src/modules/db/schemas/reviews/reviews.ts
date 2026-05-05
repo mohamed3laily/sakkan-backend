@@ -6,7 +6,7 @@ import { reviewableTypeEnum, reviewServiceTypeEnum } from './enums';
 export const reviews = pgTable('reviews', {
   id: serial('id').primaryKey(),
   reviewerId: integer('reviewer_id')
-    .references(() => users.id)
+    .references(() => users.id, { onDelete: 'cascade' })
     .notNull(),
   reviewableId: integer('reviewable_id').notNull(),
   reviewableType: reviewableTypeEnum('reviewable_type').notNull(),

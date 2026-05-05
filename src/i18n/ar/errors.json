@@ -1,4 +1,7 @@
 {
+  "NOTIFICATION_TEST_DISABLED": "تعذر استخدام نقطة اختبار الإشعارات لأنها معطّلة",
+  "NOTIFICATION_TEST_BROADCAST_NOT_ALLOWED": "نوع الإشعار هذا يستهدف عدداً كبيراً من المستخدمين ولا يمكن استخدامه لاختبار مستخدم واحد",
+  "NOTIFICATION_TEST_NO_FIXTURE": "لا يوجد سجل مناسب في قاعدة البيانات لبناء إشعار الاختبار هذا",
   "NOT_FOUND": "المورد غير موجود",
   "AREA_NOT_FOUND": "المنطقة غير موجودة",
   "VALIDATION_ERROR": "فشل التحقق",

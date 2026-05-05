@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, ne, or, sql } from 'drizzle-orm';
 
 import { DrizzleService } from '../../db/drizzle.service';
+import { cities } from '../../db/schemas/cities/cities';
+import { listings } from '../../db/schemas/listing/listing';
+import { subscriptionPlans } from '../../db/schemas/monetization/subscription-plans';
+import { userSubscriptions } from '../../db/schemas/monetization/user-subscriptions';
 import {
   notifications,
   type InsertNotification,
@@ -23,6 +27,13 @@ export type TodoReminderRow = {
   userId: number;
   fcmToken: string | null;
   language: string;
+};
+
+export type SubscriptionExpiryReminderRow = {
+  userSubscriptionId: number;
+  userId: number;
+  planNameEn: string;
+  planNameAr: string;
 };
 
 @Injectable()
@@ -173,5 +184,184 @@ export class NotificationRepository {
           lt(todos.dueDate, windowEnd),
         ),
       );
+  }
+
+  async findSubscriptionsNearingExpiry(
+    daysBeforeEnd: number,
+    windowMs: number,
+  ): Promise<SubscriptionExpiryReminderRow[]> {
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const windowStart = new Date(now + daysBeforeEnd * dayMs);
+    const windowEnd = new Date(now + daysBeforeEnd * dayMs + windowMs);
+
+    const raw = await this.drizzle.db
+      .select({
+        userSubscriptionId: userSubscriptions.id,
+        userId: userSubscriptions.userId,
+        planSnapshot: userSubscriptions.planSnapshot,
+        planDisplayNameEn: subscriptionPlans.displayNameEn,
+        planDisplayNameAr: subscriptionPlans.displayNameAr,
+      })
+      .from(userSubscriptions)
+      .innerJoin(users, eq(userSubscriptions.userId, users.id))
+      .innerJoin(subscriptionPlans, eq(userSubscriptions.planId, subscriptionPlans.id))
+      .where(
+        and(
+          eq(userSubscriptions.status, 'active'),
+          isNull(users.deactivatedAt),
+          gte(userSubscriptions.periodEnd, windowStart),
+          lt(userSubscriptions.periodEnd, windowEnd),
+        ),
+      );
+
+    return raw.map((r) => ({
+      userSubscriptionId: r.userSubscriptionId,
+      userId: r.userId,
+      planNameEn:
+        r.planSnapshot?.displayNameEn ??
+        r.planDisplayNameEn ??
+        r.planSnapshot?.name ??
+        'Subscription',
+      planNameAr:
+        r.planSnapshot?.displayNameAr ??
+        r.planDisplayNameAr ??
+        r.planSnapshot?.name ??
+        'اشتراك',
+    }));
+  }
+
+  async findFixturePreferenceMatch(): Promise<{
+    listingId: number;
+    cityId: number;
+    cityName: string;
+    areaIds: number[];
+    propertyTypeId: number;
+  } | null> {
+    const [row] = await this.drizzle.db
+      .select({
+        listingId: listings.id,
+        cityId: listings.cityId,
+        cityName: cities.nameEn,
+        areaIds: listings.areaIds,
+        propertyTypeId: listings.propertyTypeId,
+      })
+      .from(listings)
+      .innerJoin(cities, eq(listings.cityId, cities.id))
+      .where(
+        and(
+          eq(listings.status, 'PUBLISHED'),
+          isNotNull(listings.propertyTypeId),
+          isNotNull(listings.areaIds),
+          sql`array_length(${listings.areaIds}, 1) > 0`,
+        ),
+      )
+      .orderBy(desc(listings.createdAt))
+      .limit(1);
+
+    if (!row?.areaIds?.length || row.propertyTypeId === null) {
+      return null;
+    }
+
+    return {
+      listingId: row.listingId,
+      cityId: row.cityId,
+      cityName: row.cityName,
+      areaIds: row.areaIds,
+      propertyTypeId: row.propertyTypeId,
+    };
+  }
+
+  async findFixtureSeriousListing(): Promise<{
+    listingId: number;
+    cityName: string;
+    listingType: string;
+  } | null> {
+    const [row] = await this.drizzle.db
+      .select({
+        listingId: listings.id,
+        cityName: cities.nameEn,
+        listingType: listings.listingType,
+      })
+      .from(listings)
+      .innerJoin(cities, eq(listings.cityId, cities.id))
+      .where(and(eq(listings.status, 'PUBLISHED'), eq(listings.listingType, 'REQUEST')))
+      .orderBy(desc(listings.createdAt))
+      .limit(1);
+
+    return row ?? null;
+  }
+
+  async findFixtureTodoForUser(userId: number): Promise<{ id: number; title: string } | null> {
+    const [row] = await this.drizzle.db
+      .select({ id: todos.id, title: todos.title })
+      .from(todos)
+      .where(and(eq(todos.userId, userId), isNull(todos.doneAt)))
+      .orderBy(desc(todos.id))
+      .limit(1);
+    return row ?? null;
+  }
+
+  async findFixtureSubscriptionForUser(userId: number): Promise<{
+    userSubscriptionId: number;
+    planNameEn: string;
+    planNameAr: string;
+  } | null> {
+    const [row] = await this.drizzle.db
+      .select({
+        id: userSubscriptions.id,
+        planSnapshot: userSubscriptions.planSnapshot,
+        displayNameEn: subscriptionPlans.displayNameEn,
+        displayNameAr: subscriptionPlans.displayNameAr,
+      })
+      .from(userSubscriptions)
+      .innerJoin(subscriptionPlans, eq(userSubscriptions.planId, subscriptionPlans.id))
+      .where(
+        and(
+          eq(userSubscriptions.userId, userId),
+          eq(userSubscriptions.status, 'active'),
+          sql`${userSubscriptions.periodEnd} > NOW()`,
+        ),
+      )
+      .limit(1);
+
+    if (!row) {
+      return null;
+    }
+
+    return {
+      userSubscriptionId: row.id,
+      planNameEn: row.planSnapshot?.displayNameEn ?? row.displayNameEn,
+      planNameAr: row.planSnapshot?.displayNameAr ?? row.displayNameAr,
+    };
+  }
+
+  async findFixtureListingRequestForAgent(agentUserId: number): Promise<{
+    listingId: number;
+    requesterUserId: number;
+  } | null> {
+    const [assigned] = await this.drizzle.db
+      .select({
+        listingId: listings.id,
+        requesterUserId: listings.userId,
+      })
+      .from(listings)
+      .where(and(eq(listings.agentId, agentUserId), eq(listings.status, 'PUBLISHED')))
+      .orderBy(desc(listings.id))
+      .limit(1);
+    if (assigned) {
+      return assigned;
+    }
+
+    const [anyPublished] = await this.drizzle.db
+      .select({
+        listingId: listings.id,
+        requesterUserId: listings.userId,
+      })
+      .from(listings)
+      .where(eq(listings.status, 'PUBLISHED'))
+      .orderBy(desc(listings.id))
+      .limit(1);
+    return anyPublished ?? null;
   }
 }
