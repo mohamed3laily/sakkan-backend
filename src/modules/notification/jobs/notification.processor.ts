@@ -51,6 +51,8 @@ export class NotificationProcessor extends WorkerHost {
         return this.handleListingRequest(data);
       case 'TODO_REMINDER':
         return this.handleTodoReminder(data);
+      case 'SUBSCRIPTION_GOING_TO_EXPIRE':
+        return this.handleSubscriptionExpiring(data);
     }
   }
 
@@ -127,6 +129,26 @@ export class NotificationProcessor extends WorkerHost {
       templateData: { todoTitle: data.todoTitle },
       meta: { notifiableId: data.todoId, notifiableType: 'TODO' },
       fcmPayload: { todoId: String(data.todoId) },
+    });
+  }
+
+  private async handleSubscriptionExpiring(
+    data: Extract<NotificationJobPayload, { type: 'SUBSCRIPTION_GOING_TO_EXPIRE' }>,
+  ): Promise<void> {
+    const user = await this.repo.findUserPushTarget(data.userId);
+    if (!user) {
+      return;
+    }
+
+    await this.notify({
+      users: [user],
+      type: 'SUBSCRIPTION_GOING_TO_EXPIRE',
+      templateData: { planNameEn: data.planNameEn, planNameAr: data.planNameAr },
+      meta: {
+        notifiableId: data.userSubscriptionId,
+        notifiableType: 'USER_SUBSCRIPTION',
+      },
+      fcmPayload: { userSubscriptionId: String(data.userSubscriptionId) },
     });
   }
 

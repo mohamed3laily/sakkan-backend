@@ -1,0 +1,1 @@
+ALTER TYPE "public"."notification_type" ADD VALUE 'SUBSCRIPTION_GOING_TO_EXPIRE';

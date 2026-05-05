@@ -28,8 +28,17 @@ export type DispatchTodoReminderPayload = {
   todoTitle: string;
 };
 
+export type DispatchSubscriptionExpiringPayload = {
+  type: 'SUBSCRIPTION_GOING_TO_EXPIRE';
+  userSubscriptionId: number;
+  userId: number;
+  planNameEn: string;
+  planNameAr: string;
+};
+
 export type NotificationJobPayload =
   | DispatchPreferenceMatchPayload
   | DispatchSeriousListingPayload
   | DispatchListingRequestPayload
-  | DispatchTodoReminderPayload;
+  | DispatchTodoReminderPayload
+  | DispatchSubscriptionExpiringPayload;

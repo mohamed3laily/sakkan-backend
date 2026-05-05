@@ -50,6 +50,7 @@ export class MeController {
   }
 
   @Delete()
+  @AllowUnverified()
   async deleteMe(@CurrentUser() user: AuthenticatedUser) {
     await this.meService.deleteMe(user.id);
     return { message: 'ACCOUNT_DELETED' };

@@ -61,6 +61,17 @@ export const NOTIFICATION_MESSAGES: Record<
       body: `Your task "${d.todoTitle}" is due in 2 hours.`,
     }),
   },
+
+  SUBSCRIPTION_GOING_TO_EXPIRE: {
+    ar: (d) => ({
+      title: 'اشتراكك ينتهي قريباً',
+      body: `تنتهي صلاحية اشتراكك «${d.planNameAr}» خلال 3 أيام. جدّد من التطبيق للاستمرار.`,
+    }),
+    en: (d) => ({
+      title: 'Subscription ending soon',
+      body: `Your "${d.planNameEn}" subscription ends in 3 days. Renew in the app to keep access.`,
+    }),
+  },
 };
 
 export function buildMessage(
