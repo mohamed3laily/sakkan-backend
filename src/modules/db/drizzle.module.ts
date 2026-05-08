@@ -4,6 +4,7 @@ import { CitiesAreasSeed } from './seed/cities-areas.seed';
 import { ConfigModule } from '@nestjs/config';
 import { AppSettingsSeed } from './seed/app-settings.seed';
 import { CreditProductsSeed } from './seed/credit-products.seed';
+import { RealEstateDevelopersSeed } from './seed/real-estate-developers.seed';
 import { PropertyTypeSeed } from './seed/property-type.seed';
 import { SubscriptionPlansSeed } from './seed/subscription-plans.seed';
 
@@ -21,6 +22,7 @@ import { SubscriptionPlansSeed } from './seed/subscription-plans.seed';
     SubscriptionPlansSeed,
     CreditProductsSeed,
     AppSettingsSeed,
+    RealEstateDevelopersSeed,
   ],
   exports: [DrizzleService],
 })

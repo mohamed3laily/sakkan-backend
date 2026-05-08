@@ -21,6 +21,7 @@ import { StorageModule } from './modules/storage/storage.module';
 import { AttachmentModule } from './modules/attachment/attachment.module';
 import { AppSettingsModule } from './modules/app-settings/app-settings.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { RealEstateDeveloperModule } from './modules/real-estate-developer/real-estate-developer.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { NotificationModule } from './modules/notification/notification.module';
     AttachmentModule,
     AppSettingsModule,
     NotificationModule,
+    RealEstateDeveloperModule,
   ],
   controllers: [AppController],
   providers: [AppService],

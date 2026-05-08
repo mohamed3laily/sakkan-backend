@@ -51,3 +51,7 @@ export * from './monetization/enums';
 // attachments
 export * from './attachments/attachments';
 export * from './attachments/enums';
+
+// real-state-developers
+export * from './real-state-developers/real-estate-developers';
+export * from './real-state-developers/developers-projects';
