@@ -32,7 +32,7 @@ export const NOTIFICATION_MESSAGES: Record<
   SERIOUS_LISTING_CREATED: {
     ar: (d) => ({
       title: 'طلب جاد قد يهمك',
-      body: `نشر طلب جاد قد يهمكو تواصل مع الطالب الأن`,
+      body: `نشر طلب جاد قد يهمك, تواصل مع الطالب الأن`,
     }),
     en: (d) => ({
       title: 'New serious request',
@@ -42,12 +42,12 @@ export const NOTIFICATION_MESSAGES: Record<
 
   LISTING_REQUEST_RECEIVED: {
     ar: (d) => ({
-      title: 'طلب إعلان جديد',
-      body: `قام ${d.requesterName} بإنشاء طلب إعلان وطلب مساعدتك.`,
+      title: 'طلب عقار جديد',
+      body: `قام ${d.requesterName} بإنشاء طلب عقار منك.`,
     }),
     en: (d) => ({
       title: 'New listing request',
-      body: `${d.requesterName} created a listing request and asked for your help.`,
+      body: `${d.requesterName} created a listing request from you`,
     }),
   },
 
