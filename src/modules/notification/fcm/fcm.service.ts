@@ -100,21 +100,64 @@ export class FcmService {
     body: string,
     data?: Record<string, string>,
   ): Promise<void> {
-    if (!tokens.length) {
-      return;
+    try {
+      console.log('================ MULTICAST START ================');
+  
+      console.log('tokens:', tokens);
+  
+      console.log('title:', title);
+  
+      console.log('body:', body);
+  
+      console.log('data:', data);
+  
+      const payload = {
+        tokens,
+        notification: { title, body },
+        data,
+        android: {
+          priority: 'high' as const,
+          notification: {
+            sound: 'default',
+            channelId: 'default',
+          },
+        },
+        apns: {
+          headers: {
+            'apns-priority': '10',
+          },
+          payload: {
+            aps: {
+              sound: 'default',
+            },
+          },
+        },
+      };
+  
+      console.log('payload:', JSON.stringify(payload, null, 2));
+  
+      const response = await this.messaging.sendEachForMulticast(payload);
+  
+      console.log('================ MULTICAST RESPONSE ================');
+  
+      console.log('successCount:', response.successCount);
+  
+      console.log('failureCount:', response.failureCount);
+  
+      response.responses.forEach((r, index) => {
+        console.log(`TOKEN ${index}:`, tokens[index]);
+  
+        if (r.success) {
+          console.log('SUCCESS:', r.messageId);
+        } else {
+          console.error('FAILED:', r.error);
+        }
+      });
+    } catch (err) {
+      console.error('================ MULTICAST CRASH ================');
+  
+      console.error(err);
     }
-
-    const chunks = this.chunkArray(tokens, 500);
-    await Promise.all(
-      chunks.map((chunk) =>
-        this.messaging
-          .sendEachForMulticast({ tokens: chunk, notification: { title, body }, data })
-          .catch((err: unknown) => {
-            const message = err instanceof Error ? err.message : String(err);
-            this.logger.warn(`FCM multicast error: ${message}`);
-          }),
-      ),
-    );
   }
 
   private chunkArray<T>(arr: T[], size: number): T[][] {
