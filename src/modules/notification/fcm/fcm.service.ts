@@ -19,22 +19,78 @@ export class FcmService {
     data?: Record<string, string>,
   ): Promise<void> {
     try {
-      console.log('sending to token', token);
-      console.log('title', title);
-      console.log('body', body);
-      console.log('data', data);
-      console.log('apns', { payload: { aps: { sound: 'default' } } });
-      console.log('android', { notification: { sound: 'default' } });
-      await this.messaging.send({
+      const payload = {
         token,
         notification: { title, body },
         data,
-        apns: { payload: { aps: { sound: 'default' } } },
-        android: { notification: { sound: 'default' } },
-      });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`FCM send failed for token ${token.slice(0, 10)}…: ${message}`);
+        android: {
+          priority: 'high' as const,
+          notification: {
+            sound: 'default',
+            channelId: 'default',
+          },
+        },
+        apns: {
+          headers: {
+            'apns-priority': '10',
+          },
+          payload: {
+            aps: {
+              sound: 'default',
+              contentAvailable: true,
+            },
+          },
+        },
+      };
+  
+      console.log('================ FCM SEND START ================');
+      console.log('token:', token);
+      console.log('title:', title);
+      console.log('body:', body);
+      console.log('data:', JSON.stringify(data, null, 2));
+      console.log('payload:', JSON.stringify(payload, null, 2));
+  
+      const response = await this.messaging.send(payload);
+  
+      console.log('================ FCM SEND SUCCESS ================');
+      console.log('firebaseMessageId:', response);
+      console.log('token:', token);
+    } catch (err: any) {
+      console.log('================ FCM SEND FAILED ================');
+  
+      console.error('RAW ERROR:', err);
+  
+      console.error('ERROR MESSAGE:', err?.message);
+  
+      console.error('ERROR CODE:', err?.code);
+  
+      console.error('ERROR DETAILS:', err?.details);
+  
+      console.error('ERROR STACK:', err?.stack);
+  
+      console.error('FULL ERROR JSON:', JSON.stringify(err, null, 2));
+  
+      console.error('TOKEN:', token);
+  
+      if (err?.errorInfo) {
+        console.error('ERROR INFO:', err.errorInfo);
+      }
+  
+      if (err?.code === 'messaging/registration-token-not-registered') {
+        console.error('TOKEN IS INVALID / EXPIRED');
+      }
+  
+      if (err?.code === 'messaging/invalid-registration-token') {
+        console.error('TOKEN FORMAT INVALID');
+      }
+  
+      if (err?.code === 'messaging/mismatched-credential') {
+        console.error('FIREBASE PROJECT MISMATCH');
+      }
+  
+      this.logger.warn(
+        `FCM send failed for token ${token.slice(0, 15)}...`,
+      );
     }
   }
 
