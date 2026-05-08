@@ -15,7 +15,6 @@ export class TestNotificationDto {
   @IsIn(notifiableTypeEnum.enumValues)
   type: (typeof notifiableTypeEnum.enumValues)[number];
 
-  /** Required for TODO_REMINDER, SUBSCRIPTION_GOING_TO_EXPIRE, LISTING_REQUEST_RECEIVED. Omit for broadcast types (data resolved from DB). */
   @ValidateIf((o: TestNotificationDto) => recipientTypesNeedUserId(o.type))
   @IsInt()
   @Type(() => Number)
