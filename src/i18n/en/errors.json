@@ -4,6 +4,7 @@
   "NOTIFICATION_TEST_NO_FIXTURE": "No suitable record was found in the database to build this test notification",
   "NOT_FOUND": "Resource not found",
   "AREA_NOT_FOUND": "Area not found",
+  "DEVELOPER_PROJECT_NOT_FOUND": "Developer project not found",
   "VALIDATION_ERROR": "Validation failed",
   "INVALID_FILE_TYPE": "Invalid file type",
   "INVALID_PAYMOB_HMAC": "Invalid payment callback signature",

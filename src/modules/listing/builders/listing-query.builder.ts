@@ -1,4 +1,17 @@
-import { SQL, and, eq, gte, lte, or, ilike, asc, desc, arrayOverlaps, sql } from 'drizzle-orm';
+import {
+  SQL,
+  and,
+  eq,
+  gte,
+  lte,
+  or,
+  ilike,
+  asc,
+  desc,
+  arrayOverlaps,
+  isNull,
+  sql,
+} from 'drizzle-orm';
 import { listings } from '../../db/schemas/listing/listing';
 import { ListingFiltersDto } from '../dto/listing-filters.dto';
 import { ListingSortDto, ListingSortBy, SortOrder } from '../dto/listing-sort.dto';
@@ -81,6 +94,7 @@ function buildAgentPreferenceFilter(f: ListingFiltersDto, userId?: number) {
 
 export function buildListingWhere(filters: ListingFiltersDto, userId?: number) {
   return collect(
+    isNull(listings.projectId),
     buildBasicFilters(filters),
     buildRangeFilters(filters),
     buildKeywordFilter(filters.keyword),

@@ -4,6 +4,7 @@
   "NOTIFICATION_TEST_NO_FIXTURE": "لا يوجد سجل مناسب في قاعدة البيانات لبناء إشعار الاختبار هذا",
   "NOT_FOUND": "المورد غير موجود",
   "AREA_NOT_FOUND": "المنطقة غير موجودة",
+  "DEVELOPER_PROJECT_NOT_FOUND": "مشروع المطور غير موجود",
   "VALIDATION_ERROR": "فشل التحقق",
   "INVALID_FILE_TYPE": "نوع الملف غير صالح",
   "INVALID_PAYMOB_HMAC": "توقيع إشعار الدفع غير صالح",
