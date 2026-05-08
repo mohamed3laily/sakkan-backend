@@ -19,6 +19,12 @@ export class FcmService {
     data?: Record<string, string>,
   ): Promise<void> {
     try {
+      console.log('sending to token', token);
+      console.log('title', title);
+      console.log('body', body);
+      console.log('data', data);
+      console.log('apns', { payload: { aps: { sound: 'default' } } });
+      console.log('android', { notification: { sound: 'default' } });
       await this.messaging.send({
         token,
         notification: { title, body },
