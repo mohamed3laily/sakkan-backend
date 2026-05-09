@@ -5,14 +5,14 @@ import { DrizzleService } from '../db/drizzle.service';
 import { areas } from '../db/schemas/cities/areas';
 import { cities } from '../db/schemas/cities/cities';
 import { listings } from '../db/schemas/listing/listing';
-import { attachments } from '../db/schemas/schema-index';
+import { attachments, favorites } from '../db/schemas/schema-index';
 import { developersProjects } from '../db/schemas/real-state-developers/developers-projects';
 import { realEstateDevelopers } from '../db/schemas/real-state-developers/real-estate-developers';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 import type { DeveloperProjectsQueryDto } from './dto/developer-projects-query.dto';
 
-const projectSelectFields = {
+const projectSelectFieldsBase = {
   id: developersProjects.id,
   name: developersProjects.name,
   description: developersProjects.description,
@@ -59,6 +59,20 @@ const projectSelectFields = {
   `.as('attachments'),
 } as const;
 
+function getProjectSelectFields(userId?: number) {
+  return {
+    ...projectSelectFieldsBase,
+    isFavorited: userId
+      ? sql<boolean>`EXISTS (
+          SELECT 1 FROM ${favorites}
+          WHERE ${favorites.userId} = ${userId}
+            AND ${favorites.favoritableType} = 'DEVELOPER_PROJECT'
+            AND ${favorites.favoritableId} = ${developersProjects.id}
+        )`.as('isFavorited')
+      : sql<boolean>`false`.as('isFavorited'),
+  };
+}
+
 @Injectable()
 export class RealEstateDeveloperRepository {
   constructor(private readonly drizzleService: DrizzleService) {}
@@ -88,13 +102,13 @@ export class RealEstateDeveloperRepository {
     };
   }
 
-  async findAllProjects(query: DeveloperProjectsQueryDto) {
+  async findAllProjects(query: DeveloperProjectsQueryDto, userId?: number) {
     const { page = 1, limit = 20 } = query;
     const offset = (page - 1) * limit;
     const whereClause = this.buildProjectsWhereClause(query);
 
     const listBase = this.drizzleService.db
-      .select(projectSelectFields)
+      .select(getProjectSelectFields(userId))
       .from(developersProjects)
       .leftJoin(cities, eq(developersProjects.cityId, cities.id))
       .leftJoin(areas, eq(developersProjects.areaId, areas.id))
@@ -128,9 +142,9 @@ export class RealEstateDeveloperRepository {
     };
   }
 
-  async findProjectById(id: number) {
+  async findProjectById(id: number, userId?: number) {
     const [row] = await this.drizzleService.db
-      .select(projectSelectFields)
+      .select(getProjectSelectFields(userId))
       .from(developersProjects)
       .leftJoin(cities, eq(developersProjects.cityId, cities.id))
       .leftJoin(areas, eq(developersProjects.areaId, areas.id))

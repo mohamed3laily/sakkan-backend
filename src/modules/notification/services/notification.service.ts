@@ -13,8 +13,10 @@ export class NotificationService {
   ) {}
 
   async getNotifications(userId: number, query: NotificationQueryDto) {
-    const { page = 1, limit = 10 } = query;
-    const { data, total } = await this.repo.findForUser(userId, page, limit);
+    const { page = 1, limit = 10, favorited } = query;
+    const { data, total } = await this.repo.findForUser(userId, page, limit, {
+      favorited,
+    });
     return this.paginationService.createPaginatedResponse(data, total, page, limit);
   }
 

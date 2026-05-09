@@ -10,6 +10,8 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from 'src/common/decorators/public.decorator';
 import { TranslateInterceptor } from 'src/common/interceptors/translate.interceptor';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { DeveloperProjectsQueryDto } from './dto/developer-projects-query.dto';
 import { DevelopersQueryDto } from './dto/developers-query.dto';
 import { RealEstateDeveloperService } from './real-estate-developer.service';
@@ -22,15 +24,21 @@ export class RealEstateDeveloperController {
   @Public()
   @UseInterceptors(TranslateInterceptor)
   @Get('projects/:projectId')
-  async getProjectById(@Param('projectId', ParseIntPipe) projectId: number) {
-    return this.service.getProjectById(projectId);
+  async getProjectById(
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return this.service.getProjectById(projectId, user?.id);
   }
 
   @Public()
   @UseInterceptors(TranslateInterceptor)
   @Get('projects')
-  async getProjects(@Query() query: DeveloperProjectsQueryDto) {
-    return this.service.getProjects(query);
+  async getProjects(
+    @Query() query: DeveloperProjectsQueryDto,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return this.service.getProjects(query, user?.id);
   }
 
   @Public()
