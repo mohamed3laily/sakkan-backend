@@ -15,15 +15,15 @@ import { DevelopersQueryDto } from './dto/developers-query.dto';
 import { RealEstateDeveloperService } from './real-estate-developer.service';
 
 @UseGuards(JwtAuthGuard)
-@Controller('real-estate-developers')
+@Controller('')
 export class RealEstateDeveloperController {
   constructor(private readonly service: RealEstateDeveloperService) {}
 
   @Public()
   @UseInterceptors(TranslateInterceptor)
-  @Get('projects/:id')
-  async getProjectById(@Param('id', ParseIntPipe) id: number) {
-    return this.service.getProjectById(id);
+  @Get('projects/:projectId')
+  async getProjectById(@Param('projectId', ParseIntPipe) projectId: number) {
+    return this.service.getProjectById(projectId);
   }
 
   @Public()

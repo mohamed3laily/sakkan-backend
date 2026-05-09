@@ -48,6 +48,7 @@ export const listings = pgTable(
     latitude: doublePrecision('latitude'),
     longitude: doublePrecision('longitude'),
     paymentMethod: paymentMethodEnum('payment_method'),
+    developerPaymentMethods: paymentMethodEnum('developer_payment_methods').array(),
     contactWhatsapp: boolean('contact_whatsapp').default(true),
     contactPhone: boolean('contact_phone').default(false),
     status: listingStatusEnum('status').default('PUBLISHED'),

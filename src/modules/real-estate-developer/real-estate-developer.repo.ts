@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { and, count, desc, eq, inArray, isNotNull,asc, type SQL } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNotNull, sql, type SQL } from 'drizzle-orm';
 
 import { DrizzleService } from '../db/drizzle.service';
 import { areas } from '../db/schemas/cities/areas';
 import { cities } from '../db/schemas/cities/cities';
 import { listings } from '../db/schemas/listing/listing';
+import { attachments } from '../db/schemas/schema-index';
 import { developersProjects } from '../db/schemas/real-state-developers/developers-projects';
 import { realEstateDevelopers } from '../db/schemas/real-state-developers/real-estate-developers';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
@@ -15,12 +16,14 @@ const projectSelectFields = {
   id: developersProjects.id,
   name: developersProjects.name,
   description: developersProjects.description,
-  banner: developersProjects.banner,
   address: developersProjects.address,
   latitude: developersProjects.latitude,
   longitude: developersProjects.longitude,
   priceStartingFrom: developersProjects.priceStartingFrom,
   commissionPercentage: developersProjects.commissionPercentage,
+  phone: developersProjects.phone,
+  whatsappPhone: developersProjects.whatsappPhone,
+  createdAt: developersProjects.createdAt,
   developer: {
     id: realEstateDevelopers.id,
     name: realEstateDevelopers.name,
@@ -36,6 +39,24 @@ const projectSelectFields = {
     nameEn: areas.nameEn,
     nameAr: areas.nameAr,
   },
+  attachments: sql<{ id: number; url: string; fileType: string; mimeType: string }[]>`
+    COALESCE(
+      (
+        SELECT json_agg(
+          json_build_object(
+            'id', ${attachments.id},
+            'url', ${attachments.url},
+            'fileType', ${attachments.fileType},
+            'mimeType', ${attachments.mimeType}
+          )
+        )
+        FROM ${attachments}
+        WHERE ${attachments.attachableId} = ${developersProjects.id}
+          AND ${attachments.attachableType} = 'DEVELOPER_PROJECT'
+      ),
+      '[]'
+    )
+  `.as('attachments'),
 } as const;
 
 @Injectable()
@@ -77,6 +98,13 @@ export class RealEstateDeveloperRepository {
       .from(developersProjects)
       .leftJoin(cities, eq(developersProjects.cityId, cities.id))
       .leftJoin(areas, eq(developersProjects.areaId, areas.id))
+      .leftJoin(
+        attachments,
+        and(
+          eq(attachments.attachableId, developersProjects.id),
+          eq(attachments.attachableType, 'DEVELOPER_PROJECT'),
+        ),
+      )
       .innerJoin(realEstateDevelopers, eq(developersProjects.developerId, realEstateDevelopers.id))
       .$dynamic();
 

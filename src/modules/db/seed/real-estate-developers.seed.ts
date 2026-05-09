@@ -1,13 +1,29 @@
 import { Injectable } from '@nestjs/common';
-import { asc, eq, inArray, or, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, or, sql } from 'drizzle-orm';
 
 import { DrizzleService } from '../drizzle.service';
-import { areas, cities, listings, propertyType } from '../schemas/schema-index';
+import { areas, cities, listings, propertyType, attachments } from '../schemas/schema-index';
 import { developersProjects } from '../schemas/real-state-developers/developers-projects';
 import { realEstateDevelopers } from '../schemas/real-state-developers/real-estate-developers';
+import { paymentMethodEnum } from '../schemas/listing/enums';
 
 /** Prefix for idempotent re-seeding; only rows with this prefix are removed. */
 const SEED_NAME_PREFIX = 'SEED:';
+
+type PaymentMethod = (typeof paymentMethodEnum.enumValues)[number];
+
+function randomDeveloperPaymentMethods(): PaymentMethod[] {
+  const pool = paymentMethodEnum.enumValues;
+  const chosen = pool.filter(() => Math.random() < 0.5);
+  if (chosen.length === 0) {
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    if (pick === undefined) {
+      throw new Error('RealEstateDevelopersSeed: payment_method enum empty');
+    }
+    return [pick];
+  }
+  return chosen;
+}
 
 @Injectable()
 export class RealEstateDevelopersSeed {
@@ -50,6 +66,18 @@ export class RealEstateDevelopersSeed {
         : sql`${listings.title} LIKE ${SEED_NAME_PREFIX + '%'}`;
 
     await db.delete(listings).where(listingCleanupWhere);
+
+    if (seedProjectIds.length > 0) {
+      await db.delete(attachments).where(
+        and(
+          eq(attachments.attachableType, 'DEVELOPER_PROJECT'),
+          inArray(
+            attachments.attachableId,
+            seedProjectIds.map((r) => r.id),
+          ),
+        ),
+      );
+    }
 
     await db
       .delete(developersProjects)
@@ -97,13 +125,13 @@ export class RealEstateDevelopersSeed {
           areaId: area?.id ?? null,
           name: `${SEED_NAME_PREFIX} O West — October`,
           description: 'Compound with townhouses and apartments near October amenities.',
-          banner: 'https://via.placeholder.com/800x320.png?text=O+West',
           address: '6th of October City, Giza',
           latitude: city.latitude ?? 29.97,
           longitude: city.longitude ?? 30.95,
           priceStartingFrom: 3_500_000,
           commissionPercentage: 2.5,
           phone: '+201095482308',
+          whatsappPhone: '+201095482308',
         },
         {
           developerId: dev1.id,
@@ -111,13 +139,13 @@ export class RealEstateDevelopersSeed {
           areaId: null,
           name: `${SEED_NAME_PREFIX} O West Phase 2`,
           description: 'Upcoming phase; registration for early inventory.',
-          banner: 'https://via.placeholder.com/800x320.png?text=O+West+2',
           address: '6th of October City, Giza',
           latitude: city.latitude ?? 29.97,
           longitude: city.longitude ?? 30.95,
           priceStartingFrom: 4_200_000,
           commissionPercentage: 2.5,
           phone: '+201095482308',
+          whatsappPhone: '+201095482308',
         },
         {
           developerId: dev2.id,
@@ -125,13 +153,13 @@ export class RealEstateDevelopersSeed {
           areaId: area?.id ?? null,
           name: `${SEED_NAME_PREFIX} Palm Hills New Cairo`,
           description: 'Villas and twin houses in a gated community.',
-          banner: 'https://via.placeholder.com/800x320.png?text=PH+NC',
           address: 'New Cairo, Cairo',
           latitude: city.latitude ?? 30.02,
           longitude: city.longitude ?? 31.48,
           priceStartingFrom: 8_500_000,
           commissionPercentage: 3,
           phone: '+201095482308',
+          whatsappPhone: '+201095482308',
         },
         {
           developerId: dev3.id,
@@ -139,13 +167,13 @@ export class RealEstateDevelopersSeed {
           areaId: null,
           name: `${SEED_NAME_PREFIX} MADAR Almaza Bay`,
           description: 'North Coast chalets with sea views.',
-          banner: 'https://via.placeholder.com/800x320.png?text=MADAR+Bay',
           address: 'North Coast, Marsa Matrouh',
           latitude: 31.02,
           longitude: 28.85,
           priceStartingFrom: 6_800_000,
           commissionPercentage: 2.75,
           phone: '+201095482308',
+          whatsappPhone: '+201095482308',
         },
       ])
       .returning({
@@ -153,6 +181,18 @@ export class RealEstateDevelopersSeed {
         name: developersProjects.name,
         priceStartingFrom: developersProjects.priceStartingFrom,
       });
+
+    await db.insert(attachments).values(
+      insertedProjects.map((project) => ({
+        attachableType: 'DEVELOPER_PROJECT' as const,
+        attachableId: project.id,
+        fileType: 'IMAGE' as const,
+        url: `https://via.placeholder.com/800x320.png?text=${encodeURIComponent(project.name)}`,
+        key: `seed/developer-projects/${project.id}/cover.png`,
+        mimeType: 'image/png',
+        size: 1024,
+      })),
+    );
 
     const propTypeRows = await db
       .select({ id: propertyType.id })
@@ -181,10 +221,13 @@ export class RealEstateDevelopersSeed {
             cityId: city.id,
             areaIds: area?.id ? [area.id] : [],
             budgetType: 'MARKET' as const,
-            price: project.priceStartingFrom ?? 3_000_000,
+            price: 3_000_000,
             projectId: project.id,
             spaceSqm: 120,
             numberOfRooms: 3,
+            numberOfBathrooms: 2,
+            developerPaymentMethods: randomDeveloperPaymentMethods(),
+            deliveryDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
           };
         }),
       );

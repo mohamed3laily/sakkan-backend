@@ -22,7 +22,6 @@ export const developersProjects = pgTable(
       .notNull(),
     name: text('name').notNull(),
     description: text('description'),
-    banner: text('banner').notNull(),
     address: text('address').notNull(),
     cityId: integer('city_id')
       .references(() => cities.id, { onDelete: 'set null' })
@@ -33,6 +32,7 @@ export const developersProjects = pgTable(
     priceStartingFrom: integer('price_starting_from'),
     commissionPercentage: real('commission_percentage'),
     phone: varchar('phone'),
+    whatsappPhone: varchar('whatsapp_phone'),
     ...timestamps,
   },
   (table) => [
