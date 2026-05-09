@@ -18,14 +18,14 @@ export class RealEstateDeveloperService {
     return this.paginationService.createPaginatedResponse(data, total, page, limit);
   }
 
-  async getProjects(query: DeveloperProjectsQueryDto) {
+  async getProjects(query: DeveloperProjectsQueryDto, userId?: number) {
     const { page = 1, limit = 10 } = query;
-    const { data, total } = await this.repo.findAllProjects(query);
+    const { data, total } = await this.repo.findAllProjects(query, userId);
     return this.paginationService.createPaginatedResponse(data, total, page, limit);
   }
 
-  async getProjectById(id: number) {
-    const project = await this.repo.findProjectById(id);
+  async getProjectById(id: number, userId?: number) {
+    const project = await this.repo.findProjectById(id, userId);
     if (!project) {
       throw new NotFoundException('DEVELOPER_PROJECT_NOT_FOUND');
     }

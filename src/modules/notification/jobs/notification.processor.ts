@@ -10,10 +10,8 @@ import type {
 
 import { FcmService } from '../fcm/fcm.service';
 import { buildMessage, type NotificationLanguage } from '../messages/notification.messages';
-import {
-  NotificationRepository,
-  type PushTargetUser,
-} from '../repositories/notification.repository';
+import { NotificationRepository } from '../repositories/notification.repository';
+import type { PushTargetUser } from '../types/notification-repository.types';
 
 import type { FcmPayload, NotifiableMeta } from '../types/notification.types';
 
@@ -62,10 +60,7 @@ export class NotificationProcessor extends WorkerHost {
   private async handlePreferenceMatch(
     data: Extract<NotificationJobPayload, { type: 'LISTING_PREFERENCE_MATCH' }>,
   ): Promise<void> {
-    const users = await this.repo.findUsersMatchingPreferences(
-      data.areaIds,
-      data.propertyTypeId,
-    );
+    const users = await this.repo.findUsersMatchingPreferences(data.areaIds, data.propertyTypeId);
     if (!users.length) {
       return;
     }

@@ -1,40 +1,39 @@
 import { Injectable } from '@nestjs/common';
-import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, ne, or, sql } from 'drizzle-orm';
+import {
+  and,
+  desc,
+  eq,
+  getTableColumns,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  ne,
+  or,
+  sql,
+} from 'drizzle-orm';
 
 import { DrizzleService } from '../../db/drizzle.service';
 import { cities } from '../../db/schemas/cities/cities';
+import { favorites } from '../../db/schemas/schema-index';
 import { listings } from '../../db/schemas/listing/listing';
 import { subscriptionPlans } from '../../db/schemas/monetization/subscription-plans';
 import { userSubscriptions } from '../../db/schemas/monetization/user-subscriptions';
 import {
   notifications,
   type InsertNotification,
-  type SelectNotification,
 } from '../../db/schemas/notifications/notifications';
 import { preferences } from '../../db/schemas/preferences/preferences';
 import { todos } from '../../db/schemas/todos/todos';
 import { users } from '../../db/schemas/user/user';
 
-export type PushTargetUser = {
-  id: number;
-  fcmToken: string | null;
-  language: string;
-};
-
-export type TodoReminderRow = {
-  id: number;
-  title: string;
-  userId: number;
-  fcmToken: string | null;
-  language: string;
-};
-
-export type SubscriptionExpiryReminderRow = {
-  userSubscriptionId: number;
-  userId: number;
-  planNameEn: string;
-  planNameAr: string;
-};
+import type {
+  NotificationListItem,
+  PushTargetUser,
+  SubscriptionExpiryReminderRow,
+  TodoReminderRow,
+} from '../types/notification-repository.types';
 
 @Injectable()
 export class NotificationRepository {
@@ -51,14 +50,22 @@ export class NotificationRepository {
     userId: number,
     page: number,
     limit: number,
-  ): Promise<{ data: SelectNotification[]; total: number }> {
+    options?: { favorited?: boolean },
+  ): Promise<{ data: NotificationListItem[]; total: number }> {
     const offset = (page - 1) * limit;
+    const userClause = eq(notifications.userId, userId);
+    const favoritedNotifiableSql = this.favoritedNotifiableExists(userId);
+    const whereClause =
+      options?.favorited === true ? and(userClause, favoritedNotifiableSql) : userClause;
 
     const [data, countResult] = await Promise.all([
       this.drizzle.db
-        .select()
+        .select({
+          ...getTableColumns(notifications),
+          isFavorited: sql<boolean>`${favoritedNotifiableSql}`.as('isFavorited'),
+        })
         .from(notifications)
-        .where(eq(notifications.userId, userId))
+        .where(whereClause)
         .orderBy(desc(notifications.createdAt))
         .limit(limit)
         .offset(offset),
@@ -66,7 +73,7 @@ export class NotificationRepository {
       this.drizzle.db
         .select({ total: sql<number>`count(*)::int` })
         .from(notifications)
-        .where(eq(notifications.userId, userId)),
+        .where(whereClause),
     ]);
 
     const total = countResult[0]?.total ?? 0;
@@ -224,10 +231,7 @@ export class NotificationRepository {
         r.planSnapshot?.name ??
         'Subscription',
       planNameAr:
-        r.planSnapshot?.displayNameAr ??
-        r.planDisplayNameAr ??
-        r.planSnapshot?.name ??
-        'اشتراك',
+        r.planSnapshot?.displayNameAr ?? r.planDisplayNameAr ?? r.planSnapshot?.name ?? 'اشتراك',
     }));
   }
 
@@ -346,11 +350,17 @@ export class NotificationRepository {
         requesterUserId: listings.userId,
       })
       .from(listings)
-      .where(and(eq(listings.agentId, agentUserId), eq(listings.status, 'PUBLISHED')))
+      .where(
+        and(
+          eq(listings.agentId, agentUserId),
+          eq(listings.status, 'PUBLISHED'),
+          isNotNull(listings.userId),
+        ),
+      )
       .orderBy(desc(listings.id))
       .limit(1);
-    if (assigned) {
-      return assigned;
+    if (assigned?.requesterUserId != null) {
+      return { listingId: assigned.listingId, requesterUserId: assigned.requesterUserId };
     }
 
     const [anyPublished] = await this.drizzle.db
@@ -359,9 +369,23 @@ export class NotificationRepository {
         requesterUserId: listings.userId,
       })
       .from(listings)
-      .where(eq(listings.status, 'PUBLISHED'))
+      .where(and(eq(listings.status, 'PUBLISHED'), isNotNull(listings.userId)))
       .orderBy(desc(listings.id))
       .limit(1);
-    return anyPublished ?? null;
+    if (anyPublished?.requesterUserId != null) {
+      return { listingId: anyPublished.listingId, requesterUserId: anyPublished.requesterUserId };
+    }
+    return null;
+  }
+
+  private favoritedNotifiableExists(userId: number) {
+    return sql`EXISTS (
+      SELECT 1 FROM ${favorites}
+      WHERE ${favorites.userId} = ${userId}
+        AND ${notifications.notifiableId} IS NOT NULL
+        AND ${notifications.notifiableType} IS NOT NULL
+        AND ${favorites.favoritableId} = ${notifications.notifiableId}
+        AND ${favorites.favoritableType}::text = ${notifications.notifiableType}
+    )`;
   }
 }
