@@ -54,15 +54,17 @@ export class NotificationRepository {
   ): Promise<{ data: NotificationListItem[]; total: number }> {
     const offset = (page - 1) * limit;
     const userClause = eq(notifications.userId, userId);
-    const favoritedNotifiableSql = this.favoritedNotifiableExists(userId);
+    const favoritedMatchSql = this.userFavoriteExistsForNotification(userId);
     const whereClause =
-      options?.favorited === true ? and(userClause, favoritedNotifiableSql) : userClause;
+      options?.favorited === true ? and(userClause, favoritedMatchSql) : userClause;
 
     const [data, countResult] = await Promise.all([
       this.drizzle.db
         .select({
           ...getTableColumns(notifications),
-          isFavorited: sql<boolean>`${favoritedNotifiableSql}`.as('isFavorited'),
+          isFavorited: sql<boolean>`CASE WHEN ${favoritedMatchSql} THEN true ELSE false END`.as(
+            'isFavorited',
+          ),
         })
         .from(notifications)
         .where(whereClause)
@@ -378,14 +380,12 @@ export class NotificationRepository {
     return null;
   }
 
-  private favoritedNotifiableExists(userId: number) {
+  private userFavoriteExistsForNotification(userId: number) {
     return sql`EXISTS (
       SELECT 1 FROM ${favorites}
       WHERE ${favorites.userId} = ${userId}
-        AND ${notifications.notifiableId} IS NOT NULL
-        AND ${notifications.notifiableType} IS NOT NULL
-        AND ${favorites.favoritableId} = ${notifications.notifiableId}
-        AND ${favorites.favoritableType}::text = ${notifications.notifiableType}
+        AND ${favorites.favoritableType} = 'NOTIFICATION'
+        AND ${favorites.favoritableId} = ${notifications.id}
     )`;
   }
 }
