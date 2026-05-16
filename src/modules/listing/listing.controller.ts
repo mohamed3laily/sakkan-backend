@@ -55,7 +55,10 @@ export class ListingController {
   @Public()
   @UseInterceptors(TranslateInterceptor, ContactGateInterceptor)
   @Get(':id')
-  async getListingById(@Param('id', ParseIntPipe) id: number) {
-    return this.service.getListingById(id);
+  async getListingById(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return this.service.getListingById(id, user?.id);
   }
 }
