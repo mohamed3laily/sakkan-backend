@@ -71,8 +71,8 @@ export class ListingService {
     return this.paginationService.createPaginatedResponse(data, total, page, limit);
   }
 
-  async getListingById(id: number) {
-    const listing = await this.repo.findById(id);
+  async getListingById(id: number, userId?: number) {
+    const listing = await this.repo.findById(id, userId);
 
     if (!listing) {
       throw new NotFoundException(`Listing with ID ${id} not found`);

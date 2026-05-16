@@ -206,7 +206,7 @@ export class ListingsRepository {
       .where(eq(listings.id, listingId))
       .limit(1);
 
-    return rows[0] ?? null;
+    return rows[0] as { userId: number; listingType: string } | null;
   }
 
   async findOwnerAndTypeInTx(
@@ -219,7 +219,7 @@ export class ListingsRepository {
       .where(eq(listings.id, listingId))
       .limit(1);
 
-    return rows[0] ?? null;
+    return rows[0] as { userId: number; listingType: string } | null;
   }
 
   async findOwnerId(listingId: number): Promise<number | null> {
