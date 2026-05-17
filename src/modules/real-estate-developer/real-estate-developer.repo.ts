@@ -112,13 +112,6 @@ export class RealEstateDeveloperRepository {
       .from(developersProjects)
       .leftJoin(cities, eq(developersProjects.cityId, cities.id))
       .leftJoin(areas, eq(developersProjects.areaId, areas.id))
-      .leftJoin(
-        attachments,
-        and(
-          eq(attachments.attachableId, developersProjects.id),
-          eq(attachments.attachableType, 'DEVELOPER_PROJECT'),
-        ),
-      )
       .innerJoin(realEstateDevelopers, eq(developersProjects.developerId, realEstateDevelopers.id))
       .$dynamic();
 
