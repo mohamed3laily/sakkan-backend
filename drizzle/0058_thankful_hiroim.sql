@@ -1,0 +1,1 @@
+ALTER TABLE "listings" ADD COLUMN "number_of_units" integer;

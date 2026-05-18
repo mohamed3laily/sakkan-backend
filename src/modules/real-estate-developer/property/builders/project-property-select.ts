@@ -60,6 +60,7 @@ export function getProjectPropertySelectFields(userId?: number) {
     spaceSqm: listings.spaceSqm,
     numberOfRooms: listings.numberOfRooms,
     numberOfBathrooms: listings.numberOfBathrooms,
+    numberOfUnits: listings.numberOfUnits,
     mPrice: listings.mPrice,
     deliveryDate: listings.deliveryDate,
     deliveryReadiness: sql<ProjectPropertyDeliveryReadiness>`

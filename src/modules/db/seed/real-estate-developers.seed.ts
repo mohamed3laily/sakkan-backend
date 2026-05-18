@@ -25,6 +25,10 @@ function randomDeveloperPaymentMethods(): PaymentMethod[] {
   return chosen;
 }
 
+function randomIntInclusive(min: number, max: number): number {
+  return min + Math.floor(Math.random() * (max - min + 1));
+}
+
 @Injectable()
 export class RealEstateDevelopersSeed {
   constructor(private readonly drizzle: DrizzleService) {}
@@ -226,6 +230,7 @@ export class RealEstateDevelopersSeed {
             spaceSqm: 120,
             numberOfRooms: 3,
             numberOfBathrooms: 2,
+            numberOfUnits: randomIntInclusive(1, 350),
             developerPaymentMethods: randomDeveloperPaymentMethods(),
             deliveryDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
           };
