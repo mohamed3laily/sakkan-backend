@@ -24,8 +24,8 @@ async function bootstrap() {
   const realEstateDevelopersSeed = app.get(RealEstateDevelopersSeed);
   await realEstateDevelopersSeed.run();
 
-  const appSettingsSeed = app.get(AppSettingsSeed);
-  await appSettingsSeed.run();
+  //const appSettingsSeed = app.get(AppSettingsSeed);
+  //await appSettingsSeed.run();
 
   await app.close();
 }

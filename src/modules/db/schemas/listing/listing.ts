@@ -44,6 +44,7 @@ export const listings = pgTable(
     spaceSqm: integer('space_sqm'),
     numberOfRooms: integer('number_of_rooms'),
     numberOfBathrooms: integer('number_of_bathrooms'),
+    numberOfUnits: integer('number_of_units'),
     propertyAge: integer('property_age'),
     latitude: doublePrecision('latitude'),
     longitude: doublePrecision('longitude'),
