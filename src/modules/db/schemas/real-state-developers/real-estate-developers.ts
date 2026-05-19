@@ -3,7 +3,8 @@ import { timestamps } from '../timestamps';
 
 export const realEstateDevelopers = pgTable('real_estate_developers', {
   id: serial('id').primaryKey(),
-  name: text('name').notNull(),
+  nameEn: text('name_en'),
+  nameAr: text('name_ar'),
   logo: text('logo').notNull(),
   ...timestamps,
 });

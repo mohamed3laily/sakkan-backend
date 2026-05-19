@@ -20,9 +20,13 @@ export const developersProjects = pgTable(
     developerId: integer('developer_id')
       .references(() => realEstateDevelopers.id, { onDelete: 'cascade' })
       .notNull(),
-    name: text('name').notNull(),
-    description: text('description'),
-    address: text('address').notNull(),
+    nameEn: text('name_en'),
+    nameAr: text('name_ar'),
+
+    descriptionEn: text('description_en'),
+    descriptionAr: text('description_ar'),
+    addressEn: text('address_en'),
+    addressAr: text('address_ar'),
     cityId: integer('city_id')
       .references(() => cities.id, { onDelete: 'set null' })
       .notNull(),

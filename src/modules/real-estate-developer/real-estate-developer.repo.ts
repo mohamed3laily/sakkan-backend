@@ -14,9 +14,12 @@ import type { DeveloperProjectsQueryDto } from './dto/developer-projects-query.d
 
 const projectSelectFieldsBase = {
   id: developersProjects.id,
-  name: developersProjects.name,
-  description: developersProjects.description,
-  address: developersProjects.address,
+  nameEn: developersProjects.nameEn,
+  nameAr: developersProjects.nameAr,
+  descriptionEn: developersProjects.descriptionEn,
+  descriptionAr: developersProjects.descriptionAr,
+  addressEn: developersProjects.addressEn,
+  addressAr: developersProjects.addressAr,
   latitude: developersProjects.latitude,
   longitude: developersProjects.longitude,
   priceStartingFrom: developersProjects.priceStartingFrom,
@@ -26,7 +29,8 @@ const projectSelectFieldsBase = {
   createdAt: developersProjects.createdAt,
   developer: {
     id: realEstateDevelopers.id,
-    name: realEstateDevelopers.name,
+    nameEn: realEstateDevelopers.nameEn,
+    nameAr: realEstateDevelopers.nameAr,
     logo: realEstateDevelopers.logo,
   },
   city: {
@@ -85,7 +89,8 @@ export class RealEstateDeveloperRepository {
       this.drizzleService.db
         .select({
           id: realEstateDevelopers.id,
-          name: realEstateDevelopers.name,
+          nameEn: realEstateDevelopers.nameEn,
+          nameAr: realEstateDevelopers.nameAr,
           logo: realEstateDevelopers.logo,
         })
         .from(realEstateDevelopers)
