@@ -13,19 +13,22 @@ import type { ProjectPropertyDeliveryReadiness } from '../enums/delivery-readine
 
 type ProjectPropertyProjectShape = {
   id: number;
-  name: string;
+  nameEn: string | null;
+  nameAr: string | null;
   phone: string | null;
   whatsappPhone: string | null;
   latitude: number | null;
   longitude: number | null;
-  address: string;
+  addressEn: string | null;
+  addressAr: string | null;
   city: { id: number; nameEn: string; nameAr: string } | null;
   area: { id: number; nameEn: string; nameAr: string } | null;
 };
 
 type ProjectPropertyDeveloperShape = {
   id: number;
-  name: string;
+  nameEn: string | null;
+  nameAr: string | null;
   logo: string;
 };
 
@@ -80,12 +83,14 @@ export function getProjectPropertySelectFields(userId?: number) {
       CASE
         WHEN ${developersProjects.id} IS NOT NULL THEN json_build_object(
           'id', ${developersProjects.id},
-          'name', ${developersProjects.name},
+          'nameEn', ${developersProjects.nameEn},
+          'nameAr', ${developersProjects.nameAr},
           'phone', ${developersProjects.phone},
           'whatsappPhone', ${developersProjects.whatsappPhone},
           'latitude', ${developersProjects.latitude},
           'longitude', ${developersProjects.longitude},
-          'address', ${developersProjects.address},
+          'addressEn', ${developersProjects.addressEn},
+          'addressAr', ${developersProjects.addressAr},
           'city', CASE
             WHEN ${cities.id} IS NOT NULL THEN json_build_object(
               'id', ${cities.id},
@@ -110,7 +115,8 @@ export function getProjectPropertySelectFields(userId?: number) {
       CASE
         WHEN ${realEstateDevelopers.id} IS NOT NULL THEN json_build_object(
           'id', ${realEstateDevelopers.id},
-          'name', ${realEstateDevelopers.name},
+          'nameEn', ${realEstateDevelopers.nameEn},
+          'nameAr', ${realEstateDevelopers.nameAr},
           'logo', ${realEstateDevelopers.logo}
         )
         ELSE NULL

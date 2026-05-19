@@ -6,6 +6,12 @@ type BilingualPair = { enKey: string; arKey: string; outKey: string };
 
 const BILINGUAL_PAIRS: BilingualPair[] = [
   { enKey: 'nameEn', arKey: 'nameAr', outKey: 'name' },
+  {
+    enKey: 'descriptionEn',
+    arKey: 'descriptionAr',
+    outKey: 'description',
+  },
+  { enKey: 'addressEn', arKey: 'addressAr', outKey: 'address' },
   { enKey: 'displayNameEn', arKey: 'displayNameAr', outKey: 'displayName' },
   { enKey: 'planNameEn', arKey: 'planNameAr', outKey: 'planName' },
   {
