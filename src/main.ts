@@ -12,18 +12,6 @@ async function bootstrap() {
 
   app.use(helmet());
 
-  const isProduction = process.env.NODE_ENV === 'production';
-  const corsOrigins = process.env.CORS_ORIGINS?.split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
-  if (corsOrigins?.length || !isProduction) {
-    app.enableCors({
-      origin: corsOrigins?.length ? corsOrigins : true,
-      credentials: true,
-    });
-  }
-
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: '1',
