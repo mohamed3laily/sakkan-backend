@@ -1,0 +1,25 @@
+---
+description: Sakkan backend core conventions and project identity
+alwaysApply: true
+---
+
+# Sakkan Backend
+
+NestJS + Drizzle ORM + PostgreSQL backend for a real-estate platform (Sakkan).
+
+## Essentials
+
+- All HTTP routes use URI versioning: prefix **`/v1/`** (see `src/main.ts`)
+- Layering: **controller → service → repo** — never query the DB from controllers
+- Before changing domain logic, read `AGENTS.md` and the relevant `docs/*.md` file
+
+## Common pitfall
+
+- **User auth:** `POST /v1/auth/login`, `POST /v1/auth/register`
+- **Admin auth:** `POST /v1/login`, `POST /v1/register` (no `auth/` or `admin/` prefix)
+
+These are different controllers. Do not confuse them when adding routes or tests.
+
+## External services
+
+Redis (BullMQ), AWS S3, Torvo SMS, Firebase FCM, Paymob payments — see `docs/architecture.md`.

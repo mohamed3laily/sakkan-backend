@@ -1,0 +1,38 @@
+---
+description: NestJS module and feature patterns for Sakkan
+globs: src/**/*.ts
+alwaysApply: false
+---
+
+# NestJS Module Patterns
+
+## Adding a feature
+
+Create: `*.module.ts`, `*.controller.ts`, `*.service.ts`, `*.repo.ts`, `dto/` folder.
+
+Wire the module in `src/app.module.ts` (or parent module).
+
+## Auth guards and decorators
+
+| Decorator / guard | Use |
+|---|---|
+| `@UseGuards(JwtAuthGuard)` | User JWT (default for protected routes) |
+| `@UseGuards(AdminJwtAuthGuard)` | Admin panel routes |
+| `@Public()` | Optional JWT — unauthenticated callers allowed |
+| `@AllowUnverified()` | Skip phone verification check |
+| `@CurrentUser()` | Inject authenticated user from JWT |
+
+## Errors
+
+Throw NestJS exceptions with **i18n keys**, not user-facing strings:
+
+```typescript
+throw new ConflictException('PHONE_EXISTS');
+throw new UnauthorizedException('INVALID_CREDENTIALS');
+```
+
+Add translations in both `src/i18n/en/` and `src/i18n/ar/`.
+
+## Throttling
+
+Use `@AuthThrottle()` or `@StrictAuthThrottle()` on auth endpoints (see `src/common/decorators/auth-throttle.decorator.ts`).
