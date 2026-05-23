@@ -56,10 +56,7 @@ export class MeService {
       throw new ConflictException('PHONE_EXISTS');
     }
 
-    const updated = await this.meRepo.updateMe(userId, {
-      phone: normalized,
-      verifiedPhoneAt: null,
-    });
+    const updated = await this.meRepo.updatePhone(userId, normalized, null);
     if (!updated) {
       throw new NotFoundException('USER_NOT_FOUND');
     }
@@ -77,7 +74,7 @@ export class MeService {
 
     const imageInfo = await this.s3.upload('profile-pictures', file);
 
-    const user = await this.meRepo.updateMe(userId, { profilePicture: imageInfo.url });
+    const user = await this.meRepo.updateProfilePicture(userId, imageInfo.url);
 
     if (current?.profilePicture) {
       await this.s3.delete(current.profilePicture);

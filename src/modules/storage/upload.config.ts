@@ -7,9 +7,7 @@ export const imageUploadInterceptorOptions: MulterOptions = {
     const allowedMimeTypes =
       /^image\/(jpeg|png|webp|jpg|gif|bmp|tiff|svg\+xml|svg|x-icon|vnd\.microsoft\.icon|heic|heif)$/i;
 
-    const isOctetStream = file.mimetype === 'application/octet-stream';
-
-    if (!file.mimetype.match(allowedMimeTypes) && !isOctetStream) {
+    if (!file.mimetype.match(allowedMimeTypes)) {
       return cb(new BadRequestException('INVALID_FILE_TYPE'), false);
     }
 

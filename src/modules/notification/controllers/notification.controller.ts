@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 
 import { TranslateInterceptor } from 'src/common/interceptors/translate.interceptor';
+import { NonProductionGuard } from 'src/common/guards/non-production.guard';
 
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -30,6 +31,7 @@ export class NotificationController {
   ) {}
 
   @Post('test')
+  @UseGuards(NonProductionGuard)
   async sendTestNotification(@Body() dto: TestNotificationDto) {
     await this.notificationTestService.sendTestNotification(dto);
     return { message: 'NOTIFICATION_TEST_QUEUED' };

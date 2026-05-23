@@ -4,6 +4,7 @@ import {
   ConflictException,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -177,6 +178,11 @@ export class AuthService {
       throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
 
+    if (user.deactivatedAt) {
+      this.logger.warn({ action: LogAction.USER_LOGIN, reason: 'ACCOUNT_DEACTIVATED' }, 'Login failed');
+      throw new ForbiddenException('ACCOUNT_DEACTIVATED');
+    }
+
     const token = this.generateToken(user.id, user.phone);
 
     this.logger.log({ userId: user.id, action: LogAction.USER_LOGIN }, 'User logged in');
@@ -345,7 +351,7 @@ export class AuthService {
   }
 
   private generateToken(userId: number, phone: string): string {
-    const payload: JwtPayload = { sub: userId, phone };
+    const payload: JwtPayload = { sub: userId, phone, role: 'user' };
     return this.jwtService.sign(payload);
   }
 
