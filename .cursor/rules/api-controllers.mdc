@@ -1,0 +1,35 @@
+---
+description: API route conventions and nested RouterModule paths
+globs: "**/*.controller.ts"
+alwaysApply: false
+---
+
+# API Controllers
+
+## Route prefix
+
+`@Controller('auth')` → `/v1/auth/*`. No global `/api` prefix.
+
+## Nested routes (RouterModule)
+
+Paths not visible from `@Controller()` alone:
+
+| Full path | Module |
+|---|---|
+| `/v1/users/me/*` | `src/modules/user/me/` |
+| `/v1/users/me/listings/*` | `src/modules/user/me/listing/` |
+| `/v1/users/agents` | `src/modules/user/user.controller.ts` |
+| `/v1/users/agents/:agentId/reviews` | `src/modules/user/review/` |
+| `/v1/real-estate-developers` | developer catalog |
+| `/v1/real-estate-developers/projects` | projects list |
+| `/v1/real-estate-developers/projects/:projectId/properties` | properties |
+
+See `docs/api-routes.md` for the full map.
+
+## Public + optional auth
+
+`@Public()` with `@UseGuards(JwtAuthGuard)` allows unauthenticated access but attaches `user` when a valid Bearer token is present (used on listing browse endpoints).
+
+## Auth throttling
+
+Apply `@AuthThrottle()` / `@StrictAuthThrottle()` on register, login, and password-reset endpoints.

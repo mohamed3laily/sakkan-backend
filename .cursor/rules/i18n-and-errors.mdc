@@ -1,0 +1,31 @@
+---
+description: i18n error keys and response translation
+globs: src/**/*.ts
+alwaysApply: false
+---
+
+# i18n and Errors
+
+## Exception keys
+
+`I18nExceptionFilter` (`src/common/filters/i18n-exception.filter.ts`) translates exception messages via `Accept-Language`.
+
+Always throw keys like `'PHONE_EXISTS'`, `'INVALID_CREDENTIALS'`, `'NO_QUOTA_OR_CREDITS'`.
+
+## Translation files
+
+Add keys to matching namespaces in **both** locales:
+
+- `src/i18n/en/*.json`
+- `src/i18n/ar/*.json`
+
+Namespaces: `auth`, `common`, `errors`, `listing`, `subscription`, `user`, `todo`, `note`, `notification`.
+
+## Response translation
+
+Global interceptors in `src/main.ts` translate successful response fields:
+
+- `TranslateInterceptor` — request-side field mapping
+- `ResponseTranslateInterceptor` — response-side translation
+
+Use `@UseInterceptors(TranslateInterceptor)` on endpoints returning translatable catalog data (listings, cities, property types).
