@@ -1,12 +1,15 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { NodePgDatabase, drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { ConfigService } from '@nestjs/config';
 import * as schema from './schemas/schema-index';
-import chalk from 'chalk';
+
+import { shouldLogDbQueries } from '../../common/logging/logging.config';
+
 @Injectable()
 export class DrizzleService implements OnApplicationBootstrap {
   public db: NodePgDatabase<typeof schema>;
+  private readonly logger = new Logger(DrizzleService.name);
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -20,17 +23,17 @@ export class DrizzleService implements OnApplicationBootstrap {
       connectionString: databaseUrl,
     });
 
+    const logQueries = shouldLogDbQueries(this.configService);
+
     this.db = drizzle(pool, {
       schema,
-      logger: {
-        logQuery: (query, params) => {
-          console.log(
-            chalk.green.bold('[SQL]'),
-            chalk.cyan(query),
-            params.length ? chalk.yellow(JSON.stringify(params)) : '',
-          );
-        },
-      },
+      logger: logQueries
+        ? {
+            logQuery: (query, params) => {
+              this.logger.debug({ query, params }, 'SQL query');
+            },
+          }
+        : undefined,
     });
   }
 }

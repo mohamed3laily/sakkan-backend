@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 
 import { DrizzleService } from '../../db/drizzle.service';
@@ -9,8 +9,6 @@ import { toPlanSnapshot, type PlanDto } from '../types';
 
 @Injectable()
 export class SubscriptionService {
-  private readonly logger = new Logger(SubscriptionService.name);
-
   constructor(private readonly drizzle: DrizzleService) {}
 
   async getActivePlans(): Promise<PlanDto[]> {
@@ -87,10 +85,6 @@ export class SubscriptionService {
         planSnapshot,
       })
       .returning();
-
-    this.logger.log(
-      `Subscription activated: user=${params.userId} plan=${plan.name} until=${periodEnd.toISOString()}`,
-    );
 
     return subscription;
   }

@@ -4,6 +4,7 @@ import {
   ConflictException,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -16,11 +17,13 @@ import { RegisterDto } from './dto/register.dto';
 import { AuthRepo } from './auth.repo';
 import { TorvoSmsService } from '../sms/torvo-sms.service';
 import { PhoneUtils } from './utils/phone.utils';
+import { LogAction } from 'src/common/logging';
 
 @Injectable()
 export class AuthService {
   private static readonly BCRYPT_SALT_ROUNDS = 10;
   private static readonly OTP_LENGTH = 5;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private authRepo: AuthRepo,
@@ -35,6 +38,7 @@ export class AuthService {
     const existingUser = await this.authRepo.getUserByPhone(normalizedPhone);
 
     if (existingUser) {
+      this.logger.warn({ action: LogAction.USER_REGISTER, reason: 'PHONE_EXISTS' }, 'Register failed');
       throw new ConflictException('PHONE_EXISTS');
     }
 
@@ -62,6 +66,8 @@ export class AuthService {
     }
     const token = this.generateToken(newUser.id, newUser.phone);
 
+    this.logger.log({ userId: newUser.id, action: LogAction.USER_REGISTER }, 'User registered');
+
     return {
       message: 'REGISTER_OTP_SENT',
       accessToken: token,
@@ -82,10 +88,18 @@ export class AuthService {
     const user = await this.authRepo.getUserByPhone(normalizedPhone);
 
     if (!user || !user.verifyPhoneToken || !user.verifyPhoneTokenExpiry) {
+      this.logger.warn(
+        { action: LogAction.USER_VERIFY_PHONE, reason: 'INVALID_VERIFICATION_REQUEST' },
+        'Phone verification failed',
+      );
       throw new BadRequestException('INVALID_VERIFICATION_REQUEST');
     }
 
     if (new Date() > user.verifyPhoneTokenExpiry) {
+      this.logger.warn(
+        { action: LogAction.USER_VERIFY_PHONE, reason: 'VERIFICATION_TOKEN_EXPIRED' },
+        'Phone verification failed',
+      );
       throw new BadRequestException('VERIFICATION_TOKEN_EXPIRED');
     }
 
@@ -93,6 +107,10 @@ export class AuthService {
     const valid = user.verifyPhoneToken === token;
 
     if (!valid) {
+      this.logger.warn(
+        { action: LogAction.USER_VERIFY_PHONE, reason: 'INVALID_VERIFICATION_TOKEN' },
+        'Phone verification failed',
+      );
       throw new BadRequestException('INVALID_VERIFICATION_TOKEN');
     }
 
@@ -102,6 +120,8 @@ export class AuthService {
       verifyPhoneTokenExpiry: null,
     });
 
+    this.logger.log({ userId: user.id, action: LogAction.USER_VERIFY_PHONE }, 'Phone verified');
+
     return { message: 'PHONE_VERIFIED' };
   }
 
@@ -110,6 +130,10 @@ export class AuthService {
 
     const user = await this.authRepo.getUserByPhone(normalizedPhone);
     if (!user) {
+      this.logger.warn(
+        { action: LogAction.USER_RESEND_VERIFY_PHONE, reason: 'INVALID_VERIFICATION_REQUEST' },
+        'Resend verify phone failed',
+      );
       throw new BadRequestException('INVALID_VERIFICATION_REQUEST');
     }
 
@@ -136,21 +160,26 @@ export class AuthService {
     try {
       normalizedPhone = PhoneUtils.normalizePhone(phone);
     } catch {
+      this.logger.warn({ action: LogAction.USER_LOGIN, reason: 'INVALID_CREDENTIALS' }, 'Login failed');
       throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
 
     const user = await this.authRepo.getUserByPhone(normalizedPhone);
 
     if (!user) {
+      this.logger.warn({ action: LogAction.USER_LOGIN, reason: 'INVALID_CREDENTIALS' }, 'Login failed');
       throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
 
     const isPasswordValid = await this.comparePassword(password, user.password);
     if (!isPasswordValid) {
+      this.logger.warn({ action: LogAction.USER_LOGIN, reason: 'INVALID_CREDENTIALS' }, 'Login failed');
       throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
 
     const token = this.generateToken(user.id, user.phone);
+
+    this.logger.log({ userId: user.id, action: LogAction.USER_LOGIN }, 'User logged in');
 
     return {
       accessToken: token,
@@ -190,6 +219,11 @@ export class AuthService {
     await this.torvoSms.sendQuickSms(
       normalizedPhone,
       this.torvoSms.buildPasswordResetMessage(resetToken),
+    );
+
+    this.logger.log(
+      { userId: user.id, action: LogAction.USER_PASSWORD_RESET_REQUEST },
+      'Password reset requested',
     );
 
     return { message: 'RESET_SENT' };
@@ -270,6 +304,11 @@ export class AuthService {
       resetToken: null,
       resetTokenExpiry: null,
     });
+
+    this.logger.log(
+      { userId: user.id, action: LogAction.USER_PASSWORD_RESET_COMPLETE },
+      'Password reset completed',
+    );
 
     return { message: 'RESET_SUCCESS' };
   }

@@ -1,12 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
+
+import { LogAction } from 'src/common/logging';
 
 export type S3Folder = 'profile-pictures' | 'listing-images';
 
 @Injectable()
 export class S3Service {
+  private readonly logger = new Logger(S3Service.name);
   private readonly client: S3Client;
   private readonly bucket: string;
   private readonly region: string;
@@ -45,12 +48,24 @@ export class S3Service {
   async deleteByKey(key: string): Promise<void> {
     try {
       await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
-    } catch {}
+    } catch (err) {
+      this.logger.error(
+        { action: LogAction.S3_DELETE_FAILED, key },
+        err instanceof Error ? err.message : 'S3 delete failed',
+      );
+      throw err;
+    }
   }
+
   async delete(publicUrl: string): Promise<void> {
     try {
       const key = new URL(publicUrl).pathname.slice(1);
       await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
-    } catch {}
+    } catch (err) {
+      this.logger.error(
+        { action: LogAction.S3_DELETE_FAILED, publicUrl },
+        err instanceof Error ? err.message : 'S3 delete failed',
+      );
+    }
   }
 }

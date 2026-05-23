@@ -17,6 +17,7 @@ export class I18nExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<{ url?: string; method?: string }>();
     const lang = getLang(host);
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -24,21 +25,27 @@ export class I18nExceptionFilter implements ExceptionFilter {
       message: 'INTERNAL_ERROR',
     };
 
+    const path = request?.url;
+    const method = request?.method;
+
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       if (status >= 500) {
-        this.logger.error(`[${status}] ${exception.message}`, exception.stack, 'ExceptionFilter');
+        this.logger.error(
+          { status, message: exception.message, path, method, err: exception },
+          'HttpException',
+        );
       } else {
-        this.logger.warn(`[${status}] ${exception.message}`, 'ExceptionFilter');
+        this.logger.warn({ status, message: exception.message, path, method }, 'HttpException');
       }
     } else if (exception instanceof Error) {
-      this.logger.error(exception.message, exception.stack, 'ExceptionFilter');
+      this.logger.error({ err: exception, path, method }, exception.message);
     } else {
-      this.logger.error(JSON.stringify(exception), undefined, 'ExceptionFilter');
+      this.logger.error({ exception, path, method }, 'Unknown exception');
     }
 
-    if ((exception as any)?.cause) {
-      this.logger.error('Caused by:', (exception as any).cause, 'ExceptionFilter');
+    if ((exception as { cause?: unknown })?.cause) {
+      this.logger.error({ cause: (exception as { cause: unknown }).cause }, 'Exception cause');
     }
 
     if (exception instanceof HttpException) {

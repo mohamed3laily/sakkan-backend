@@ -4,6 +4,7 @@ import { and, eq, lt, sql } from 'drizzle-orm';
 
 import { DrizzleService } from '../../db/drizzle.service';
 import { listings } from '../../db/schemas/listing/listing';
+import { LogAction } from 'src/common/logging';
 
 @Injectable()
 export class ListingExpiryService {
@@ -25,7 +26,14 @@ export class ListingExpiryService {
       .returning({ id: listings.id });
 
     if (expired.length > 0) {
-      this.logger.log(`Expired ${expired.length} premium listing(s)`);
+      this.logger.log(
+        ({
+          action: LogAction.PREMIUM_LISTINGS_EXPIRED,
+          count: expired.length,
+          listingIds: expired.map((row) => row.id),
+        }),
+        'Premium listings expired',
+      );
     }
   }
 }

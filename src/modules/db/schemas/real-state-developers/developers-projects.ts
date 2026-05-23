@@ -6,7 +6,7 @@ import {
   real,
   serial,
   text,
-  varchar
+  varchar,
 } from 'drizzle-orm/pg-core';
 import { timestamps } from '../timestamps';
 import { realEstateDevelopers } from './real-estate-developers';

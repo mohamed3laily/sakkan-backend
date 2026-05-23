@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 
 import { FIREBASE_APP } from './firebase.provider';
+import { LogAction } from 'src/common/logging';
 
 @Injectable()
 export class FcmService {
@@ -42,13 +43,16 @@ export class FcmService {
           },
         },
       };
-  
- await this.messaging.send(payload);
 
-    } catch (err: any) {
-
+      await this.messaging.send(payload);
+    } catch (err: unknown) {
       this.logger.warn(
-        `FCM send failed for token ${token.slice(0, 15)}...`,
+        ({
+          action: LogAction.FCM_SEND_FAILED,
+          tokenPrefix: token.slice(0, 15),
+          errorCode: err instanceof Error ? err.message : String(err),
+        }),
+        'FCM send failed',
       );
     }
   }
@@ -59,6 +63,10 @@ export class FcmService {
     body: string,
     data?: Record<string, string>,
   ): Promise<void> {
+    if (tokens.length === 0) {
+      return;
+    }
+
     try {
       const payload = {
         tokens,
@@ -82,19 +90,36 @@ export class FcmService {
           },
         },
       };
-  
+
       const response = await this.messaging.sendEachForMulticast(payload);
-      response.responses.forEach((r, index) => {
+      const successCount = response.successCount;
+      const failureCount = response.failureCount;
 
-      });
-    } catch (err) {  
-      this.logger.error(err);
+      if (failureCount > 0) {
+        const errorCodes = response.responses
+          .filter((r) => !r.success)
+          .map((r) => r.error?.code ?? 'unknown')
+          .slice(0, 5);
+
+        this.logger.warn(
+          ({
+            action: LogAction.FCM_MULTICAST_RESULT,
+            successCount,
+            failureCount,
+            totalTokens: tokens.length,
+            errorCodes,
+          }),
+          'FCM multicast partial failure',
+        );
+      }
+    } catch (err) {
+      this.logger.error(
+        ({
+          action: LogAction.FCM_SEND_FAILED,
+          totalTokens: tokens.length,
+        }),
+        err instanceof Error ? err.message : String(err),
+      );
     }
-  }
-
-  private chunkArray<T>(arr: T[], size: number): T[][] {
-    return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
-      arr.slice(i * size, i * size + size),
-    );
   }
 }

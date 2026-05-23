@@ -6,6 +6,7 @@ import { creditProducts } from '../../db/schemas/monetization/credit-products';
 import { oneTimeCredits } from '../../db/schemas/monetization/one-time-credits';
 import type { AppTransaction } from '../monetization-db.types';
 import type { CreditType } from '../types';
+import { LogAction } from 'src/common/logging';
 
 export type CreditProductRow = typeof creditProducts.$inferSelect;
 
@@ -86,7 +87,15 @@ export class CreditsService {
     const newBalance = row.totalCredits - row.usedCredits;
 
     this.logger.log(
-      `Credits added: user=${userId} type=${type} amount=${amount} paymentId=${paymentId} newBalance=${newBalance}`,
+      ({
+        action: LogAction.CREDITS_ADDED,
+        userId,
+        creditType: type,
+        amount,
+        paymentId,
+        newBalance,
+      }),
+      'Credits added',
     );
 
     return { newBalance };

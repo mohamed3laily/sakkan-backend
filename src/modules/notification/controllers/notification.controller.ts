@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Patch, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 
 import { TranslateInterceptor } from 'src/common/interceptors/translate.interceptor';
 

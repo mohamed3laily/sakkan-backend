@@ -35,7 +35,9 @@ export const listings = pgTable(
     dealType: dealTypeEnum('deal_type').notNull(),
     listingType: listingTypeEnum('listing_type').notNull(),
     propertyTypeId: integer('property_type_id').references(() => propertyType.id),
-    cityId: integer('city_id').notNull().references(() => cities.id),
+    cityId: integer('city_id')
+      .notNull()
+      .references(() => cities.id),
     areaIds: integer('area_ids').array(),
     agentId: integer('agent_id').references(() => users.id, { onDelete: 'cascade' }),
     budgetType: budgetTypeEnum('budget_type').notNull(),
@@ -54,7 +56,7 @@ export const listings = pgTable(
     contactPhone: boolean('contact_phone').default(false),
     status: listingStatusEnum('status').default('PUBLISHED'),
     listingTier: listingTierEnum('listing_tier').default('standard'),
-    premiumExpiresAt: timestamp('premium_expires_at', {withTimezone: true,mode: 'string'}),
+    premiumExpiresAt: timestamp('premium_expires_at', { withTimezone: true, mode: 'string' }),
     monetizationPaymentId: integer('monetization_payment_id').references(() => payments.id),
     quotaSource: listingQuotaSourceEnum('quota_source'),
     projectId: integer('project_id').references(() => developersProjects.id),
