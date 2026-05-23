@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { payments } from '../../db/schemas/monetization/payments';
+import { LogAction } from 'src/common/logging';
 import { CreditsService } from '../credits/credits.service';
 import type { AppTransaction } from '../monetization-db.types';
 import { ListingPromotionService } from '../listing-promotion/listing-promotion.service';
@@ -24,7 +25,15 @@ export class PaymentFulfillmentService {
   async fulfillSubscription(payment: PaymentRow) {
     const { plan_id: planId } = this.getSubscriptionMeta(payment.metadata);
     if (planId == null) {
-      this.logger.warn(`Subscription payment ${payment.id} missing plan_id in metadata`);
+      this.logger.warn(
+        ({
+          action: LogAction.SUBSCRIPTION_ACTIVATED,
+          userId: payment.userId,
+          paymentId: payment.id,
+          reason: 'MISSING_PLAN_ID',
+        }),
+        'Subscription fulfillment skipped',
+      );
       return;
     }
 
@@ -36,7 +45,15 @@ export class PaymentFulfillmentService {
       paidAmountPiasters: payment.amountPiasters,
     });
 
-    this.logger.log(`Subscription activated: user=${payment.userId} plan=${planId}`);
+    this.logger.log(
+      ({
+        action: LogAction.SUBSCRIPTION_ACTIVATED,
+        userId: payment.userId,
+        planId,
+        paymentId: payment.id,
+      }),
+      'Subscription activated',
+    );
   }
 
   async fulfillSeriousRequestTx(tx: AppTransaction, payment: PaymentRow) {
@@ -52,7 +69,14 @@ export class PaymentFulfillmentService {
       );
       if (!result) {
         this.logger.warn(
-          `Serious publish skipped: listing ${listingId} not found for payment ${payment.id}`,
+          ({
+            action: LogAction.PREMIUM_LISTING_CREATED,
+            userId: payment.userId,
+            paymentId: payment.id,
+            listingId,
+            reason: 'LISTING_NOT_FOUND',
+          }),
+          'Serious publish skipped',
         );
       }
     }
@@ -71,7 +95,14 @@ export class PaymentFulfillmentService {
       );
       if (!result) {
         this.logger.warn(
-          `Featured publish skipped: listing ${listingId} not found for payment ${payment.id}`,
+          ({
+            action: LogAction.PREMIUM_LISTING_CREATED,
+            userId: payment.userId,
+            paymentId: payment.id,
+            listingId,
+            reason: 'LISTING_NOT_FOUND',
+          }),
+          'Featured publish skipped',
         );
       }
     }
@@ -80,7 +111,15 @@ export class PaymentFulfillmentService {
   async fulfillFeaturedBundleTx(tx: AppTransaction, payment: PaymentRow) {
     await this.creditsService.addCreditsTx(tx, payment.userId, 'featured', 15, payment.id);
 
-    this.logger.log(`Featured bundle activated: user=${payment.userId} +15 credits`);
+    this.logger.log(
+      ({
+        action: LogAction.FEATURED_BUNDLE_ACTIVATED,
+        userId: payment.userId,
+        paymentId: payment.id,
+        credits: 15,
+      }),
+      'Featured bundle activated',
+    );
   }
 
   private getSubscriptionMeta(metadata: PaymentRow['metadata']): SubscriptionMetadata {

@@ -13,6 +13,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { NonProductionGuard } from 'src/common/guards/non-production.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { PaymobCheckoutService } from './checkout/paymob-checkout.service';
@@ -79,6 +80,7 @@ export class SubscriptionsController {
   }
 
   @Post('testing/reset-subscription')
+  @UseGuards(NonProductionGuard)
   resetSubscriptionForTesting(@CurrentUser() user: AuthenticatedUser) {
     return this.subscriptionService.deleteAllSubscriptionsForTesting(user.id);
   }

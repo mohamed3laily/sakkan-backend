@@ -1,6 +1,8 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { LogAction, maskPhone } from 'src/common/logging';
+
 /**
  * Torvo quick send — `POST https://smsapi.torvochat.com/sms/send`
  * Headers: `Content-Type: application/json`, `x-api-key: <key>`
@@ -66,6 +68,11 @@ export class TorvoSmsService {
       });
     } catch (e) {
       this.logger.error(
+        {
+          action: LogAction.SMS_SEND_FAILED,
+          phone: maskPhone(phoneE164),
+          reason: 'NETWORK_ERROR',
+        },
         e instanceof Error ? e.message : String(e),
         e instanceof Error ? e.stack : undefined,
       );
@@ -77,7 +84,12 @@ export class TorvoSmsService {
     const rawText = await res.text();
     if (!res.ok) {
       this.logger.error(
-        `Torvo SMS send failed (HTTP ${res.status}). Request body (compare to working curl): ${JSON.stringify(body)}. Response: ${rawText}`,
+        {
+          action: LogAction.SMS_SEND_FAILED,
+          phone: maskPhone(phoneE164),
+          httpStatus: res.status,
+        },
+        'Torvo SMS send failed',
       );
       throw new InternalServerErrorException('SMS_SEND_FAILED');
     }
@@ -90,7 +102,14 @@ export class TorvoSmsService {
     }
 
     const messageId = extractMessageId(parsed);
-    this.logger.log(`Torvo SMS queued/sent: messageId=${messageId ?? 'n/a'}`);
+    this.logger.log(
+      {
+        action: LogAction.SMS_SENT,
+        phone: maskPhone(phoneE164),
+        messageId: messageId ?? null,
+      },
+      'Torvo SMS queued/sent',
+    );
 
     return { messageId, raw: parsed };
   }
@@ -108,6 +127,11 @@ export class TorvoSmsService {
       });
     } catch (e) {
       this.logger.error(
+        {
+          action: LogAction.SMS_SEND_FAILED,
+          messageId,
+          reason: 'NETWORK_ERROR',
+        },
         e instanceof Error ? e.message : String(e),
         e instanceof Error ? e.stack : undefined,
       );
@@ -117,7 +141,14 @@ export class TorvoSmsService {
     }
     const rawText = await res.text();
     if (!res.ok) {
-      this.logger.error(`Torvo SMS status failed: ${res.status} ${rawText}`);
+      this.logger.error(
+        {
+          action: LogAction.SMS_SEND_FAILED,
+          messageId,
+          httpStatus: res.status,
+        },
+        'Torvo SMS status failed',
+      );
       throw new InternalServerErrorException('SMS_SEND_FAILED');
     }
     try {
@@ -130,7 +161,10 @@ export class TorvoSmsService {
   private buildSendBody(phoneE164: string, message: string): TorvoSendRequestBody {
     const text = (message == null ? '' : String(message)).trim();
     if (text.length === 0) {
-      this.logger.error('Torvo: refused to send: SMS text is empty after trim');
+      this.logger.error(
+        { action: LogAction.SMS_SEND_FAILED, reason: 'EMPTY_MESSAGE' },
+        'Torvo refused to send empty SMS',
+      );
       throw new InternalServerErrorException('SMS_SEND_FAILED');
     }
     const recipient = phoneE164.trim();

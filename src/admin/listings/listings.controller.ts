@@ -13,6 +13,8 @@ import { ListingsService } from './listings.service';
 import { ListingQueryDto } from 'src/modules/listing/dto/listing-query.dto';
 import { AdminJwtAuthGuard } from '../auth/guards/admin-jwt-auth.guard';
 import { UpdateListingStatusDto } from './dto/update-listing-status.dto';
+import { CurrentAdmin } from '../auth/decorators/current-admin.decorator';
+import { AuthenticatedAdmin } from '../auth/interfaces/authenticated-admin.interface';
 
 @UseGuards(AdminJwtAuthGuard)
 @Controller('admin/listings')
@@ -30,11 +32,19 @@ export class ListingsController {
   }
 
   @Patch(':id/status')
-  async updateStatus(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateListingStatusDto) {
-    return this.service.updateStatus(id, dto);
+  async updateStatus(
+    @CurrentAdmin() admin: AuthenticatedAdmin,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateListingStatusDto,
+  ) {
+    return this.service.updateStatus(admin.id, id, dto);
   }
+
   @Delete(':id')
-  async deleteListing(@Param('id', ParseIntPipe) id: number) {
-    return this.service.deleteListing(id);
+  async deleteListing(
+    @CurrentAdmin() admin: AuthenticatedAdmin,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.service.deleteListing(admin.id, id);
   }
 }

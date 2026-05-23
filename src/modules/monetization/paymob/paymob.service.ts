@@ -10,6 +10,7 @@ import {
   buildGetTransactionHmacConcatString,
   buildPostTransactionHmacConcatFromRaw,
 } from './paymob-hmac.util';
+import { LogAction } from 'src/common/logging';
 
 export type PaymobCheckoutFlow = 'intention' | 'legacy_iframe';
 
@@ -110,16 +111,47 @@ export class PaymobService {
 
     try {
       if (this.useIntention) {
-        return await this.createPaymentIntention(params, internalPayment, amountPiasters);
+        const result = await this.createPaymentIntention(params, internalPayment, amountPiasters);
+        this.logger.log(
+          ({
+            action: LogAction.PAYMOB_CHECKOUT_CREATED,
+            userId: params.userId,
+            paymentId: internalPayment.id,
+            paymentType: params.paymentType,
+            amountEgp: params.amountEgp,
+          }),
+          'Paymob checkout created',
+        );
+        return result;
       }
-      return await this.createOrderLegacy(params, internalPayment, amountPiasters);
+      const result = await this.createOrderLegacy(params, internalPayment, amountPiasters);
+      this.logger.log(
+        ({
+          action: LogAction.PAYMOB_CHECKOUT_CREATED,
+          userId: params.userId,
+          paymentId: internalPayment.id,
+          paymentType: params.paymentType,
+          amountEgp: params.amountEgp,
+        }),
+        'Paymob checkout created',
+      );
+      return result;
     } catch (err) {
       await this.drizzle.db
         .update(payments)
         .set({ status: 'failed', updatedAt: new Date().toISOString() })
         .where(eq(payments.id, internalPayment.id));
 
-      this.logger.error('Paymob order creation failed', err);
+      this.logger.error(
+        ({
+          action: LogAction.PAYMOB_CHECKOUT_FAILED,
+          userId: params.userId,
+          paymentId: internalPayment.id,
+          paymentType: params.paymentType,
+        }),
+        'Paymob order creation failed',
+        err instanceof Error ? err.stack : undefined,
+      );
       throw new InternalServerErrorException('PAYMENT_GATEWAY_ERROR');
     }
   }
@@ -365,20 +397,39 @@ export class PaymobService {
   verifyWebhookHmac(payload: unknown, hmac: string): boolean {
     if (!hmac?.trim()) {
       this.logger.warn(
-        'Paymob HMAC POST: missing or empty ?hmac= query param. Paymob appends hmac to the callback URL.',
+        ({
+          action: LogAction.PAYMOB_HMAC_INVALID,
+          reason: 'MISSING_HMAC_QUERY',
+          context: 'POST',
+        }),
+        'Paymob HMAC verification failed',
       );
       return false;
     }
 
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-      this.logger.warn('Paymob HMAC POST: body is not a JSON object');
+      this.logger.warn(
+        ({
+          action: LogAction.PAYMOB_HMAC_INVALID,
+          reason: 'INVALID_BODY',
+          context: 'POST',
+        }),
+        'Paymob HMAC verification failed',
+      );
       return false;
     }
 
     const body = payload as Record<string, unknown>;
     const objRaw = body['obj'];
     if (!objRaw || typeof objRaw !== 'object' || Array.isArray(objRaw)) {
-      this.logger.warn('Paymob HMAC POST: payload.obj is missing or not an object');
+      this.logger.warn(
+        ({
+          action: LogAction.PAYMOB_HMAC_INVALID,
+          reason: 'MISSING_OBJ',
+          context: 'POST',
+        }),
+        'Paymob HMAC verification failed',
+      );
       return false;
     }
 
@@ -416,7 +467,12 @@ export class PaymobService {
     const hmac = Array.isArray(raw) ? raw[0] : raw;
     if (!hmac || typeof hmac !== 'string') {
       this.logger.warn(
-        'Paymob HMAC GET (return URL): missing hmac in query — redirect callbacks must include Paymob query params.',
+        ({
+          action: LogAction.PAYMOB_HMAC_INVALID,
+          reason: 'MISSING_HMAC_QUERY',
+          context: 'GET',
+        }),
+        'Paymob HMAC verification failed',
       );
       return false;
     }
@@ -459,7 +515,14 @@ export class PaymobService {
 
     if (normalizedReceived.length !== expectedHexLen) {
       this.logger.warn(
-        `Paymob HMAC ${context} failed: received digest length=${normalizedReceived.length} (expect ${expectedHexLen} for SHA-512 hex) order=${meta?.orderId} txn=${meta?.txnId}`,
+        ({
+          action: LogAction.PAYMOB_HMAC_INVALID,
+          reason: 'INVALID_DIGEST_LENGTH',
+          context,
+          orderId: meta?.orderId,
+          txnId: meta?.txnId,
+        }),
+        'Paymob HMAC verification failed',
       );
       return false;
     }
@@ -492,19 +555,19 @@ export class PaymobService {
       }
     }
 
-    const primarySecret = this.webhookHmacSecrets[0];
-    const firstComputed = primarySecret
-      ? crypto
-          .createHmac('sha512', this.hmacKeyVariants(primarySecret)[0])
-          .update(concatenated)
-          .digest('hex')
-          .toLowerCase()
-      : '';
-
     const cfgInt = this.integrationId;
     const payloadInt = meta?.integrationId;
     this.logger.warn(
-      `Paymob HMAC ${context} mismatch (PAYMOB_HMAC_SECRET): order=${meta?.orderId} txn=${meta?.txnId} payloadIntegration=${payloadInt} PAYMOB_INTEGRATION_ID=${cfgInt} concatLen=${concatenated.length} hmacSecretChars=${primarySecret?.length ?? 0} computedPrefix=${firstComputed.slice(0, 16)} receivedPrefix=${normalizedReceived.slice(0, 16)}`,
+      ({
+        action: LogAction.PAYMOB_HMAC_INVALID,
+        reason: 'DIGEST_MISMATCH',
+        context,
+        orderId: meta?.orderId,
+        txnId: meta?.txnId,
+        payloadIntegrationId: payloadInt,
+        configIntegrationId: cfgInt,
+      }),
+      'Paymob HMAC verification failed',
     );
     if (payloadInt !== undefined && String(payloadInt) !== String(cfgInt)) {
       this.logger.warn(

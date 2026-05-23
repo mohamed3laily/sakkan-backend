@@ -1,6 +1,6 @@
 import { PropertyTypeQueryDto } from './dto/property-type-query.dto';
 
-import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { ListingsRepository } from './listing.repo';
 import { ListingFiltersDto } from './dto/listing-filters.dto';
@@ -12,9 +12,12 @@ import { DrizzleService } from '../db/drizzle.service';
 import { GeoValidationService } from './geo-validation.service';
 import { ListingPromotionService } from '../monetization/listing-promotion/listing-promotion.service';
 import { ListingPostCreateService } from './listing-post-create.service';
+import { LogAction } from 'src/common/logging';
 
 @Injectable()
 export class ListingService {
+  private readonly logger = new Logger(ListingService.name);
+
   constructor(
     private readonly repo: ListingsRepository,
     private readonly paginationService: PaginationService,
@@ -28,19 +31,20 @@ export class ListingService {
   async createListing(userId: number, dto: CreateListingDto, images: Express.Multer.File[] = []) {
     await this.geoValidationService.validateListingLocation(dto);
 
-    const listing =
-      dto.makePremium === true
-        ? await this.drizzle.db.transaction(async (tx) => {
-            const row = await this.repo.createInTx(tx, userId, dto);
-            await this.listingPromotionService.promoteToPremiumInTransaction(
-              tx,
-              row.id,
-              userId,
-              null,
-            );
-            return row;
-          })
-        : await this.repo.create(userId, dto);
+    const makePremium = dto.makePremium === true;
+
+    const { listing, premiumPromotion } = makePremium
+      ? await this.drizzle.db.transaction(async (tx) => {
+          const row = await this.repo.createInTx(tx, userId, dto);
+          const promotion = await this.listingPromotionService.promoteToPremiumInTransaction(
+            tx,
+            row.id,
+            userId,
+            null,
+          );
+          return { listing: row, premiumPromotion: promotion };
+        })
+      : { listing: await this.repo.create(userId, dto), premiumPromotion: null };
 
     await this.listingPostCreate.run({
       listingId: listing.id,
@@ -48,6 +52,24 @@ export class ListingService {
       creatorUserId: userId,
       images,
     });
+
+    if (premiumPromotion) {
+      this.logger.log(
+        ({
+          action: LogAction.PREMIUM_LISTING_CREATED,
+          userId,
+          listingId: listing.id,
+          listingType: dto.listingType,
+          dealType: dto.dealType,
+          cityId: dto.cityId,
+          propertyTypeId: dto.propertyTypeId,
+          promotedAs: premiumPromotion.promotedAs,
+          quotaSource: premiumPromotion.source,
+          remainingQuota: premiumPromotion.remaining,
+        }),
+        'Premium listing created',
+      );
+    }
 
     return listing;
   }

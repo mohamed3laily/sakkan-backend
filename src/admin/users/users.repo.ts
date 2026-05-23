@@ -4,6 +4,29 @@ import { users } from 'src/modules/db/schemas/user/user';
 import { eq, ilike, count, and, or, sql } from 'drizzle-orm';
 import { AdminUserQueryDto } from './dto/user-query.dto';
 
+const SAFE_USER_COLUMNS = {
+  id: users.id,
+  firstName: users.firstName,
+  lastName: users.lastName,
+  phone: users.phone,
+  profilePicture: users.profilePicture,
+  type: users.type,
+  bio: users.bio,
+  organizationNameAr: users.organizationNameAr,
+  organizationNameEn: users.organizationNameEn,
+  socialMediaLinks: users.socialMediaLinks,
+  cityId: users.cityId,
+  contactViaWhatsapp: users.contactViaWhatsapp,
+  contactViaPhone: users.contactViaPhone,
+  avgRating: users.avgRating,
+  reviewsCount: users.reviewsCount,
+  verifiedPhoneAt: users.verifiedPhoneAt,
+  deactivatedAt: users.deactivatedAt,
+  language: users.language,
+  createdAt: users.createdAt,
+  updatedAt: users.updatedAt,
+} as const;
+
 @Injectable()
 export class UsersRepo {
   constructor(private readonly drizzleService: DrizzleService) {}
@@ -14,7 +37,12 @@ export class UsersRepo {
     const whereClause = search ? this.buildSearchWhere(search) : undefined;
 
     const [data, [{ total }]] = await Promise.all([
-      this.drizzleService.db.select().from(users).where(whereClause).limit(limit).offset(offset),
+      this.drizzleService.db
+        .select(SAFE_USER_COLUMNS)
+        .from(users)
+        .where(whereClause)
+        .limit(limit)
+        .offset(offset),
       this.drizzleService.db.select({ total: count() }).from(users).where(whereClause),
     ]);
 
@@ -23,7 +51,7 @@ export class UsersRepo {
 
   async findById(id: number) {
     const [user] = await this.drizzleService.db
-      .select()
+      .select(SAFE_USER_COLUMNS)
       .from(users)
       .where(eq(users.id, id))
       .limit(1);

@@ -4,7 +4,26 @@ import { users } from 'src/modules/db/schemas/user/user';
 import { cities } from 'src/modules/db/schemas/cities/cities';
 import { subscriptionPlans, userSubscriptions } from 'src/modules/db/schemas/schema-index';
 import { and, eq, sql } from 'drizzle-orm';
-import type { UpdateMeDto } from './dto/me.dto';
+import type { SafeUserProfileUpdate, UpdateMeDto } from './dto/me.dto';
+
+const PROFILE_RETURNING = {
+  id: users.id,
+  firstName: users.firstName,
+  lastName: users.lastName,
+  phone: users.phone,
+  profilePicture: users.profilePicture,
+  type: users.type,
+  bio: users.bio,
+  organizationNameAr: users.organizationNameAr,
+  organizationNameEn: users.organizationNameEn,
+  socialMediaLinks: users.socialMediaLinks,
+  contactViaWhatsapp: users.contactViaWhatsapp,
+  contactViaPhone: users.contactViaPhone,
+  language: users.language,
+  fcmToken: users.fcmToken,
+  createdAt: users.createdAt,
+  updatedAt: users.updatedAt,
+} as const;
 
 @Injectable()
 export class MeRepository {
@@ -62,28 +81,34 @@ export class MeRepository {
   }
 
   async updateMe(userId: number, dto: UpdateMeDto) {
+    const safeUpdate = this.toSafeUpdate(dto);
+    if (Object.keys(safeUpdate).length === 0) {
+      return this.getMe(userId);
+    }
+
     const [user] = await this.drizzle.db
       .update(users)
-      .set(dto)
+      .set(safeUpdate)
       .where(eq(users.id, userId))
-      .returning({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        phone: users.phone,
-        profilePicture: users.profilePicture,
-        type: users.type,
-        bio: users.bio,
-        organizationNameAr: users.organizationNameAr,
-        organizationNameEn: users.organizationNameEn,
-        socialMediaLinks: users.socialMediaLinks,
-        contactViaWhatsapp: users.contactViaWhatsapp,
-        contactViaPhone: users.contactViaPhone,
-        language: users.language,
-        fcmToken: users.fcmToken,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-      });
+      .returning(PROFILE_RETURNING);
+    return user || null;
+  }
+
+  async updatePhone(userId: number, phone: string, verifiedPhoneAt: Date | null) {
+    const [user] = await this.drizzle.db
+      .update(users)
+      .set({ phone, verifiedPhoneAt })
+      .where(eq(users.id, userId))
+      .returning(PROFILE_RETURNING);
+    return user || null;
+  }
+
+  async updateProfilePicture(userId: number, profilePicture: string) {
+    const [user] = await this.drizzle.db
+      .update(users)
+      .set({ profilePicture })
+      .where(eq(users.id, userId))
+      .returning(PROFILE_RETURNING);
     return user || null;
   }
 
@@ -94,5 +119,23 @@ export class MeRepository {
       .returning({ id: users.id });
 
     return result.length > 0;
+  }
+
+  private toSafeUpdate(dto: UpdateMeDto): SafeUserProfileUpdate {
+    const safe: SafeUserProfileUpdate = {};
+
+    if (dto.firstName !== undefined) safe.firstName = dto.firstName;
+    if (dto.lastName !== undefined) safe.lastName = dto.lastName;
+    if (dto.bio !== undefined) safe.bio = dto.bio;
+    if (dto.organizationNameAr !== undefined) safe.organizationNameAr = dto.organizationNameAr;
+    if (dto.organizationNameEn !== undefined) safe.organizationNameEn = dto.organizationNameEn;
+    if (dto.socialMediaLinks !== undefined) safe.socialMediaLinks = dto.socialMediaLinks;
+    if (dto.cityId !== undefined) safe.cityId = dto.cityId;
+    if (dto.contactViaWhatsapp !== undefined) safe.contactViaWhatsapp = dto.contactViaWhatsapp;
+    if (dto.contactViaPhone !== undefined) safe.contactViaPhone = dto.contactViaPhone;
+    if (dto.language !== undefined) safe.language = dto.language;
+    if (dto.fcmToken !== undefined) safe.fcmToken = dto.fcmToken;
+
+    return safe;
   }
 }

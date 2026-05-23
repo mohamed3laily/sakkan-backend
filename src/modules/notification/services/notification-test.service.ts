@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import type { NotifiableType } from '../../db/schemas/notifications/notifications';
@@ -24,7 +29,6 @@ export class NotificationTestService {
   ) {}
 
   async sendTestNotification(dto: TestNotificationDto): Promise<void> {
-
     if (isSingleRecipientType(dto.type)) {
       if (dto.userId == null) {
         throw new BadRequestException('VALIDATION_ERROR');
@@ -39,7 +43,9 @@ export class NotificationTestService {
     await this.notificationQueue.dispatch(payload);
   }
 
-  private async buildPayloadFromFixtures(dto: TestNotificationDto): Promise<NotificationJobPayload> {
+  private async buildPayloadFromFixtures(
+    dto: TestNotificationDto,
+  ): Promise<NotificationJobPayload> {
     switch (dto.type) {
       case 'LISTING_PREFERENCE_MATCH': {
         const fixture = await this.repo.findFixturePreferenceMatch();

@@ -6,10 +6,10 @@ import {
   IsObject,
   IsIn,
   MaxLength,
-  IsDate,
+  IsInt,
+  IsBoolean,
 } from 'class-validator';
 import {
-  userTypeEnum,
   userLanguageEnum,
   type UserLanguage,
 } from 'src/modules/db/schemas/user/enums';
@@ -40,17 +40,16 @@ export class UpdateMeDto {
   socialMediaLinks?: SocialMediaLinks;
 
   @IsOptional()
+  @IsInt()
   cityId?: number;
 
   @IsOptional()
+  @IsBoolean()
   contactViaWhatsapp?: boolean;
 
   @IsOptional()
+  @IsBoolean()
   contactViaPhone?: boolean;
-
-  @IsOptional()
-  @IsIn(userTypeEnum.enumValues)
-  type?: (typeof userTypeEnum.enumValues)[number];
 
   @IsOptional()
   @IsIn(userLanguageEnum.enumValues)
@@ -60,17 +59,6 @@ export class UpdateMeDto {
   @IsString()
   @MaxLength(4096)
   fcmToken?: string;
-
-  @IsOptional()
-  @IsString()
-  profilePicture?: string;
-
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @IsOptional()
-  verifiedPhoneAt?: Date | null;
 }
 
 export class ChangePhoneDto {
@@ -78,3 +66,18 @@ export class ChangePhoneDto {
   @IsNotEmpty()
   phone: string;
 }
+
+export type SafeUserProfileUpdate = Pick<
+  UpdateMeDto,
+  | 'firstName'
+  | 'lastName'
+  | 'bio'
+  | 'organizationNameAr'
+  | 'organizationNameEn'
+  | 'socialMediaLinks'
+  | 'cityId'
+  | 'contactViaWhatsapp'
+  | 'contactViaPhone'
+  | 'language'
+  | 'fcmToken'
+>;

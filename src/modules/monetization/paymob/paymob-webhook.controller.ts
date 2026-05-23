@@ -16,6 +16,7 @@ import type { Response } from 'express';
 import { paymobOrderIdFromTransactionObj } from './paymob-hmac.util';
 import { PaymobService } from './paymob.service';
 import { PaymobWebhookService } from './paymob-webhook.service';
+import { LogAction } from 'src/common/logging';
 
 /**
  * Paymob Accept callbacks (configure URLs on the integration in the dashboard).
@@ -58,7 +59,15 @@ export class PaymobWebhookController {
       }
     }
     this.logger.log(
-      `Paymob webhook received: type=${typeLog} txn=${txnLog} order=${orderLog} integration=${intLog} hmacQuery=${hmacStr ? `present(len=${hmacStr.length})` : 'MISSING'}`,
+      ({
+        action: LogAction.PAYMOB_WEBHOOK_RECEIVED,
+        type: typeLog,
+        txnId: txnLog,
+        orderId: orderLog,
+        integrationId: intLog,
+        hmacPresent: hmacStr.length > 0,
+      }),
+      'Paymob webhook received',
     );
 
     await this.webhookService.handleWebhook(payload, hmacStr);
@@ -83,7 +92,12 @@ export class PaymobWebhookController {
           ? (hmacRaw[0]?.length ?? 0)
           : 0;
     this.logger.log(
-      `Paymob return URL hit: hmac=${hmacLen ? `present(len=${hmacLen})` : 'MISSING'} queryKeys=${Object.keys(query).length}`,
+      ({
+        action: LogAction.PAYMOB_RETURN_RECEIVED,
+        hmacPresent: hmacLen > 0,
+        queryKeyCount: Object.keys(query).length,
+      }),
+      'Paymob return URL hit',
     );
     if (!this.paymobService.verifyResponseCallbackHmac(query)) {
       throw new UnauthorizedException('INVALID_PAYMOB_HMAC');

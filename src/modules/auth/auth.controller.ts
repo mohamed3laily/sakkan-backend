@@ -9,16 +9,19 @@ import { AllowUnverified } from './decorators/allow-unverified.decorator';
 import { VerifyPhoneDto } from './dto/verify-phone.dto';
 import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { AuthThrottle, StrictAuthThrottle } from 'src/common/decorators/auth-throttle.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @AuthThrottle()
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
+  @AuthThrottle()
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
@@ -38,6 +41,7 @@ export class AuthController {
     return this.authService.resendVerifyPhone(user.phone);
   }
 
+  @StrictAuthThrottle()
   @Post('request-reset')
   async requestReset(@Body() requestResetDto: RequestResetDto) {
     return this.authService.requestPasswordReset(requestResetDto);
@@ -48,11 +52,13 @@ export class AuthController {
     return this.authService.resendResetOtp(requestResetDto);
   }
 
+  @StrictAuthThrottle()
   @Post('verify-reset-otp')
   async verifyReset(@Body() dto: VerifyResetDto) {
     return this.authService.verifyResetToken(dto.phone, dto.token);
   }
 
+  @StrictAuthThrottle()
   @Post('reset-password')
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);

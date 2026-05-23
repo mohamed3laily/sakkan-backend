@@ -22,10 +22,27 @@ import { AttachmentModule } from './modules/attachment/attachment.module';
 import { AppSettingsModule } from './modules/app-settings/app-settings.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { RealEstateDeveloperModule } from './modules/real-estate-developer/real-estate-developer.module';
+import { AppLoggingModule } from './common/logging/logging.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { AUTH_THROTTLE } from './common/throttling/throttle.constants';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60_000,
+        limit: 100,
+      },
+      {
+        name: AUTH_THROTTLE.name,
+        ttl: AUTH_THROTTLE.ttl,
+        limit: AUTH_THROTTLE.limit,
+      },
+    ]),
+    AppLoggingModule,
     ScheduleModule.forRoot(),
     BullModule.forRootAsync({
       inject: [ConfigService],
@@ -57,6 +74,12 @@ import { RealEstateDeveloperModule } from './modules/real-estate-developer/real-
     RealEstateDeveloperModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

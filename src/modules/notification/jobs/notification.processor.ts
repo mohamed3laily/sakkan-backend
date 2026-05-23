@@ -40,7 +40,6 @@ export class NotificationProcessor extends WorkerHost {
   // ── Router ───────────────────────────────────────────────────────────────
 
   private async dispatch(data: NotificationJobPayload): Promise<void> {
-    console.log('dispatching', data);
     switch (data.type) {
       case 'LISTING_PREFERENCE_MATCH':
         return this.handlePreferenceMatch(data);
@@ -98,8 +97,6 @@ export class NotificationProcessor extends WorkerHost {
       this.repo.findUserPushTarget(data.agentId),
       this.repo.findRequesterDisplayName(data.requesterUserId),
     ]);
-    console.log('agent', agent);
-    console.log('requesterName', requesterName);
     if (!agent) {
       return;
     }

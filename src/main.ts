@@ -1,12 +1,28 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { Logger } from 'nestjs-pino';
 import { ResponseTranslateInterceptor } from './common/interceptors/response-translate.interceptor';
 import { TranslateInterceptor } from './common/interceptors/translate.interceptor';
-import { I18nExceptionFilter } from './common/filters/i18n-exception.filter';
+import helmet from 'helmet';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
+
+  app.use(helmet());
+
+  const isProduction = process.env.NODE_ENV === 'production';
+  const corsOrigins = process.env.CORS_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (corsOrigins?.length || !isProduction) {
+    app.enableCors({
+      origin: corsOrigins?.length ? corsOrigins : true,
+      credentials: true,
+    });
+  }
 
   app.enableVersioning({
     type: VersioningType.URI,
@@ -21,8 +37,6 @@ async function bootstrap() {
     }),
   );
   app.useGlobalInterceptors(new TranslateInterceptor(), new ResponseTranslateInterceptor());
-
-  app.useGlobalFilters(new I18nExceptionFilter());
 
   await app.listen(process.env.PORT ?? 3000);
 }
