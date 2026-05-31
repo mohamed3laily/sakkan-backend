@@ -4,6 +4,10 @@
   "NOTIFICATION_TEST_NO_FIXTURE": "No suitable record was found in the database to build this test notification",
   "NOT_FOUND": "Resource not found",
   "AREA_NOT_FOUND": "Area not found",
+  "CITY_NOT_FOUND": "City not found",
+  "CITY_NAME_EXISTS": "A city with this English name already exists",
+  "CITY_HAS_LISTINGS": "Cannot delete a city that has listings",
+  "AREA_IN_USE": "Cannot delete an area that is used by listings",
   "DEVELOPER_PROJECT_NOT_FOUND": "Developer project not found",
   "VALIDATION_ERROR": "Validation failed",
   "INVALID_FILE_TYPE": "Invalid file type",
@@ -12,5 +16,12 @@
   "PAYMENT_FULFILLMENT_FAILED": "Payment succeeded but fulfillment failed; please contact support",
   "NO_SUBSCRIPTION": "An active subscription is required to view this contact",
   "VIEW_QUOTA_EXHAUSTED": "You have used all serious request views for this billing period",
-  "SMS_SEND_FAILED": "Could not send SMS; please try again later"
+  "SMS_SEND_FAILED": "Could not send SMS; please try again later",
+  "SUBSCRIPTION_NOT_FOUND": "Subscription not found",
+  "SUBSCRIPTION_NOT_ACTIVE": "Subscription is not active and cannot be cancelled",
+  "ADMIN_FORBIDDEN": "You do not have permission to perform this action",
+  "ADMIN_REVOKED": "This admin account has been revoked",
+  "ADMIN_NOT_FOUND": "Admin not found",
+  "CANNOT_REVOKE_SELF": "You cannot revoke your own admin access",
+  "LAST_SUPER_ADMIN": "Cannot remove or demote the last active super admin"
 }

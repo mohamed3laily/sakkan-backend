@@ -14,6 +14,12 @@ export class AuthRepo {
     });
   }
 
+  async getById(id: number) {
+    return this.drizzleService.db.query.admins.findFirst({
+      where: eq(admins.id, id),
+    });
+  }
+
   async insert(registerDto: AdminRegisterDto, hashedPassword: string) {
     const { name, phone } = registerDto;
     return this.drizzleService.db
@@ -22,6 +28,7 @@ export class AuthRepo {
         name,
         phone,
         password: hashedPassword,
+        type: 'admin',
       })
       .returning()
       .then(([admin]) => admin);

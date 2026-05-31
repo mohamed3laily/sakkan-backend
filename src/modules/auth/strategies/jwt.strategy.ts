@@ -6,6 +6,7 @@ import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { UserService } from 'src/modules/user/user.service';
 import { Reflector } from '@nestjs/core';
 import { ALLOW_UNVERIFIED_KEY } from '../decorators/allow-unverified.decorator';
+import { UserSessionService } from '../user-session.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -13,6 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private configService: ConfigService,
     private userService: UserService,
     private reflector: Reflector,
+    private userSessionService: UserSessionService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -27,6 +29,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user) {
       throw new UnauthorizedException('USER_NOT_FOUND');
+    }
+
+    const sessionActive = await this.userSessionService.isSessionActive(payload.sid);
+    if (!sessionActive) {
+      throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
 
     const allowUnverified = this.reflector.get<boolean>(
@@ -45,6 +52,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       id: user.id,
       phone: user.phone,
       verified: !!user.verifiedPhoneAt,
+      sessionId: payload.sid,
     };
   }
 }

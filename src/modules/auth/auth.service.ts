@@ -19,21 +19,25 @@ import { AuthRepo } from './auth.repo';
 import { TorvoSmsService } from '../sms/torvo-sms.service';
 import { PhoneUtils } from './utils/phone.utils';
 import { LogAction } from 'src/common/logging';
+import { UserSessionService } from './user-session.service';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @Injectable()
 export class AuthService {
   private static readonly BCRYPT_SALT_ROUNDS = 10;
   private static readonly OTP_LENGTH = 5;
+  private static readonly REFRESH_TOKEN_BYTES = 32;
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private authRepo: AuthRepo,
     private jwtService: JwtService,
     private torvoSms: TorvoSmsService,
+    private userSessionService: UserSessionService,
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { firstName, lastName, phone, password, type } = registerDto;
+    const { firstName, lastName, phone, password, type, deviceLabel, installationId } = registerDto;
 
     const normalizedPhone = PhoneUtils.normalizePhone(phone);
     const existingUser = await this.authRepo.getUserByPhone(normalizedPhone);
@@ -65,13 +69,16 @@ export class AuthService {
     } catch (err) {
       throw err;
     }
-    const token = this.generateToken(newUser.id, newUser.phone);
+    const { accessToken, refreshToken, installationId: issuedInstallationId } =
+      await this.issueTokenPair(newUser.id, newUser.phone, { deviceLabel, installationId });
 
     this.logger.log({ userId: newUser.id, action: LogAction.USER_REGISTER }, 'User registered');
 
     return {
       message: 'REGISTER_OTP_SENT',
-      accessToken: token,
+      accessToken,
+      refreshToken,
+      installationId: issuedInstallationId,
       user: {
         id: newUser.id,
         firstName: newUser.firstName,
@@ -155,7 +162,7 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const { phone, password } = loginDto;
+    const { phone, password, deviceLabel, installationId } = loginDto;
 
     let normalizedPhone: string;
     try {
@@ -183,12 +190,15 @@ export class AuthService {
       throw new ForbiddenException('ACCOUNT_DEACTIVATED');
     }
 
-    const token = this.generateToken(user.id, user.phone);
+    const { accessToken, refreshToken, installationId: issuedInstallationId } =
+      await this.issueTokenPair(user.id, user.phone, { deviceLabel, installationId });
 
     this.logger.log({ userId: user.id, action: LogAction.USER_LOGIN }, 'User logged in');
 
     return {
-      accessToken: token,
+      accessToken,
+      refreshToken,
+      installationId: issuedInstallationId,
       user: {
         id: user.id,
         firstName: user.firstName,
@@ -311,6 +321,8 @@ export class AuthService {
       resetTokenExpiry: null,
     });
 
+    await this.userSessionService.revokeAllForUser(user.id);
+
     this.logger.log(
       { userId: user.id, action: LogAction.USER_PASSWORD_RESET_COMPLETE },
       'Password reset completed',
@@ -338,8 +350,50 @@ export class AuthService {
 
     const hashedPassword = await this.hashPassword(newPassword);
     await this.authRepo.updateUser(userId, { password: hashedPassword });
+    await this.userSessionService.revokeAllForUser(userId);
 
     return { message: 'PASSWORD_CHANGED' };
+  }
+
+  async refresh(refreshTokenDto: RefreshTokenDto) {
+    const { refreshToken } = refreshTokenDto;
+    const session = await this.userSessionService.validateRefreshToken(refreshToken);
+
+    if (!session) {
+      this.logger.warn(
+        { action: LogAction.USER_TOKEN_REFRESH, reason: 'INVALID_REFRESH_TOKEN' },
+        'Token refresh failed',
+      );
+      throw new UnauthorizedException('INVALID_REFRESH_TOKEN');
+    }
+
+    const user = await this.authRepo.getUserById(session.userId);
+    if (!user) {
+      throw new UnauthorizedException('INVALID_REFRESH_TOKEN');
+    }
+
+    if (user.deactivatedAt) {
+      await this.userSessionService.revokeSession(session.id);
+      throw new ForbiddenException('ACCOUNT_DEACTIVATED');
+    }
+
+    const tokens = await this.rotateTokenPair(session.id, session.userId, user.phone);
+
+    this.logger.log({ userId: user.id, action: LogAction.USER_TOKEN_REFRESH }, 'Tokens refreshed');
+
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      installationId: session.deviceFingerprint,
+    };
+  }
+
+  async logout(sessionId: number) {
+    await this.userSessionService.revokeSession(sessionId);
+
+    this.logger.log({ sessionId, action: LogAction.USER_LOGOUT }, 'User logged out');
+
+    return { message: 'LOGOUT_SUCCESS' };
   }
 
   private async hashPassword(plain: string): Promise<string> {
@@ -350,9 +404,39 @@ export class AuthService {
     return bcrypt.compare(plain, hash);
   }
 
-  private generateToken(userId: number, phone: string): string {
-    const payload: JwtPayload = { sub: userId, phone };
+  private generateAccessToken(userId: number, phone: string, sessionId: number): string {
+    const payload: JwtPayload = { sub: userId, phone, sid: sessionId };
     return this.jwtService.sign(payload);
+  }
+
+  private generateRefreshToken(): string {
+    return crypto.randomBytes(AuthService.REFRESH_TOKEN_BYTES).toString('hex');
+  }
+
+  private async issueTokenPair(
+    userId: number,
+    phone: string,
+    options?: { deviceLabel?: string; installationId?: string },
+  ): Promise<{ accessToken: string; refreshToken: string; installationId: string }> {
+    const refreshToken = this.generateRefreshToken();
+    const { sessionId, installationId } = await this.userSessionService.establishSession(
+      userId,
+      refreshToken,
+      options,
+    );
+    const accessToken = this.generateAccessToken(userId, phone, sessionId);
+    return { accessToken, refreshToken, installationId };
+  }
+
+  private async rotateTokenPair(
+    sessionId: number,
+    userId: number,
+    phone: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const refreshToken = this.generateRefreshToken();
+    await this.userSessionService.rotateRefreshToken(sessionId, refreshToken);
+    const accessToken = this.generateAccessToken(userId, phone, sessionId);
+    return { accessToken, refreshToken };
   }
 
   private generateResetToken(): string {

@@ -4,6 +4,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { RequestResetDto, ResetPasswordDto, VerifyResetDto } from './dto/reset-password.dto';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AllowUnverified } from './decorators/allow-unverified.decorator';
 import { VerifyPhoneDto } from './dto/verify-phone.dto';
@@ -25,6 +26,19 @@ export class AuthController {
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @AuthThrottle()
+  @Post('refresh')
+  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refresh(refreshTokenDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @AllowUnverified()
+  @Post('logout')
+  async logout(@CurrentUser() user: AuthenticatedUser) {
+    return this.authService.logout(user.sessionId);
   }
 
   @UseGuards(JwtAuthGuard)

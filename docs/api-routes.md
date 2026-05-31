@@ -22,6 +22,8 @@ See [`auth.md`](auth.md).
 | ------ | ---- | ---- |
 | POST | `/v1/auth/register` | Public |
 | POST | `/v1/auth/login` | Public |
+| POST | `/v1/auth/refresh` | Public |
+| POST | `/v1/auth/logout` | JWT (unverified OK) |
 | POST | `/v1/auth/verify-phone` | JWT (unverified OK) |
 | POST | `/v1/auth/resend-verify-otp` | JWT (unverified OK) |
 | POST | `/v1/auth/request-reset` | Public |
@@ -40,6 +42,8 @@ See [`admin.md`](admin.md). **No `admin/` prefix on auth routes.**
 | ------ | ---- | ---- |
 | POST | `/v1/register` | Public |
 | POST | `/v1/login` | Public |
+| POST | `/v1/refresh` | Public |
+| POST | `/v1/logout` | Admin |
 
 ---
 
@@ -115,6 +119,28 @@ See [`admin.md`](admin.md).
 | GET | `/v1/admin/users/:id` | Admin |
 | PATCH | `/v1/admin/users/:id/deactivate` | Admin |
 | DELETE | `/v1/admin/users/:id` | Admin |
+| GET | `/v1/admin/cities` | Admin |
+| POST | `/v1/admin/cities` | Admin |
+| GET | `/v1/admin/cities/:id` | Admin |
+| PATCH | `/v1/admin/cities/:id` | Admin |
+| DELETE | `/v1/admin/cities/:id` | Admin |
+| GET | `/v1/admin/cities/:cityId/areas` | Admin |
+| POST | `/v1/admin/cities/:cityId/areas` | Admin |
+| PATCH | `/v1/admin/cities/:cityId/areas/:areaId` | Admin |
+| DELETE | `/v1/admin/cities/:cityId/areas/:areaId` | Admin |
+| GET | `/v1/admin/subscription-plans` | Admin |
+| GET | `/v1/admin/subscription-plans/:id` | Admin |
+| PATCH | `/v1/admin/subscription-plans/:id` | Super admin |
+| GET | `/v1/admin/user-subscriptions/insights` | Admin |
+| GET | `/v1/admin/user-subscriptions` | Admin |
+| GET | `/v1/admin/user-subscriptions/:id` | Admin |
+| PATCH | `/v1/admin/user-subscriptions/:id/cancel` | Admin |
+| GET | `/v1/admin/stats/overview` | Admin |
+| GET | `/v1/admin/admins` | Super admin |
+| GET | `/v1/admin/admins/:id` | Super admin |
+| POST | `/v1/admin/admins` | Super admin |
+| PATCH | `/v1/admin/admins/:id` | Super admin |
+| PATCH | `/v1/admin/admins/:id/revoke` | Super admin |
 
 ---
 
@@ -180,6 +206,8 @@ See [`background-jobs.md`](background-jobs.md).
 | Method | Path | Auth |
 | ------ | ---- | ---- |
 | GET | `/v1/app-settings` | Public |
+| GET | `/v1/admin/app-settings` | Admin JWT |
+| PATCH | `/v1/admin/app-settings` | Admin JWT |
 
 ---
 

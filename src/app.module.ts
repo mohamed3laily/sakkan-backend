@@ -23,6 +23,7 @@ import { AppSettingsModule } from './modules/app-settings/app-settings.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { RealEstateDeveloperModule } from './modules/real-estate-developer/real-estate-developer.module';
 import { AppLoggingModule } from './common/logging/logging.module';
+import { RedisModule } from './common/redis/redis.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AUTH_THROTTLE } from './common/throttling/throttle.constants';
@@ -44,6 +45,7 @@ import { AUTH_THROTTLE } from './common/throttling/throttle.constants';
     ]),
     AppLoggingModule,
     ScheduleModule.forRoot(),
+    RedisModule,
     BullModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

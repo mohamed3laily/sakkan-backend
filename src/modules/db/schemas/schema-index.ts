@@ -36,6 +36,7 @@ export * from './preferences/enums';
 
 // admins
 export * from './admins/admins';
+export * from './admins/admin-sessions';
 
 // monetization
 export * from './monetization/credit-products';

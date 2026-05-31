@@ -3,13 +3,16 @@ import { and, eq, sql } from 'drizzle-orm';
 
 import { DrizzleService } from '../../db/drizzle.service';
 import { subscriptionPlans } from '../../db/schemas/monetization/subscription-plans';
-import { userSessions } from '../../db/schemas/monetization/user-sessions';
 import { userSubscriptions } from '../../db/schemas/monetization/user-subscriptions';
 import { toPlanSnapshot, type PlanDto } from '../types';
+import { UserSessionService } from '../../auth/user-session.service';
 
 @Injectable()
 export class SubscriptionService {
-  constructor(private readonly drizzle: DrizzleService) {}
+  constructor(
+    private readonly drizzle: DrizzleService,
+    private readonly userSessionService: UserSessionService,
+  ) {}
 
   async getActivePlans(): Promise<PlanDto[]> {
     const plans = await this.drizzle.db
@@ -113,59 +116,12 @@ export class SubscriptionService {
     };
   }
 
-  async canLoginOnDevice(
-    userId: number,
-    deviceFingerprint: string,
-  ): Promise<{ allowed: boolean; activeDevices: number; limit: number }> {
-    const sub = await this.getActiveSubscription(userId);
-    const limit = sub?.plan.deviceLimit ?? 1;
-
-    const existing = await this.drizzle.db
-      .select()
-      .from(userSessions)
-      .where(
-        and(
-          eq(userSessions.userId, userId),
-          eq(userSessions.deviceFingerprint, deviceFingerprint),
-          sql`${userSessions.revokedAt} IS NULL`,
-        ),
-      )
-      .limit(1);
-
-    if (existing[0]) {
-      await this.drizzle.db
-        .update(userSessions)
-        .set({ lastSeenAt: new Date().toISOString() })
-        .where(eq(userSessions.id, existing[0].id));
-
-      return { allowed: true, activeDevices: 0, limit };
-    }
-
-    const activeSessions = await this.drizzle.db
-      .select({ count: sql<number>`count(*)` })
-      .from(userSessions)
-      .where(and(eq(userSessions.userId, userId), sql`${userSessions.revokedAt} IS NULL`));
-
-    const activeDevices = Number(activeSessions[0]?.count ?? 0);
-
-    if (activeDevices >= limit) {
-      return { allowed: false, activeDevices, limit };
-    }
-
-    await this.drizzle.db.insert(userSessions).values({
-      userId,
-      deviceFingerprint,
-      lastSeenAt: new Date().toISOString(),
-    });
-
-    return { allowed: true, activeDevices: activeDevices + 1, limit };
+  async getDeviceLimit(userId: number): Promise<number> {
+    return this.userSessionService.getDeviceLimit(userId);
   }
 
   async revokeDevice(userId: number, sessionId: number) {
-    await this.drizzle.db
-      .update(userSessions)
-      .set({ revokedAt: new Date().toISOString() })
-      .where(and(eq(userSessions.id, sessionId), eq(userSessions.userId, userId)));
+    await this.userSessionService.revokeSession(sessionId, userId);
   }
 
   /**
@@ -182,10 +138,7 @@ export class SubscriptionService {
   }
 
   getActiveDevices(userId: number) {
-    return this.drizzle.db
-      .select()
-      .from(userSessions)
-      .where(and(eq(userSessions.userId, userId), sql`${userSessions.revokedAt} IS NULL`));
+    return this.userSessionService.getActiveDevices(userId);
   }
 
   private computePeriodEnd(from: Date, billingPeriod: string): Date {

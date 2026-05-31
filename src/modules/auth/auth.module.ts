@@ -10,6 +10,7 @@ import type { StringValue } from 'ms';
 import { AuthRepo } from './auth.repo';
 import { UserModule } from '../user/user.module';
 import { SmsModule } from '../sms/sms.module';
+import { UserSessionService } from './user-session.service';
 
 @Module({
   imports: [
@@ -22,14 +23,14 @@ import { SmsModule } from '../sms/sms.module';
       useFactory: (configService: ConfigService) => ({
         secret: configService.getOrThrow<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: configService.get<StringValue>('JWT_EXPIRES_IN', '180d'),
+          expiresIn: configService.get<StringValue>('JWT_EXPIRES_IN', '30m'),
         },
       }),
     }),
     UserModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, AuthRepo],
-  exports: [AuthService, AuthRepo],
+  providers: [AuthService, JwtStrategy, AuthRepo, UserSessionService],
+  exports: [AuthService, AuthRepo, UserSessionService],
 })
 export class AuthModule {}

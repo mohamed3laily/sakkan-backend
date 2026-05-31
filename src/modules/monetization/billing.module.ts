@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 
 import { ListingModule } from '../listing/listing.module';
 import { UserModule } from '../user/user.module';
+import { AuthModule } from '../auth/auth.module';
 import { PaymobCheckoutService } from './checkout/paymob-checkout.service';
 import { CreditsService } from './credits/credits.service';
 import { ListingExpiryService } from './expiry/listing-expiry.service';
@@ -17,7 +18,7 @@ import { SubscriptionWalletService } from './subscription/subscription-wallet.se
 import { SubscriptionService } from './subscription/subscription.service';
 
 @Module({
-  imports: [UserModule, forwardRef(() => ListingModule), PaymentsModule],
+  imports: [UserModule, forwardRef(() => ListingModule), AuthModule, PaymentsModule],
   controllers: [SubscriptionsController, PaymobWebhookController],
   providers: [
     SeriousRequestUnlockRepository,

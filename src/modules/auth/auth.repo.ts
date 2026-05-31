@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InsertUser, users } from '../db/schemas/schema-index';
 import { eq } from 'drizzle-orm';
 import { DrizzleService } from '../db/drizzle.service';
-import { RegisterDto } from './dto/register.dto';
+
+type InsertUserRegistration = Pick<
+  InsertUser,
+  'firstName' | 'lastName' | 'phone' | 'password' | 'type'
+>;
 
 @Injectable()
 export class AuthRepo {
@@ -21,7 +25,7 @@ export class AuthRepo {
   }
 
   async insertUser(
-    userData: RegisterDto,
+    userData: InsertUserRegistration,
     verifyPhoneToken?: string,
     verifyPhoneTokenExpiry?: Date,
   ) {
