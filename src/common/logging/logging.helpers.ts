@@ -6,6 +6,8 @@ export const LogAction = {
   USER_RESEND_VERIFY_PHONE: 'resend_verify_phone',
   USER_PASSWORD_RESET_REQUEST: 'password_reset_request',
   USER_PASSWORD_RESET_COMPLETE: 'password_reset_complete',
+  USER_TOKEN_REFRESH: 'user_token_refresh',
+  USER_LOGOUT: 'user_logout',
 
   ADMIN_REGISTER: 'admin_register',
   ADMIN_LOGIN: 'admin_login',

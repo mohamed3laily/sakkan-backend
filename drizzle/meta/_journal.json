@@ -421,6 +421,20 @@
       "when": 1779217824144,
       "tag": "0059_wide_runaways",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1780070377417,
+      "tag": "0060_magical_captain_stacy",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1780161617205,
+      "tag": "0061_confused_mojo",
+      "breakpoints": true
     }
   ]
 }

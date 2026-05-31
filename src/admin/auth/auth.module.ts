@@ -18,9 +18,9 @@ import { AuthRepo } from './auth.repo';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.getOrThrow<string>('JWT_SECRET'),
+        secret: configService.getOrThrow<string>('ADMIN_JWT_SECRET'),
         signOptions: {
-          expiresIn: configService.get<StringValue>('JWT_EXPIRES_IN', '180d'),
+          expiresIn: configService.get<StringValue>('ADMIN_JWT_EXPIRES_IN', '7d'),
         },
       }),
     }),

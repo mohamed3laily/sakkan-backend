@@ -22,6 +22,8 @@ See [`auth.md`](auth.md).
 | ------ | ---- | ---- |
 | POST | `/v1/auth/register` | Public |
 | POST | `/v1/auth/login` | Public |
+| POST | `/v1/auth/refresh` | Public |
+| POST | `/v1/auth/logout` | JWT (unverified OK) |
 | POST | `/v1/auth/verify-phone` | JWT (unverified OK) |
 | POST | `/v1/auth/resend-verify-otp` | JWT (unverified OK) |
 | POST | `/v1/auth/request-reset` | Public |

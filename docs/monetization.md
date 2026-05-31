@@ -10,7 +10,7 @@ This document describes how subscriptions, quotas, one-time credits, listing tie
 |--------|---------|
 | **Listing tier** | `standard` (default) or `premium`. Premium is time-boxed (`premium_expires_at`, **15 days** from promotion; see [`listing.repo.ts`](../src/modules/listing/listing.repo.ts) `PREMIUM_EXPIRY_DAYS`). |
 | **Listing type** | `OFFER` (seller/property offer) vs `REQUEST` (buyer serious request). Monetization rules differ. |
-| **Subscription** | Active plan on `user_subscriptions` with monthly **featured ad quota** and **serious-request view quota** (see plan columns). |
+| **Subscription** | Active plan on `user_subscriptions` with monthly **featured ad quota** and **serious-request view quota** (see plan columns). Also defines **device_limit** for concurrent mobile sessions. |
 | **One-time credits** | Wallet rows in `one_time_credits`: one row per `(user_id, credit type)` where `type` is `featured` or `serious`. Balance = `total_credits - used_credits`. |
 | **Credit products** | Sellable SKUs in `credit_products` (key, price, credit type, pack size). Checkout reads product by key. |
 | **Quota usage** | Per user per **billing month** (`quota_usage`): `featured_ad_used`, `serious_request_views_used`. Billing month is derived from subscription period (see `QuotaService.getCurrentBillingMonth`). |
@@ -66,6 +66,17 @@ This document describes how subscriptions, quotas, one-time credits, listing tie
 - **Plans:** `GET /v1/subscriptions/plans` (public).
 - **Subscribe:** `POST /v1/subscriptions/subscribe` — creates Paymob order, metadata includes `plan_id`; webhook activates subscription via [`SubscriptionService.activateSubscription`](../src/modules/monetization/subscription/subscription.service.ts).
 - **Wallet overview:** `GET /v1/subscriptions/wallet` — active subscription summary + `credits: { serious, featured }` and flags `canPublishFeatured` / `canPublishSerious` ([`subscription-wallet.service.ts`](../src/modules/monetization/subscription/subscription-wallet.service.ts)).
+
+### Device limits (multi-phone login)
+
+Plans include `device_limit` on `subscription_plans` (seeded: Basic/free = **1**, Professional = **2**, Gold = **4**). Auth enforces this via [`UserSessionService`](../src/modules/auth/user-session.service.ts):
+
+- Each login creates a new server session; refresh reuses the existing session via refresh token.
+- Optional `deviceLabel` on login/register is display-only for the devices list.
+- New login at limit auto-revokes the oldest session.
+- `GET /v1/subscriptions/devices` returns `{ id, deviceLabel, lastSeenAt, createdAt }`; `POST /v1/subscriptions/devices/:sessionId/revoke` revokes one.
+
+See [`auth.md`](auth.md) for token and session lifecycle.
 
 ---
 

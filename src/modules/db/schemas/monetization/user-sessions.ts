@@ -10,6 +10,10 @@ export const userSessions = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     deviceFingerprint: varchar('device_fingerprint', { length: 255 }).notNull(),
+    deviceLabel: varchar('device_label', { length: 100 }),
+    refreshTokenHash: varchar('refresh_token_hash', { length: 255 }).notNull(),
+    tokenLookup: varchar('token_lookup', { length: 64 }).notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'string' }).notNull(),
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true, mode: 'string' }).notNull(),
     revokedAt: timestamp('revoked_at', { withTimezone: true, mode: 'string' }),
     ...timestamps,
@@ -19,6 +23,10 @@ export const userSessions = pgTable(
       table.userId,
       table.deviceFingerprint,
     ),
+    tokenLookupUnique: unique('user_sessions_token_lookup_unique').on(table.tokenLookup),
     userIdx: index('idx_user_sessions_user').on(table.userId),
   }),
 );
+
+export type SelectUserSession = typeof userSessions.$inferSelect;
+export type InsertUserSession = typeof userSessions.$inferInsert;
