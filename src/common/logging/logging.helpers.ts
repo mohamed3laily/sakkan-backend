@@ -28,6 +28,9 @@ export const LogAction = {
   ADMIN_AREA_CREATED: 'admin_area_created',
   ADMIN_AREA_UPDATED: 'admin_area_updated',
   ADMIN_AREA_DELETED: 'admin_area_deleted',
+  ADMIN_PLAN_UPDATED: 'admin_plan_updated',
+  ADMIN_SUBSCRIPTION_CANCELLED: 'admin_subscription_cancelled',
+  ADMIN_APP_SETTINGS_UPDATED: 'admin_app_settings_updated',
 
   USER_PROFILE_UPDATED: 'user_profile_updated',
   USER_PHONE_CHANGED: 'user_phone_changed',

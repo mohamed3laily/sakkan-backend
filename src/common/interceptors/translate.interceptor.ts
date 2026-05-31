@@ -2,6 +2,8 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nes
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
+import { shouldSkipTranslation } from '../utils/skip-translation.util';
+
 type BilingualPair = { enKey: string; arKey: string; outKey: string };
 
 const BILINGUAL_PAIRS: BilingualPair[] = [
@@ -31,6 +33,10 @@ const BILINGUAL_PAIRS: BilingualPair[] = [
 @Injectable()
 export class TranslateInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    if (shouldSkipTranslation(context)) {
+      return next.handle();
+    }
+
     const request = context
       .switchToHttp()
       .getRequest<{ headers?: Record<string, string | string[] | undefined> }>();

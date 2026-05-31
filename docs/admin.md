@@ -10,6 +10,7 @@ Admin authentication and moderation APIs. Paths assume **`/v1`** prefix.
 | ------- | ------- |
 | **Admin JWT** | Separate Passport strategy; guard `AdminJwtAuthGuard` |
 | **Admin routes** | Prefixed `/v1/admin/` except auth login/register |
+| **Raw admin responses** | Optional header `X-Raw-Response: true` skips bilingual field merging on admin routes |
 | **Moderation** | Update listing status, delete listings/users |
 
 ---
@@ -32,6 +33,16 @@ Admin register/login DTO: name, phone, password.
 JWT payload: `{ sub, phone, name, sid }` where `sid` is the admin session id. Access token config: `ADMIN_JWT_SECRET`, `ADMIN_JWT_EXPIRES_IN`. Refresh tokens are opaque, stored hashed in `admin_sessions` (30-day TTL).
 
 Use `@CurrentAdmin()` to inject authenticated admin on protected routes (`sessionId` available for logout).
+
+### Raw bilingual fields
+
+Admin panel editors often need both locale columns (e.g. `nameEn` / `nameAr`) instead of a single merged field. Send this optional header on any `/v1/admin/*` request:
+
+```
+X-Raw-Response: true
+```
+
+When present, the global translation interceptors are skipped for that request. Responses keep separate `*En` / `*Ar` fields and are not shaped by `Accept-Language`. Omit the header (default) for merged, locale-aware responses like the mobile app.
 
 ---
 
@@ -88,6 +99,53 @@ District fields: `nameEn`, `nameAr`, optional `latitude` / `longitude` / `geomet
 
 ---
 
+## Subscription plans
+
+Controller: [`admin/subscription-plans/subscription-plans.controller.ts`](../src/admin/subscription-plans/subscription-plans.controller.ts)  
+Guard: `AdminJwtAuthGuard`
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/v1/admin/subscription-plans` | List all plans (active and inactive) |
+| GET | `/v1/admin/subscription-plans/:id` | Plan detail |
+| PATCH | `/v1/admin/subscription-plans/:id` | Update plan (no create/delete) |
+
+Response uses `featuredAdViewsQuotaPerMonth` (maps from DB `featured_ad_quota_per_month`). `name` and `billingPeriod` are not editable via PATCH.
+
+---
+
+## User subscriptions
+
+Controller: [`admin/user-subscriptions/user-subscriptions.controller.ts`](../src/admin/user-subscriptions/user-subscriptions.controller.ts)  
+Guard: `AdminJwtAuthGuard`
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/v1/admin/user-subscriptions/insights` | Totals: all subscriptions, active count, current revenue (EGP) |
+| GET | `/v1/admin/user-subscriptions` | Paginated list (`page`, `limit`, optional `search`) |
+| GET | `/v1/admin/user-subscriptions/:id` | Subscription detail |
+| PATCH | `/v1/admin/user-subscriptions/:id/cancel` | Cancel active subscription; revokes user sessions |
+
+List rows include `displayStatus`: `active` when `status = active` and `periodEnd > now`, else `expired`.
+
+---
+
+## App settings
+
+Controller: [`admin/app-settings/app-settings.controller.ts`](../src/admin/app-settings/app-settings.controller.ts)  
+Guard: `AdminJwtAuthGuard`
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/v1/admin/app-settings` | Get the app settings singleton |
+| PATCH | `/v1/admin/app-settings` | Update app settings |
+
+Fields: `phones` (string array), `email`, `termsAndConditionsEn`, `termsAndConditionsAr`, optional `privacyPolicyEn` / `privacyPolicyAr`.
+
+Public read-only endpoint remains `GET /v1/app-settings` (excludes `id` and timestamps).
+
+---
+
 ## Stats module
 
 [`admin/stats/stats.module.ts`](../src/admin/stats/stats.module.ts) — empty placeholder, no routes yet.
@@ -105,6 +163,8 @@ District fields: `nameEn`, `nameAr`, optional `latitude` / `longitude` / `geomet
 | `CITY_HAS_LISTINGS` | Delete city with listings |
 | `AREA_NOT_FOUND` | District id not found for city |
 | `AREA_IN_USE` | Delete district referenced by listings |
+| `SUBSCRIPTION_NOT_FOUND` | User subscription id not found |
+| `SUBSCRIPTION_NOT_ACTIVE` | Cancel on inactive or expired subscription |
 
 ---
 
