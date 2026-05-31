@@ -5,6 +5,7 @@ export const cities = pgTable('cities', {
   nameEn: varchar('name_en', { length: 100 }).notNull().unique(),
   nameAr: varchar('name_ar', { length: 100 }).notNull(),
   listingCount: integer('listing_count').default(0),
+  areasCount: integer('areas_count').default(0),
   latitude: doublePrecision('latitude'),
   longitude: doublePrecision('longitude'),
 

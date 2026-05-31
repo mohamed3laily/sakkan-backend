@@ -9,6 +9,7 @@ import { AdminJwtAuthGuard } from './guards/admin-jwt-auth.guard';
 import { DrizzleModule } from 'src/modules/db/drizzle.module';
 import { StringValue } from 'ms';
 import { AuthRepo } from './auth.repo';
+import { AdminSessionService } from './admin-session.service';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { AuthRepo } from './auth.repo';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepo, AdminJwtStrategy, AdminJwtAuthGuard],
-  exports: [AuthService, AuthRepo, AdminJwtAuthGuard],
+  providers: [AuthService, AuthRepo, AdminJwtStrategy, AdminJwtAuthGuard, AdminSessionService],
+  exports: [AuthService, AuthRepo, AdminJwtAuthGuard, AdminSessionService],
 })
 export class AuthModule {}

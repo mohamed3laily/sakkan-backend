@@ -7,7 +7,7 @@ import { CurrentAdmin } from '../auth/decorators/current-admin.decorator';
 import { AuthenticatedAdmin } from '../auth/interfaces/authenticated-admin.interface';
 
 @UseGuards(AdminJwtAuthGuard)
-@Controller('admin/users')
+@Controller('')
 export class UsersController {
   constructor(private readonly service: UsersService) {}
 

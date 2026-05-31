@@ -11,6 +11,8 @@ export const LogAction = {
 
   ADMIN_REGISTER: 'admin_register',
   ADMIN_LOGIN: 'admin_login',
+  ADMIN_TOKEN_REFRESH: 'admin_token_refresh',
+  ADMIN_LOGOUT: 'admin_logout',
 
   PREMIUM_LISTING_CREATED: 'premium_listing_created',
   PREMIUM_LISTINGS_EXPIRED: 'premium_listings_expired',
@@ -20,6 +22,12 @@ export const LogAction = {
   ADMIN_LISTING_DELETED: 'admin_listing_deleted',
   ADMIN_USER_DEACTIVATED: 'admin_user_deactivated',
   ADMIN_USER_DELETED: 'admin_user_deleted',
+  ADMIN_CITY_CREATED: 'admin_city_created',
+  ADMIN_CITY_UPDATED: 'admin_city_updated',
+  ADMIN_CITY_DELETED: 'admin_city_deleted',
+  ADMIN_AREA_CREATED: 'admin_area_created',
+  ADMIN_AREA_UPDATED: 'admin_area_updated',
+  ADMIN_AREA_DELETED: 'admin_area_deleted',
 
   USER_PROFILE_UPDATED: 'user_profile_updated',
   USER_PHONE_CHANGED: 'user_phone_changed',

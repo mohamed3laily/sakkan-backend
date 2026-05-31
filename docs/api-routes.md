@@ -42,6 +42,8 @@ See [`admin.md`](admin.md). **No `admin/` prefix on auth routes.**
 | ------ | ---- | ---- |
 | POST | `/v1/register` | Public |
 | POST | `/v1/login` | Public |
+| POST | `/v1/refresh` | Public |
+| POST | `/v1/logout` | Admin |
 
 ---
 
@@ -117,6 +119,15 @@ See [`admin.md`](admin.md).
 | GET | `/v1/admin/users/:id` | Admin |
 | PATCH | `/v1/admin/users/:id/deactivate` | Admin |
 | DELETE | `/v1/admin/users/:id` | Admin |
+| GET | `/v1/admin/cities` | Admin |
+| POST | `/v1/admin/cities` | Admin |
+| GET | `/v1/admin/cities/:id` | Admin |
+| PATCH | `/v1/admin/cities/:id` | Admin |
+| DELETE | `/v1/admin/cities/:id` | Admin |
+| GET | `/v1/admin/cities/:cityId/areas` | Admin |
+| POST | `/v1/admin/cities/:cityId/areas` | Admin |
+| PATCH | `/v1/admin/cities/:cityId/areas/:areaId` | Admin |
+| DELETE | `/v1/admin/cities/:cityId/areas/:areaId` | Admin |
 
 ---
 

@@ -20,16 +20,18 @@ Controller: [`admin/auth/auth.controller.ts`](../src/admin/auth/auth.controller.
 
 | Method | Path | Auth | Description |
 | ------ | ---- | ---- | ----------- |
-| POST | `/v1/register` | Public | Register new admin |
-| POST | `/v1/login` | Public | Admin login → JWT |
+| POST | `/v1/register` | Public | Register new admin; returns access + refresh tokens |
+| POST | `/v1/login` | Public | Admin login → access + refresh tokens |
+| POST | `/v1/refresh` | Public | Rotate tokens; requires `refreshToken` only |
+| POST | `/v1/logout` | Admin JWT | Revoke current session |
 
 **Pitfall:** These routes have no `admin/` prefix. User auth is at `/v1/auth/*`.
 
-Admin register DTO: name, phone, password — no registration token enforced in code yet (`.env.example` lists `ADMIN_REGISTRATION_TOKEN` for future use).
+Admin register/login DTO: name, phone, password.
 
-JWT config: [`admin/auth/auth.module.ts`](../src/admin/auth/auth.module.ts) — uses `JWT_SECRET`.
+JWT payload: `{ sub, phone, name, sid }` where `sid` is the admin session id. Access token config: `ADMIN_JWT_SECRET`, `ADMIN_JWT_EXPIRES_IN`. Refresh tokens are opaque, stored hashed in `admin_sessions` (30-day TTL).
 
-Use `@CurrentAdmin()` to inject authenticated admin on protected routes.
+Use `@CurrentAdmin()` to inject authenticated admin on protected routes (`sessionId` available for logout).
 
 ---
 
@@ -63,6 +65,29 @@ Guard: `AdminJwtAuthGuard`
 
 ---
 
+## Cities and districts
+
+Controller: [`admin/cities/cities.controller.ts`](../src/admin/cities/cities.controller.ts)  
+Guard: `AdminJwtAuthGuard`
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/v1/admin/cities` | List cities (paginated, optional `search`) |
+| POST | `/v1/admin/cities` | Create city |
+| GET | `/v1/admin/cities/:id` | City detail with nested `districts` |
+| PATCH | `/v1/admin/cities/:id` | Update city |
+| DELETE | `/v1/admin/cities/:id` | Delete city (blocked if listings exist) |
+| GET | `/v1/admin/cities/:cityId/areas` | List districts for a city |
+| POST | `/v1/admin/cities/:cityId/areas` | Create district |
+| PATCH | `/v1/admin/cities/:cityId/areas/:areaId` | Update district |
+| DELETE | `/v1/admin/cities/:cityId/areas/:areaId` | Delete district (blocked if used in listings) |
+
+City fields: `nameEn`, `nameAr`, optional `latitude` / `longitude`. Response includes `listingCount` and `areasCount`.
+
+District fields: `nameEn`, `nameAr`, optional `latitude` / `longitude` / `geometry`.
+
+---
+
 ## Stats module
 
 [`admin/stats/stats.module.ts`](../src/admin/stats/stats.module.ts) — empty placeholder, no routes yet.
@@ -75,6 +100,11 @@ Guard: `AdminJwtAuthGuard`
 | --- | ---- |
 | `PHONE_EXISTS` | Admin register with existing phone |
 | `INVALID_CREDENTIALS` | Wrong admin credentials |
+| `CITY_NOT_FOUND` | City id not found |
+| `CITY_NAME_EXISTS` | Duplicate English city name |
+| `CITY_HAS_LISTINGS` | Delete city with listings |
+| `AREA_NOT_FOUND` | District id not found for city |
+| `AREA_IN_USE` | Delete district referenced by listings |
 
 ---
 
