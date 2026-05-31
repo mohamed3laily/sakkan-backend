@@ -27,6 +27,10 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
       throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
 
+    if (admin.revokedAt) {
+      throw new UnauthorizedException('ADMIN_REVOKED');
+    }
+
     const sessionActive = await this.adminSessionService.isSessionActive(payload.sid);
     if (!sessionActive) {
       throw new UnauthorizedException('INVALID_CREDENTIALS');
@@ -36,6 +40,7 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
       id: admin.id,
       phone: admin.phone,
       name: admin.name,
+      type: admin.type,
       sessionId: payload.sid,
     };
   }

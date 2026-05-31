@@ -5,12 +5,8 @@ import { DrizzleService } from 'src/modules/db/drizzle.service';
 import { subscriptionPlans } from 'src/modules/db/schemas/monetization/subscription-plans';
 import { userSubscriptions } from 'src/modules/db/schemas/monetization/user-subscriptions';
 import { users } from 'src/modules/db/schemas/user/user';
+import { ACTIVE_SUBSCRIPTION_CONDITION } from 'src/modules/monetization/subscription/active-subscription.sql';
 import { AdminUserSubscriptionQueryDto } from './dto/user-subscription-query.dto';
-
-const ACTIVE_CONDITION = and(
-  eq(userSubscriptions.status, 'active'),
-  sql`${userSubscriptions.periodEnd} > NOW()`,
-);
 
 type SubscriptionListRow = {
   id: number;
@@ -50,13 +46,13 @@ export class UserSubscriptionsRepo {
         this.drizzleService.db
           .select({ activeSubscriptions: count() })
           .from(userSubscriptions)
-          .where(ACTIVE_CONDITION),
+          .where(ACTIVE_SUBSCRIPTION_CONDITION),
         this.drizzleService.db
           .select({
             currentRevenue: sql<number>`COALESCE(SUM(COALESCE(${userSubscriptions.paidEgp}, (${userSubscriptions.planSnapshot}->>'priceEgp')::int, 0)), 0)`,
           })
           .from(userSubscriptions)
-          .where(ACTIVE_CONDITION),
+          .where(ACTIVE_SUBSCRIPTION_CONDITION),
       ]);
 
     return {

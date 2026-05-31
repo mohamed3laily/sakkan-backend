@@ -51,7 +51,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      admin: { id: admin.id, name: admin.name, phone: admin.phone },
+      admin: { id: admin.id, name: admin.name, phone: admin.phone, type: admin.type },
     };
   }
 
@@ -64,6 +64,14 @@ export class AuthService {
         'Admin login failed',
       );
       throw new UnauthorizedException('INVALID_CREDENTIALS');
+    }
+
+    if (admin.revokedAt) {
+      this.logger.warn(
+        { action: LogAction.ADMIN_LOGIN, reason: 'ADMIN_REVOKED' },
+        'Admin login failed',
+      );
+      throw new UnauthorizedException('ADMIN_REVOKED');
     }
 
     const valid = await bcrypt.compare(password, admin.password);
@@ -89,7 +97,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      admin: { id: admin.id, name: admin.name, phone: admin.phone },
+      admin: { id: admin.id, name: admin.name, phone: admin.phone, type: admin.type },
     };
   }
 
@@ -106,7 +114,7 @@ export class AuthService {
     }
 
     const admin = await this.authRepo.getById(session.adminId);
-    if (!admin) {
+    if (!admin || admin.revokedAt) {
       throw new UnauthorizedException('INVALID_REFRESH_TOKEN');
     }
 

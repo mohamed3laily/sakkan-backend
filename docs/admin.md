@@ -9,6 +9,7 @@ Admin authentication and moderation APIs. Paths assume **`/v1`** prefix.
 | Concept | Meaning |
 | ------- | ------- |
 | **Admin JWT** | Separate Passport strategy; guard `AdminJwtAuthGuard` |
+| **Admin types** | `admin` (standard) and `super_admin` (full access including admin management) |
 | **Admin routes** | Prefixed `/v1/admin/` except auth login/register |
 | **Raw admin responses** | Optional header `X-Raw-Response: true` skips bilingual field merging on admin routes |
 | **Moderation** | Update listing status, delete listings/users |
@@ -43,6 +44,15 @@ X-Raw-Response: true
 ```
 
 When present, the global translation interceptors are skipped for that request. Responses keep separate `*En` / `*Ar` fields and are not shaped by `Accept-Language`. Omit the header (default) for merged, locale-aware responses like the mobile app.
+
+### Admin roles
+
+| Type | Access |
+| ---- | ------ |
+| `admin` | All admin routes except admin management and `PATCH` subscription plans |
+| `super_admin` | Full access including `/v1/admin/admins/*` and subscription plan updates |
+
+Public `POST /v1/admin/auth/register` still creates accounts with `type = admin`. Revoked admins (`revoked_at` set) cannot log in; all sessions are revoked on disable.
 
 ---
 
@@ -110,7 +120,24 @@ Guard: `AdminJwtAuthGuard`
 | GET | `/v1/admin/subscription-plans/:id` | Plan detail |
 | PATCH | `/v1/admin/subscription-plans/:id` | Update plan (no create/delete) |
 
-Response uses `featuredAdViewsQuotaPerMonth` (maps from DB `featured_ad_quota_per_month`). `name` and `billingPeriod` are not editable via PATCH.
+Response uses `featuredAdViewsQuotaPerMonth` (maps from DB `featured_ad_quota_per_month`). `name` and `billingPeriod` are not editable via PATCH. **`PATCH` requires `super_admin`**; `GET` routes allow any admin.
+
+---
+
+## Admin management
+
+Controller: [`admin/admins/admins.controller.ts`](../src/admin/admins/admins.controller.ts)  
+Guard: `SuperAdminGuard` (all routes)
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/v1/admin/admins` | Paginated list (`page`, `limit`, optional `search`) |
+| GET | `/v1/admin/admins/:id` | Admin detail |
+| POST | `/v1/admin/admins` | Create admin (optional `type`, default `admin`) |
+| PATCH | `/v1/admin/admins/:id` | Update name, phone, and/or `type` |
+| PATCH | `/v1/admin/admins/:id/revoke` | Revoke access (`revoked_at`) and invalidate sessions |
+
+Cannot revoke self or the last active `super_admin`.
 
 ---
 
@@ -146,9 +173,41 @@ Public read-only endpoint remains `GET /v1/app-settings` (excludes `id` and time
 
 ---
 
+## Analytics
+
+Controller: [`admin/stats/stats.controller.ts`](../src/admin/stats/stats.controller.ts)  
+Guard: `AdminJwtAuthGuard`
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/v1/admin/stats/overview` | Dashboard KPIs, growth charts, listings by property type |
+
+Query: optional `months` (default `6`, max `12`) — number of months for chart series ending in the current month.
+
+Responses are cached in Redis for **4 hours** per `months` value (`admin:stats:overview:{months}`). If Redis is unavailable, the endpoint falls back to live DB queries.
+
+Month boundaries use **`Africa/Cairo`**.
+
+### Response summary
+
+| Field | `value` meaning | `changePercent` meaning |
+| ----- | --------------- | ------------------------ |
+| `totalUsers` | All users | New users this month vs last month |
+| `totalListings` | All listings (any status) | New listings this month vs last month |
+| `activeSubscriptions` | Active subs (`status = active` and `periodEnd > now`) | New subscription rows this month vs last month |
+| `monthlyRevenue` | Successful payments this month (EGP) | Payment sum this month vs last month |
+
+Also returns:
+
+- `userGrowth` — cumulative user count at end of each month
+- `listingsGrowth` — new listings created in each month
+- `listingsByPropertyType` — counts and percentages per `property_type` row (`nameEn` / `nameAr` from DB)
+
+---
+
 ## Stats module
 
-[`admin/stats/stats.module.ts`](../src/admin/stats/stats.module.ts) — empty placeholder, no routes yet.
+[`admin/stats/stats.module.ts`](../src/admin/stats/stats.module.ts) — analytics dashboard (`GET /v1/admin/stats/overview`).
 
 ---
 
@@ -165,6 +224,11 @@ Public read-only endpoint remains `GET /v1/app-settings` (excludes `id` and time
 | `AREA_IN_USE` | Delete district referenced by listings |
 | `SUBSCRIPTION_NOT_FOUND` | User subscription id not found |
 | `SUBSCRIPTION_NOT_ACTIVE` | Cancel on inactive or expired subscription |
+| `ADMIN_FORBIDDEN` | Regular admin on super-admin-only route |
+| `ADMIN_REVOKED` | Login or action on revoked admin |
+| `ADMIN_NOT_FOUND` | Admin id not found |
+| `CANNOT_REVOKE_SELF` | Self-revoke attempt |
+| `LAST_SUPER_ADMIN` | Revoke or demote last super admin |
 
 ---
 

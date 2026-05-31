@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Patch, UseGuards } from '@nestjs/common';
 
 import { AdminJwtAuthGuard } from '../auth/guards/admin-jwt-auth.guard';
+import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
 import { CurrentAdmin } from '../auth/decorators/current-admin.decorator';
 import { AuthenticatedAdmin } from '../auth/interfaces/authenticated-admin.interface';
 import { SubscriptionPlansService } from './subscription-plans.service';
@@ -21,6 +22,7 @@ export class SubscriptionPlansController {
     return this.service.getPlanById(id);
   }
 
+  @UseGuards(SuperAdminGuard)
   @Patch(':id')
   async updatePlan(
     @CurrentAdmin() admin: AuthenticatedAdmin,

@@ -28,6 +28,7 @@ export class AuthRepo {
         name,
         phone,
         password: hashedPassword,
+        type: 'admin',
       })
       .returning()
       .then(([admin]) => admin);

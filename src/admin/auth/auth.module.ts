@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { AdminJwtStrategy } from './strategies/admin-jwt.strategy';
 import { AdminJwtAuthGuard } from './guards/admin-jwt-auth.guard';
+import { SuperAdminGuard } from './guards/super-admin.guard';
 import { DrizzleModule } from 'src/modules/db/drizzle.module';
 import { StringValue } from 'ms';
 import { AuthRepo } from './auth.repo';
@@ -27,7 +28,7 @@ import { AdminSessionService } from './admin-session.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepo, AdminJwtStrategy, AdminJwtAuthGuard, AdminSessionService],
-  exports: [AuthService, AuthRepo, AdminJwtAuthGuard, AdminSessionService],
+  providers: [AuthService, AuthRepo, AdminJwtStrategy, AdminJwtAuthGuard, SuperAdminGuard, AdminSessionService],
+  exports: [AuthService, AuthRepo, AdminJwtAuthGuard, SuperAdminGuard, AdminSessionService],
 })
 export class AuthModule {}

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
@@ -88,6 +88,15 @@ export class AdminSessionService {
       .update(adminSessions)
       .set({ revokedAt: now, updatedAt: now })
       .where(and(...conditions));
+  }
+
+  async revokeAllSessionsForAdmin(adminId: number): Promise<void> {
+    const now = new Date().toISOString();
+
+    await this.drizzle.db
+      .update(adminSessions)
+      .set({ revokedAt: now, updatedAt: now })
+      .where(and(eq(adminSessions.adminId, adminId), sql`${adminSessions.revokedAt} IS NULL`));
   }
 
   async isSessionActive(sessionId: number): Promise<boolean> {

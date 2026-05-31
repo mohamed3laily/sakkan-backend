@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { RouterModule } from '@nestjs/core';
 
+import { AdminsModule } from './admins/admins.module';
 import { AppSettingsModule } from './app-settings/app-settings.module';
 import { AuthModule } from './auth/auth.module';
 import { CitiesModule } from './cities/cities.module';
@@ -12,6 +13,7 @@ import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
+    AdminsModule,
     AppSettingsModule,
     ListingsModule,
     UsersModule,
@@ -31,6 +33,8 @@ import { StatsModule } from './stats/stats.module';
           { path: 'subscription-plans', module: SubscriptionPlansModule },
           { path: 'user-subscriptions', module: UserSubscriptionsModule },
           { path: 'app-settings', module: AppSettingsModule },
+          { path: 'admins', module: AdminsModule },
+          { path: 'stats', module: StatsModule },
           { path: 'auth', module: AuthModule },
         ],
       },

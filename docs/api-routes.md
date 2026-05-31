@@ -130,11 +130,17 @@ See [`admin.md`](admin.md).
 | DELETE | `/v1/admin/cities/:cityId/areas/:areaId` | Admin |
 | GET | `/v1/admin/subscription-plans` | Admin |
 | GET | `/v1/admin/subscription-plans/:id` | Admin |
-| PATCH | `/v1/admin/subscription-plans/:id` | Admin |
+| PATCH | `/v1/admin/subscription-plans/:id` | Super admin |
 | GET | `/v1/admin/user-subscriptions/insights` | Admin |
 | GET | `/v1/admin/user-subscriptions` | Admin |
 | GET | `/v1/admin/user-subscriptions/:id` | Admin |
 | PATCH | `/v1/admin/user-subscriptions/:id/cancel` | Admin |
+| GET | `/v1/admin/stats/overview` | Admin |
+| GET | `/v1/admin/admins` | Super admin |
+| GET | `/v1/admin/admins/:id` | Super admin |
+| POST | `/v1/admin/admins` | Super admin |
+| PATCH | `/v1/admin/admins/:id` | Super admin |
+| PATCH | `/v1/admin/admins/:id/revoke` | Super admin |
 
 ---
 

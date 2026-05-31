@@ -18,5 +18,10 @@
   "VIEW_QUOTA_EXHAUSTED": "You have used all serious request views for this billing period",
   "SMS_SEND_FAILED": "Could not send SMS; please try again later",
   "SUBSCRIPTION_NOT_FOUND": "Subscription not found",
-  "SUBSCRIPTION_NOT_ACTIVE": "Subscription is not active and cannot be cancelled"
+  "SUBSCRIPTION_NOT_ACTIVE": "Subscription is not active and cannot be cancelled",
+  "ADMIN_FORBIDDEN": "You do not have permission to perform this action",
+  "ADMIN_REVOKED": "This admin account has been revoked",
+  "ADMIN_NOT_FOUND": "Admin not found",
+  "CANNOT_REVOKE_SELF": "You cannot revoke your own admin access",
+  "LAST_SUPER_ADMIN": "Cannot remove or demote the last active super admin"
 }

@@ -13,6 +13,9 @@ export const LogAction = {
   ADMIN_LOGIN: 'admin_login',
   ADMIN_TOKEN_REFRESH: 'admin_token_refresh',
   ADMIN_LOGOUT: 'admin_logout',
+  ADMIN_CREATED: 'admin_created',
+  ADMIN_UPDATED: 'admin_updated',
+  ADMIN_REVOKED: 'admin_revoked',
 
   PREMIUM_LISTING_CREATED: 'premium_listing_created',
   PREMIUM_LISTINGS_EXPIRED: 'premium_listings_expired',
