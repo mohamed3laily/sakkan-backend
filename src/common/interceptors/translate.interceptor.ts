@@ -1,4 +1,5 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -32,8 +33,10 @@ const BILINGUAL_PAIRS: BilingualPair[] = [
 
 @Injectable()
 export class TranslateInterceptor implements NestInterceptor {
+  constructor(private readonly reflector: Reflector) {}
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    if (shouldSkipTranslation(context)) {
+    if (shouldSkipTranslation(context, this.reflector)) {
       return next.handle();
     }
 

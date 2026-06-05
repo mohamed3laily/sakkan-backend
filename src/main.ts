@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
@@ -24,7 +24,11 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.useGlobalInterceptors(new TranslateInterceptor(), new ResponseTranslateInterceptor());
+  const reflector = app.get(Reflector);
+  app.useGlobalInterceptors(
+    new TranslateInterceptor(reflector),
+    new ResponseTranslateInterceptor(reflector),
+  );
 
   await app.listen(process.env.PORT ?? 3000);
 }
