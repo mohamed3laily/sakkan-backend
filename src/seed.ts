@@ -21,11 +21,11 @@ async function bootstrap() {
   //await creditProductsSeed.run();
 
   // Requires cities in DB (run CitiesAreasSeed or migrate + data first):
-  const realEstateDevelopersSeed = app.get(RealEstateDevelopersSeed);
-  await realEstateDevelopersSeed.run();
+  //const realEstateDevelopersSeed = app.get(RealEstateDevelopersSeed);
+  //await realEstateDevelopersSeed.run();
 
-  //const appSettingsSeed = app.get(AppSettingsSeed);
-  //await appSettingsSeed.run();
+  const appSettingsSeed = app.get(AppSettingsSeed);
+  await appSettingsSeed.run();
 
   await app.close();
 }

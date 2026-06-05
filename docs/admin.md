@@ -169,7 +169,9 @@ Guard: `AdminJwtAuthGuard`
 
 Fields: `phones` (string array), `email`, `termsAndConditionsEn`, `termsAndConditionsAr`, optional `privacyPolicyEn` / `privacyPolicyAr`.
 
-Public read-only endpoint remains `GET /v1/app-settings` (excludes `id` and timestamps).
+Responses always return separate `*En` / `*Ar` columns (translation interceptors are skipped on this controller). No `X-Raw-Response` header is required.
+
+Public read-only endpoint remains `GET /v1/app-settings` (excludes `id` and timestamps; merged by `Accept-Language`).
 
 ---
 

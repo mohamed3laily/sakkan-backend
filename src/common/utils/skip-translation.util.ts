@@ -1,4 +1,7 @@
 import { ArgumentsHost, ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+
+import { SKIP_TRANSLATION_KEY } from '../decorators/skip-translation.decorator';
 
 /** When set to `true` or `1` on `/v1/admin/*` requests, bilingual response shaping is skipped. */
 export const RAW_RESPONSE_HEADER = 'x-raw-response';
@@ -37,7 +40,20 @@ export function isAdminPath(path: string): boolean {
   return path === '/v1/admin' || path.startsWith('/v1/admin/');
 }
 
-export function shouldSkipTranslation(ctx: ExecutionContext | ArgumentsHost): boolean {
+export function shouldSkipTranslation(
+  ctx: ExecutionContext | ArgumentsHost,
+  reflector?: Reflector,
+): boolean {
+  if (reflector && 'getHandler' in ctx) {
+    const skipByDecorator = reflector.getAllAndOverride<boolean>(SKIP_TRANSLATION_KEY, [
+      ctx.getHandler(),
+      ctx.getClass(),
+    ]);
+    if (skipByDecorator) {
+      return true;
+    }
+  }
+
   const request = getRequest(ctx);
   const path = getRequestPath(request);
 

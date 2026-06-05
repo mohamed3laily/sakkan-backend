@@ -1,4 +1,5 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { getLang } from '../utils/lang.util';
@@ -7,8 +8,10 @@ import { t } from 'src/i18n';
 
 @Injectable()
 export class ResponseTranslateInterceptor implements NestInterceptor {
+  constructor(private readonly reflector: Reflector) {}
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    if (shouldSkipTranslation(context)) {
+    if (shouldSkipTranslation(context, this.reflector)) {
       return next.handle();
     }
 
