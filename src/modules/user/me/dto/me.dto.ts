@@ -11,6 +11,7 @@ import {
 } from 'class-validator';
 import {
   userLanguageEnum,
+  userTypeEnum,
   type UserLanguage,
 } from 'src/modules/db/schemas/user/enums';
 
@@ -26,6 +27,10 @@ export class UpdateMeDto {
   @IsOptional()
   @IsString()
   bio?: string;
+
+  @IsOptional()
+  @IsIn(userTypeEnum.enumValues)
+  type?: (typeof userTypeEnum.enumValues)[number];
 
   @IsOptional()
   @IsString()
@@ -66,18 +71,3 @@ export class ChangePhoneDto {
   @IsNotEmpty()
   phone: string;
 }
-
-export type SafeUserProfileUpdate = Pick<
-  UpdateMeDto,
-  | 'firstName'
-  | 'lastName'
-  | 'bio'
-  | 'organizationNameAr'
-  | 'organizationNameEn'
-  | 'socialMediaLinks'
-  | 'cityId'
-  | 'contactViaWhatsapp'
-  | 'contactViaPhone'
-  | 'language'
-  | 'fcmToken'
->;
