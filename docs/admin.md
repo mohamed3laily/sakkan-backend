@@ -72,6 +72,20 @@ Service: [`admin/listings/listings.service.ts`](../src/admin/listings/listings.s
 
 ---
 
+## Report moderation
+
+Controller: [`admin/reports/reports.controller.ts`](../src/admin/reports/reports.controller.ts)  
+Guard: `AdminJwtAuthGuard`
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/v1/admin/reports` | List reports (paginated, optional `status` filter) |
+| PATCH | `/v1/admin/reports/:id/status` | Update report status |
+
+Report statuses: `PENDING`, `REVIEWED`, `RESOLVED`, `DISMISSED`.
+
+---
+
 ## User management
 
 Controller: [`admin/users/users.controller.ts`](../src/admin/users/users.controller.ts)  
@@ -231,6 +245,7 @@ Also returns:
 | `ADMIN_NOT_FOUND` | Admin id not found |
 | `CANNOT_REVOKE_SELF` | Self-revoke attempt |
 | `LAST_SUPER_ADMIN` | Revoke or demote last super admin |
+| `REPORT_NOT_FOUND` | Report id not found |
 
 ---
 

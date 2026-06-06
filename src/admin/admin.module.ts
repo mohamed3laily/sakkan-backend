@@ -10,6 +10,7 @@ import { SubscriptionPlansModule } from './subscription-plans/subscription-plans
 import { UserSubscriptionsModule } from './user-subscriptions/user-subscriptions.module';
 import { UsersModule } from './users/users.module';
 import { StatsModule } from './stats/stats.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { StatsModule } from './stats/stats.module';
     UserSubscriptionsModule,
     AuthModule,
     StatsModule,
+    ReportsModule,
     RouterModule.register([
       {
         path: 'admin',
@@ -35,6 +37,7 @@ import { StatsModule } from './stats/stats.module';
           { path: 'app-settings', module: AppSettingsModule },
           { path: 'admins', module: AdminsModule },
           { path: 'stats', module: StatsModule },
+          { path: 'reports', module: ReportsModule },
           { path: 'auth', module: AuthModule },
         ],
       },

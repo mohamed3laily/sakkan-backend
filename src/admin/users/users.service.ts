@@ -1,17 +1,23 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
+import { LogAction } from 'src/common/logging';
+import { PaginationService } from 'src/common/services/pagination.service';
 import { UsersRepo } from './users.repo';
 import { AdminUserQueryDto } from './dto/user-query.dto';
-import { LogAction } from 'src/common/logging';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private readonly repo: UsersRepo) {}
+  constructor(
+    private readonly repo: UsersRepo,
+    private readonly paginationService: PaginationService,
+  ) {}
 
   async getUsers(query: AdminUserQueryDto) {
-    return this.repo.findAll(query);
+    const { page = 1, limit = 20 } = query;
+    const { data, total } = await this.repo.findAll(query);
+    return this.paginationService.createPaginatedResponse(data, total, page, limit);
   }
 
   async getUserById(id: number) {

@@ -42,6 +42,7 @@ export const LogAction = {
 
   REPORT_CREATED: 'report_created',
   REPORT_DUPLICATE_REJECTED: 'report_duplicate_rejected',
+  ADMIN_REPORT_STATUS_UPDATED: 'admin_report_status_updated',
 
   PAYMOB_CHECKOUT_CREATED: 'paymob_checkout_created',
   PAYMOB_CHECKOUT_FAILED: 'paymob_checkout_failed',
