@@ -121,7 +121,7 @@ export class SubscriptionService {
   }
 
   async revokeDevice(userId: number, sessionId: number) {
-    await this.userSessionService.revokeSession(sessionId, userId);
+    await this.userSessionService.revokeSession(sessionId, 'manual_revoke', userId);
   }
 
   /**

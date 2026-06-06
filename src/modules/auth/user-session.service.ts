@@ -1,38 +1,34 @@
 import { Injectable } from '@nestjs/common';
-import { and, asc, eq, gt, isNull, sql } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
-import { DrizzleService } from '../db/drizzle.service';
-import {
-  SelectUserSession,
-  userSessions,
-} from '../db/schemas/monetization/user-sessions';
-import { subscriptionPlans } from '../db/schemas/monetization/subscription-plans';
-import { userSubscriptions } from '../db/schemas/monetization/user-subscriptions';
+import { FcmTokenService } from '../notification/services/fcm-token.service';
+import { SelectUserSession } from '../db/schemas/monetization/user-sessions';
+import type { SessionRevokeReason } from './session-auth-codes';
+import { UserSessionRepo } from './user-session.repo';
+
+export type RefreshResolution =
+  | { status: 'valid'; session: SelectUserSession }
+  | { status: 'revoked'; reason: SessionRevokeReason | null }
+  | { status: 'expired' }
+  | { status: 'invalid' };
+
+export type SessionStatus =
+  | { active: true }
+  | { active: false; reason: SessionRevokeReason | null; expired: boolean };
 
 @Injectable()
 export class UserSessionService {
   private static readonly BCRYPT_SALT_ROUNDS = 10;
   private static readonly REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-  constructor(private readonly drizzle: DrizzleService) {}
+  constructor(
+    private readonly userSessionRepo: UserSessionRepo,
+    private readonly fcmTokenService: FcmTokenService,
+  ) {}
 
   async getDeviceLimit(userId: number): Promise<number> {
-    const rows = await this.drizzle.db
-      .select({ deviceLimit: subscriptionPlans.deviceLimit })
-      .from(userSubscriptions)
-      .innerJoin(subscriptionPlans, eq(userSubscriptions.planId, subscriptionPlans.id))
-      .where(
-        and(
-          eq(userSubscriptions.userId, userId),
-          eq(userSubscriptions.status, 'active'),
-          sql`${userSubscriptions.periodEnd} > NOW()`,
-        ),
-      )
-      .limit(1);
-
-    return rows[0]?.deviceLimit ?? 1;
+    return (await this.userSessionRepo.findDeviceLimit(userId)) ?? 1;
   }
 
   async establishSession(
@@ -45,84 +41,72 @@ export class UserSessionService {
     const { hash, lookup } = await this.hashRefreshToken(plainRefreshToken);
 
     if (options?.installationId) {
-      const existing = await this.drizzle.db
-        .select()
-        .from(userSessions)
-        .where(
-          and(
-            eq(userSessions.userId, userId),
-            eq(userSessions.deviceFingerprint, options.installationId),
-          ),
-        )
-        .limit(1);
+      const existing = await this.userSessionRepo.findByUserAndInstallationId(
+        userId,
+        options.installationId,
+      );
 
-      if (existing[0]) {
-        await this.drizzle.db
-          .update(userSessions)
-          .set({
-            refreshTokenHash: hash,
-            tokenLookup: lookup,
-            expiresAt,
-            lastSeenAt: now,
-            revokedAt: null,
-            deviceLabel: options.deviceLabel?.trim() || existing[0].deviceLabel,
-            updatedAt: now,
-          })
-          .where(eq(userSessions.id, existing[0].id));
+      if (existing) {
+        await this.userSessionRepo.reactivateSession(existing.id, {
+          refreshTokenHash: hash,
+          tokenLookup: lookup,
+          expiresAt,
+          lastSeenAt: now,
+          deviceLabel: options.deviceLabel?.trim() || existing.deviceLabel,
+          updatedAt: now,
+        });
 
         return {
-          sessionId: existing[0].id,
-          installationId: existing[0].deviceFingerprint,
+          sessionId: existing.id,
+          installationId: existing.deviceFingerprint,
         };
       }
     }
 
     const installationId = crypto.randomUUID();
-
     const limit = await this.getDeviceLimit(userId);
-    const activeSessions = await this.getActiveSessionRows(userId);
+    const activeSessions = await this.userSessionRepo.findActiveByUserId(userId);
 
     if (activeSessions.length >= limit) {
       const overflowCount = activeSessions.length - limit + 1;
       await this.revokeOldest(userId, overflowCount);
     }
 
-    const [inserted] = await this.drizzle.db
-      .insert(userSessions)
-      .values({
-        userId,
-        deviceFingerprint: installationId,
-        deviceLabel: options?.deviceLabel?.trim() || null,
-        refreshTokenHash: hash,
-        tokenLookup: lookup,
-        expiresAt,
-        lastSeenAt: now,
-      })
-      .returning({ id: userSessions.id });
+    const sessionId = await this.userSessionRepo.insertSession({
+      userId,
+      deviceFingerprint: installationId,
+      deviceLabel: options?.deviceLabel?.trim() || null,
+      refreshTokenHash: hash,
+      tokenLookup: lookup,
+      expiresAt,
+      lastSeenAt: now,
+    });
 
-    return { sessionId: inserted.id, installationId };
+    return { sessionId, installationId };
   }
 
-  async validateRefreshToken(plainToken: string): Promise<SelectUserSession | null> {
+  async resolveRefreshToken(plainToken: string): Promise<RefreshResolution> {
     const lookup = this.tokenLookup(plainToken);
+    const session = await this.userSessionRepo.findByTokenLookup(lookup);
 
-    const rows = await this.drizzle.db
-      .select()
-      .from(userSessions)
-      .where(eq(userSessions.tokenLookup, lookup))
-      .limit(1);
-
-    const session = rows[0];
-    if (!session || session.revokedAt) {
-      return null;
-    }
-
-    if (new Date(session.expiresAt) <= new Date()) {
-      return null;
+    if (!session) {
+      return { status: 'invalid' };
     }
 
     const valid = await bcrypt.compare(plainToken, session.refreshTokenHash);
-    return valid ? session : null;
+    if (!valid) {
+      return { status: 'invalid' };
+    }
+
+    if (session.revokedAt) {
+      return { status: 'revoked', reason: session.revokedReason };
+    }
+
+    if (new Date(session.expiresAt) <= new Date()) {
+      return { status: 'expired' };
+    }
+
+    return { status: 'valid', session };
   }
 
   async rotateRefreshToken(sessionId: number, newPlainToken: string): Promise<void> {
@@ -130,75 +114,51 @@ export class UserSessionService {
     const expiresAt = new Date(Date.now() + UserSessionService.REFRESH_TTL_MS).toISOString();
     const { hash, lookup } = await this.hashRefreshToken(newPlainToken);
 
-    await this.drizzle.db
-      .update(userSessions)
-      .set({
-        refreshTokenHash: hash,
-        tokenLookup: lookup,
-        expiresAt,
-        lastSeenAt: now,
-        updatedAt: now,
-      })
-      .where(eq(userSessions.id, sessionId));
+    await this.userSessionRepo.updateTokenRotation(sessionId, {
+      refreshTokenHash: hash,
+      tokenLookup: lookup,
+      expiresAt,
+      lastSeenAt: now,
+      updatedAt: now,
+    });
   }
 
-  async revokeSession(sessionId: number, userId?: number): Promise<void> {
+  async revokeSession(
+    sessionId: number,
+    reason: SessionRevokeReason,
+    userId?: number,
+  ): Promise<void> {
     const now = new Date().toISOString();
-    const conditions = [eq(userSessions.id, sessionId)];
-    if (userId !== undefined) {
-      conditions.push(eq(userSessions.userId, userId));
+    await this.userSessionRepo.revokeById(sessionId, reason, now, userId);
+    await this.fcmTokenService.deleteBySessionId(sessionId);
+  }
+
+  async revokeAllForUser(userId: number, reason: SessionRevokeReason): Promise<void> {
+    const now = new Date().toISOString();
+    await this.userSessionRepo.revokeAllActiveByUserId(userId, reason, now);
+    await this.fcmTokenService.deleteAllForUser(userId);
+  }
+
+  async getSessionStatus(sessionId: number): Promise<SessionStatus> {
+    const session = await this.userSessionRepo.findStatusById(sessionId);
+
+    if (!session) {
+      return { active: false, reason: null, expired: true };
     }
 
-    await this.drizzle.db
-      .update(userSessions)
-      .set({ revokedAt: now, updatedAt: now })
-      .where(and(...conditions));
-  }
-
-  async revokeAllForUser(userId: number): Promise<void> {
-    const now = new Date().toISOString();
-    await this.drizzle.db
-      .update(userSessions)
-      .set({ revokedAt: now, updatedAt: now })
-      .where(and(eq(userSessions.userId, userId), isNull(userSessions.revokedAt)));
-  }
-
-  async isSessionActive(sessionId: number): Promise<boolean> {
-    const rows = await this.drizzle.db
-      .select({
-        revokedAt: userSessions.revokedAt,
-        expiresAt: userSessions.expiresAt,
-      })
-      .from(userSessions)
-      .where(eq(userSessions.id, sessionId))
-      .limit(1);
-
-    const session = rows[0];
-    if (!session || session.revokedAt) {
-      return false;
+    if (session.revokedAt) {
+      return { active: false, reason: session.revokedReason, expired: false };
     }
 
-    return new Date(session.expiresAt) > new Date();
+    if (new Date(session.expiresAt) <= new Date()) {
+      return { active: false, reason: null, expired: true };
+    }
+
+    return { active: true };
   }
 
   getActiveDevices(userId: number) {
-    const now = new Date().toISOString();
-    return this.drizzle.db
-      .select({
-        id: userSessions.id,
-        deviceLabel: userSessions.deviceLabel,
-        lastSeenAt: userSessions.lastSeenAt,
-        createdAt: userSessions.createdAt,
-      })
-      .from(userSessions)
-      .where(
-        and(
-          eq(userSessions.userId, userId),
-          isNull(userSessions.revokedAt),
-          gt(userSessions.expiresAt, now),
-        ),
-      )
-      .orderBy(asc(userSessions.lastSeenAt));
+    return this.userSessionRepo.findActiveDevices(userId);
   }
 
   private async revokeOldest(userId: number, count: number): Promise<void> {
@@ -206,31 +166,12 @@ export class UserSessionService {
       return;
     }
 
-    const activeSessions = await this.getActiveSessionRows(userId);
-    const toRevoke = activeSessions.slice(0, count);
+    const activeSessions = await this.userSessionRepo.findActiveByUserId(userId);
+    const sessionIds = activeSessions.slice(0, count).map((session) => session.id);
     const now = new Date().toISOString();
 
-    for (const session of toRevoke) {
-      await this.drizzle.db
-        .update(userSessions)
-        .set({ revokedAt: now, updatedAt: now })
-        .where(eq(userSessions.id, session.id));
-    }
-  }
-
-  private async getActiveSessionRows(userId: number): Promise<SelectUserSession[]> {
-    const now = new Date().toISOString();
-    return this.drizzle.db
-      .select()
-      .from(userSessions)
-      .where(
-        and(
-          eq(userSessions.userId, userId),
-          isNull(userSessions.revokedAt),
-          gt(userSessions.expiresAt, now),
-        ),
-      )
-      .orderBy(asc(userSessions.lastSeenAt));
+    await this.userSessionRepo.revokeByIds(sessionIds, 'device_limit', now);
+    await this.fcmTokenService.deleteBySessionIds(sessionIds);
   }
 
   private async hashRefreshToken(

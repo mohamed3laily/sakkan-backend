@@ -6,6 +6,7 @@ export * from './user/user';
 export * from './user/enums';
 // notifications
 export * from './notifications/notifications';
+export * from './notifications/user-fcm-tokens';
 // cities
 export * from './cities/cities';
 export * from './cities/areas';

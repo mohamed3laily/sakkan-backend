@@ -56,7 +56,10 @@ export class UserSubscriptionsService {
       throw new NotFoundException('SUBSCRIPTION_NOT_FOUND');
     }
 
-    await this.userSessionService.revokeAllForUser(cancelled.userId);
+    await this.userSessionService.revokeAllForUser(
+      cancelled.userId,
+      'subscription_cancelled',
+    );
 
     this.logger.warn(
       ({

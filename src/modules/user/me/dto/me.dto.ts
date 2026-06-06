@@ -59,11 +59,6 @@ export class UpdateMeDto {
   @IsOptional()
   @IsIn(userLanguageEnum.enumValues)
   language?: UserLanguage;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(4096)
-  fcmToken?: string;
 }
 
 export class ChangePhoneDto {

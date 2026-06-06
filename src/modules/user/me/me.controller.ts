@@ -11,6 +11,7 @@ import {
 
 import { MeService } from './me.service';
 import { ChangePhoneDto, UpdateMeDto } from './dto/me.dto';
+import { RegisterPushTokenDto } from './dto/register-push-token.dto';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { AllowUnverified } from 'src/modules/auth/decorators/allow-unverified.decorator';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
@@ -27,6 +28,14 @@ export class MeController {
   async getMe(@CurrentUser() user: AuthenticatedUser) {
     const userId = user?.id;
     return this.meService.getMe(userId);
+  }
+
+  @Put('push-token')
+  async registerPushToken(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: RegisterPushTokenDto,
+  ) {
+    return this.meService.registerPushToken(user.id, user.sessionId, dto);
   }
 
   @Put()
