@@ -78,6 +78,7 @@ Nested via `RouterModule` in [`user.module.ts`](../src/modules/user/user.module.
 | PATCH | `/v1/users/agents/:agentId/reviews/me` | JWT |
 | GET | `/v1/users/me` | JWT |
 | PUT | `/v1/users/me` | JWT |
+| PUT | `/v1/users/me/push-token` | JWT |
 | PUT | `/v1/users/me/phone` | JWT |
 | PUT | `/v1/users/me/profile-picture` | JWT |
 | DELETE | `/v1/users/me` | JWT |

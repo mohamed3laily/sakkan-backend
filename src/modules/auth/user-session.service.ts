@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
+import { FcmTokenService } from '../notification/services/fcm-token.service';
 import { SelectUserSession } from '../db/schemas/monetization/user-sessions';
 import type { SessionRevokeReason } from './session-auth-codes';
 import { UserSessionRepo } from './user-session.repo';
@@ -21,7 +22,10 @@ export class UserSessionService {
   private static readonly BCRYPT_SALT_ROUNDS = 10;
   private static readonly REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-  constructor(private readonly userSessionRepo: UserSessionRepo) {}
+  constructor(
+    private readonly userSessionRepo: UserSessionRepo,
+    private readonly fcmTokenService: FcmTokenService,
+  ) {}
 
   async getDeviceLimit(userId: number): Promise<number> {
     return (await this.userSessionRepo.findDeviceLimit(userId)) ?? 1;
@@ -126,11 +130,13 @@ export class UserSessionService {
   ): Promise<void> {
     const now = new Date().toISOString();
     await this.userSessionRepo.revokeById(sessionId, reason, now, userId);
+    await this.fcmTokenService.deleteBySessionId(sessionId);
   }
 
   async revokeAllForUser(userId: number, reason: SessionRevokeReason): Promise<void> {
     const now = new Date().toISOString();
     await this.userSessionRepo.revokeAllActiveByUserId(userId, reason, now);
+    await this.fcmTokenService.deleteAllForUser(userId);
   }
 
   async getSessionStatus(sessionId: number): Promise<SessionStatus> {
@@ -165,6 +171,7 @@ export class UserSessionService {
     const now = new Date().toISOString();
 
     await this.userSessionRepo.revokeByIds(sessionIds, 'device_limit', now);
+    await this.fcmTokenService.deleteBySessionIds(sessionIds);
   }
 
   private async hashRefreshToken(

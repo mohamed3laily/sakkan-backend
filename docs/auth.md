@@ -76,8 +76,9 @@ When a user logs in on a new device at the limit, the **oldest** active session 
 
 When app data is cleared and the user logs in again, a **new session** is created (expected).
 
-- **Logout** revokes the current session only (`sid` in JWT).
-- **Password change / reset** revokes all sessions.
+- **Logout** revokes the current session only (`sid` in JWT) and removes its FCM push token.
+- **Password change / reset** revokes all sessions and clears all FCM push tokens.
+- **Push token:** register per session via `PUT /v1/users/me/push-token` after login/refresh (not on profile update).
 - **Manage devices:** `GET /v1/subscriptions/devices` returns `{ id, deviceLabel, lastSeenAt, createdAt }`; revoke via `POST /v1/subscriptions/devices/:sessionId/revoke`.
 
 Service: [`user-session.service.ts`](../src/modules/auth/user-session.service.ts)
@@ -156,6 +157,7 @@ All routes require `JwtAuthGuard` (phone must be verified unless `@AllowUnverifi
 | ------ | ---- | ----------- |
 | GET | `/v1/users/me` | Current user profile |
 | PUT | `/v1/users/me` | Update profile |
+| PUT | `/v1/users/me/push-token` | Register FCM token for current session |
 | PUT | `/v1/users/me/phone` | Change phone |
 | PUT | `/v1/users/me/profile-picture` | Upload profile picture (S3) |
 | DELETE | `/v1/users/me` | Delete account |

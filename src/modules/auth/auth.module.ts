@@ -12,10 +12,12 @@ import { UserModule } from '../user/user.module';
 import { SmsModule } from '../sms/sms.module';
 import { UserSessionService } from './user-session.service';
 import { UserSessionRepo } from './user-session.repo';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
     DrizzleModule,
+    NotificationModule,
     SmsModule,
     PassportModule,
     JwtModule.registerAsync({

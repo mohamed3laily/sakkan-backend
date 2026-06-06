@@ -52,6 +52,5 @@ export const users = pgTable('users', {
   resetTokenExpiry: timestamp('reset_token_expiry'),
   deactivatedAt: timestamp('deactivated_at'),
   language: userLanguageEnum('language').default('AR').notNull(),
-  fcmToken: text('fcm_token'),
   ...timestamps,
 });

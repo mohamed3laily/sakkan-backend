@@ -196,12 +196,12 @@ export class NotificationProcessor extends WorkerHost {
     const byLang = new Map<NotificationLanguage, string[]>();
 
     for (const u of users) {
-      if (!u.fcmToken) {
+      if (!u.fcmTokens.length) {
         continue;
       }
       const lang: NotificationLanguage = u.language === 'EN' ? 'en' : 'ar';
       const tokens = byLang.get(lang) ?? [];
-      tokens.push(u.fcmToken);
+      tokens.push(...u.fcmTokens);
       byLang.set(lang, tokens);
     }
 

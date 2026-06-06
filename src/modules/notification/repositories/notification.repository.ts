@@ -4,6 +4,7 @@ import {
   desc,
   eq,
   getTableColumns,
+  gt,
   gte,
   inArray,
   isNotNull,
@@ -19,11 +20,13 @@ import { cities } from '../../db/schemas/cities/cities';
 import { favorites } from '../../db/schemas/schema-index';
 import { listings } from '../../db/schemas/listing/listing';
 import { subscriptionPlans } from '../../db/schemas/monetization/subscription-plans';
+import { userSessions } from '../../db/schemas/monetization/user-sessions';
 import { userSubscriptions } from '../../db/schemas/monetization/user-subscriptions';
 import {
   notifications,
   type InsertNotification,
 } from '../../db/schemas/notifications/notifications';
+import { userFcmTokens } from '../../db/schemas/notifications/user-fcm-tokens';
 import { preferences } from '../../db/schemas/preferences/preferences';
 import { todos } from '../../db/schemas/todos/todos';
 import { users } from '../../db/schemas/user/user';
@@ -121,37 +124,21 @@ export class NotificationRepository {
       return [];
     }
 
-    return this.drizzle.db
-      .select({
-        id: users.id,
-        fcmToken: users.fcmToken,
-        language: users.language,
-      })
-      .from(users)
-      .where(inArray(users.id, uniqueIds));
+    return this.aggregatePushTargets(uniqueIds);
   }
 
   async findNonSeekers(): Promise<PushTargetUser[]> {
-    return this.drizzle.db
-      .select({
-        id: users.id,
-        fcmToken: users.fcmToken,
-        language: users.language,
-      })
+    const rows = await this.drizzle.db
+      .select({ id: users.id })
       .from(users)
       .where(and(ne(users.type, 'SEEKER'), isNull(users.deactivatedAt)));
+
+    return this.aggregatePushTargets(rows.map((row) => row.id));
   }
 
   async findUserPushTarget(userId: number): Promise<PushTargetUser | null> {
-    const [user] = await this.drizzle.db
-      .select({
-        id: users.id,
-        fcmToken: users.fcmToken,
-        language: users.language,
-      })
-      .from(users)
-      .where(eq(users.id, userId));
-    return user ?? null;
+    const targets = await this.aggregatePushTargets([userId]);
+    return targets[0] ?? null;
   }
 
   async findRequesterDisplayName(userId: number): Promise<string> {
@@ -178,8 +165,6 @@ export class NotificationRepository {
         id: todos.id,
         title: todos.title,
         userId: todos.userId,
-        fcmToken: users.fcmToken,
-        language: users.language,
       })
       .from(todos)
       .innerJoin(users, eq(todos.userId, users.id))
@@ -193,6 +178,46 @@ export class NotificationRepository {
           lt(todos.dueDate, windowEnd),
         ),
       );
+  }
+
+  private async aggregatePushTargets(userIds: number[]): Promise<PushTargetUser[]> {
+    if (!userIds.length) {
+      return [];
+    }
+
+    const now = new Date().toISOString();
+    const userRows = await this.drizzle.db
+      .select({ id: users.id, language: users.language })
+      .from(users)
+      .where(and(inArray(users.id, userIds), isNull(users.deactivatedAt)));
+
+    const tokenRows = await this.drizzle.db
+      .select({
+        userId: userFcmTokens.userId,
+        token: userFcmTokens.token,
+      })
+      .from(userFcmTokens)
+      .innerJoin(userSessions, eq(userSessions.id, userFcmTokens.sessionId))
+      .where(
+        and(
+          inArray(userFcmTokens.userId, userIds),
+          isNull(userSessions.revokedAt),
+          gt(userSessions.expiresAt, now),
+        ),
+      );
+
+    const tokensByUser = new Map<number, string[]>();
+    for (const row of tokenRows) {
+      const tokens = tokensByUser.get(row.userId) ?? [];
+      tokens.push(row.token);
+      tokensByUser.set(row.userId, tokens);
+    }
+
+    return userRows.map((user) => ({
+      id: user.id,
+      language: user.language,
+      fcmTokens: tokensByUser.get(user.id) ?? [],
+    }));
   }
 
   async findSubscriptionsNearingExpiry(

@@ -20,7 +20,6 @@ const PROFILE_RETURNING = {
   contactViaWhatsapp: users.contactViaWhatsapp,
   contactViaPhone: users.contactViaPhone,
   language: users.language,
-  fcmToken: users.fcmToken,
   createdAt: users.createdAt,
   updatedAt: users.updatedAt,
 } as const;
@@ -50,7 +49,6 @@ export class MeRepository {
         contactViaWhatsapp: users.contactViaWhatsapp,
         contactViaPhone: users.contactViaPhone,
         language: users.language,
-        fcmToken: users.fcmToken,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
         isVerified: sql<boolean>`COALESCE(${subscriptionPlans.hasVerifiedBadge}, false)`,

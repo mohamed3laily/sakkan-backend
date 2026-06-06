@@ -11,8 +11,11 @@ import { NotificationQueue } from './jobs/notification.queue';
 import { SubscriptionExpiryScheduler } from './jobs/subscription-expiry.scheduler';
 import { TodoReminderScheduler } from './jobs/todo-reminder.scheduler';
 import { NotificationRepository } from './repositories/notification.repository';
+import { FcmTokenRepo } from './repositories/fcm-token.repo';
 import { NotificationService } from './services/notification.service';
+import { FcmTokenService } from './services/fcm-token.service';
 import { NotificationTestService } from './services/notification-test.service';
+import { FcmTokenCleanupScheduler } from './jobs/fcm-token-cleanup.scheduler';
 
 @Module({
   imports: [BullModule.registerQueue({ name: QUEUES.NOTIFICATION })],
@@ -20,6 +23,8 @@ import { NotificationTestService } from './services/notification-test.service';
   providers: [
     FirebaseProvider,
     FcmService,
+    FcmTokenRepo,
+    FcmTokenService,
     NotificationService,
     NotificationTestService,
     NotificationRepository,
@@ -27,7 +32,8 @@ import { NotificationTestService } from './services/notification-test.service';
     NotificationQueue,
     TodoReminderScheduler,
     SubscriptionExpiryScheduler,
+    FcmTokenCleanupScheduler,
   ],
-  exports: [NotificationQueue],
+  exports: [NotificationQueue, FcmTokenService],
 })
 export class NotificationModule {}

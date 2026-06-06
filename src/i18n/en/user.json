@@ -3,5 +3,6 @@
   "REVIEW_NOT_FOUND": "Review not found",
   "USER_NOT_FOUND": "User not found",
   "REVIEW_ALREADY_EXISTS": "You have already reviewed this user before",
-  "ACCOUNT_DELETED": "Account deleted successfully"
+  "ACCOUNT_DELETED": "Account deleted successfully",
+  "PUSH_TOKEN_REGISTERED": "Push notification token registered"
 }

@@ -48,6 +48,7 @@ Enabled via `ScheduleModule.forRoot()` in [`app.module.ts`](../src/app.module.ts
 | -------- | ----- | ---- | ------- |
 | Every 10 minutes | `SubscriptionExpiryScheduler` | [`subscription-expiry.scheduler.ts`](../src/modules/notification/jobs/subscription-expiry.scheduler.ts) | Notify users 3 days before subscription expiry |
 | Every hour | `TodoReminderScheduler` | [`todo-reminder.scheduler.ts`](../src/modules/notification/jobs/todo-reminder.scheduler.ts) | Remind users of todos due in ~2 hours |
+| Daily at midnight | `FcmTokenCleanupScheduler` | [`fcm-token-cleanup.scheduler.ts`](../src/modules/notification/jobs/fcm-token-cleanup.scheduler.ts) | Delete FCM tokens tied to revoked or expired sessions |
 | Daily at midnight | `ListingExpiryService` | [`listing-expiry.service.ts`](../src/modules/monetization/expiry/listing-expiry.service.ts) | Downgrade expired premium listings to standard + UNLISTED |
 
 Subscription/todo schedulers enqueue `dispatch-notification` jobs rather than sending push directly.
@@ -66,6 +67,15 @@ Controller: [`notification.controller.ts`](../src/modules/notification/controlle
 | PATCH | `/v1/notifications/read-all` | JWT | Mark all read |
 
 Requires Firebase env vars for FCM delivery.
+
+### FCM push tokens (session-bound)
+
+FCM tokens are stored in `user_fcm_tokens`, one row per **active device session** (`user_sessions.id`). The mobile app registers after login via `PUT /v1/users/me/push-token` with `{ fcmToken }` — bound to the JWT session (`sid`).
+
+- Push dispatch joins `user_fcm_tokens` + active sessions only (not revoked, not expired)
+- A user with multiple logged-in devices receives push on **all** active device tokens
+- Tokens are deleted on logout, session revoke, password change/reset, and device-limit kick
+- `FcmTokenCleanupScheduler` removes any orphaned rows daily
 
 ---
 

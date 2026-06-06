@@ -11,6 +11,8 @@ import { PhoneUtils } from 'src/modules/auth/utils/phone.utils';
 import { PreferenceService } from 'src/modules/preference/preference.service';
 import { S3Service } from 'src/modules/storage/s3.service';
 import { LogAction } from 'src/common/logging';
+import { FcmTokenService } from 'src/modules/notification/services/fcm-token.service';
+import { RegisterPushTokenDto } from './dto/register-push-token.dto';
 
 @Injectable()
 export class MeService {
@@ -20,7 +22,13 @@ export class MeService {
     private readonly meRepo: MeRepository,
     private readonly preferenceService: PreferenceService,
     private readonly s3: S3Service,
+    private readonly fcmTokenService: FcmTokenService,
   ) {}
+
+  async registerPushToken(userId: number, sessionId: number, dto: RegisterPushTokenDto) {
+    await this.fcmTokenService.registerForSession(userId, sessionId, dto.fcmToken);
+    return { message: 'PUSH_TOKEN_REGISTERED' };
+  }
 
   async getMe(userId: number) {
     return this.meRepo.getMe(userId);

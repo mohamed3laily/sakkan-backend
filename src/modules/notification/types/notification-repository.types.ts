@@ -2,16 +2,14 @@ import type { SelectNotification } from '../../db/schemas/notifications/notifica
 
 export type PushTargetUser = {
   id: number;
-  fcmToken: string | null;
   language: string;
+  fcmTokens: string[];
 };
 
 export type TodoReminderRow = {
   id: number;
   title: string;
   userId: number;
-  fcmToken: string | null;
-  language: string;
 };
 
 export type SubscriptionExpiryReminderRow = {

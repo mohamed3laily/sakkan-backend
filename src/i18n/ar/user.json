@@ -3,5 +3,6 @@
   "REVIEW_NOT_FOUND": "التقييم غير موجود",
   "USER_NOT_FOUND": "المستخدم غير موجود",
   "REVIEW_ALREADY_EXISTS": "لقد قمت بتقييم هذا المستخدم من قبل",
-  "ACCOUNT_DELETED": "تم حذف الحساب"
+  "ACCOUNT_DELETED": "تم حذف الحساب",
+  "PUSH_TOKEN_REGISTERED": "تم تسجيل رمز الإشعارات"
 }
