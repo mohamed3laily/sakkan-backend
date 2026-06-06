@@ -4,5 +4,6 @@
   "UNAUTHORIZED": "غير مصرح",
   "FORBIDDEN": "غير مسموح",
   "INTERNAL_ERROR": "خطأ داخلي في السيرفر",
-  "ALREADY_REPORTED": "لقد قمت بالإبلاغ عن هذا العنصر بالفعل"
+  "ALREADY_REPORTED": "لقد قمت بالإبلاغ عن هذا العنصر بالفعل",
+  "REPORT_NOT_FOUND": "البلاغ غير موجود"
 }

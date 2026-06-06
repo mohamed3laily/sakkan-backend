@@ -32,7 +32,7 @@ export class UsersRepo {
   constructor(private readonly drizzleService: DrizzleService) {}
 
   async findAll(query: AdminUserQueryDto) {
-    const { page = 1, limit = 10, search } = query;
+    const { page = 1, limit = 20, search } = query;
     const offset = (page - 1) * limit;
     const whereClause = search ? this.buildSearchWhere(search) : undefined;
 

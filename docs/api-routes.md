@@ -116,6 +116,8 @@ See [`admin.md`](admin.md).
 | GET | `/v1/admin/listings/:id` | Admin |
 | PATCH | `/v1/admin/listings/:id/status` | Admin |
 | DELETE | `/v1/admin/listings/:id` | Admin |
+| GET | `/v1/admin/reports` | Admin |
+| PATCH | `/v1/admin/reports/:id/status` | Admin |
 | GET | `/v1/admin/users` | Admin |
 | GET | `/v1/admin/users/:id` | Admin |
 | PATCH | `/v1/admin/users/:id/deactivate` | Admin |
