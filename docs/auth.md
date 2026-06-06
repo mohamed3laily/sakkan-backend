@@ -87,8 +87,41 @@ Service: [`user-session.service.ts`](../src/modules/auth/user-session.service.ts
 1. Extract Bearer token
 2. Load user by `payload.sub`
 3. Verify session `payload.sid` is active (not revoked, not expired)
-4. If `verifiedPhoneAt` is null and route lacks `@AllowUnverified()` → `403 PHONE_NOT_VERIFIED`
-5. Attach `{ id, phone, verified, sessionId }` to request as `user`
+4. If session is revoked or expired → `401` / `403` with structured `code` (see below)
+5. If `verifiedPhoneAt` is null and route lacks `@AllowUnverified()` → `403 PHONE_NOT_VERIFIED`
+6. Attach `{ id, phone, verified, sessionId }` to request as `user`
+
+### Session revoke reasons and error `code` field
+
+When `POST /v1/auth/refresh` or a JWT-protected call fails because the session ended, the API returns a stable machine-readable **`code`** (in addition to the translated `message`). Mobile clients should branch on `code`, not `message`.
+
+Internal revoke reasons are stored in `user_sessions.revoked_reason` for audit. Only one scenario is exposed specifically to the frontend; all other revokes map to a generic code.
+
+| `code` | HTTP | When | App behavior |
+| ------ | ---- | ---- | ------------ |
+| `SESSION_REVOKED_DEVICE_LIMIT` | 401 | Oldest session kicked because another device logged in at the plan limit | Show "signed out on another device" UI |
+| `SESSION_REVOKED` | 401 | Logout, password change/reset, manual device revoke, subscription cancel, or legacy rows with no reason | Generic re-login |
+| `SESSION_EXPIRED` | 401 | Refresh token or session past `expires_at` | Login screen |
+| `ACCOUNT_DEACTIVATED` | 403 | User account deactivated | Account disabled screen |
+| `INVALID_REFRESH_TOKEN` | 401 | Unknown or tampered refresh token | Login screen |
+
+Example response (another device logged in):
+
+```json
+{
+  "message": "Your session ended because your account was used on another device",
+  "code": "SESSION_REVOKED_DEVICE_LIMIT"
+}
+```
+
+Example response (logout / password change — same generic code):
+
+```json
+{
+  "message": "Your session has ended. Please sign in again",
+  "code": "SESSION_REVOKED"
+}
+```
 
 Guard: [`jwt-auth.guard.ts`](../src/modules/auth/guards/jwt-auth.guard.ts)  
 Payload type: [`jwt-payload.interface.ts`](../src/modules/auth/interfaces/jwt-payload.interface.ts)
@@ -137,8 +170,12 @@ Nested via `RouterModule` in [`user.module.ts`](../src/modules/user/user.module.
 | Key | When |
 | --- | ---- |
 | `PHONE_EXISTS` | Register with existing phone |
-| `INVALID_CREDENTIALS` | Wrong phone/password or revoked session |
-| `INVALID_REFRESH_TOKEN` | Invalid or expired refresh token |
+| `INVALID_CREDENTIALS` | Wrong phone/password on login |
+| `INVALID_REFRESH_TOKEN` | Unknown or invalid refresh token |
+| `SESSION_REVOKED_DEVICE_LIMIT` | Session revoked because another device logged in |
+| `SESSION_REVOKED` | Session ended (logout, password change, device revoke, etc.) |
+| `SESSION_EXPIRED` | Refresh token or session TTL elapsed |
+| `ACCOUNT_DEACTIVATED` | User account deactivated |
 | `PHONE_NOT_VERIFIED` | JWT user without verified phone |
 | `USER_NOT_FOUND` | JWT references deleted user |
 

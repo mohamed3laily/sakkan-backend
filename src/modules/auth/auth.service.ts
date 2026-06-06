@@ -19,14 +19,22 @@ import { AuthRepo } from './auth.repo';
 import { TorvoSmsService } from '../sms/torvo-sms.service';
 import { PhoneUtils } from './utils/phone.utils';
 import { LogAction } from 'src/common/logging';
-import { UserSessionService } from './user-session.service';
+import { UserSessionService, type RefreshResolution } from './user-session.service';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import {
+  createSessionAuthException,
+  toPublicRevokeCode,
+  type PublicSessionAuthCode,
+} from './session-auth-codes';
 
 @Injectable()
 export class AuthService {
   private static readonly BCRYPT_SALT_ROUNDS = 10;
-  private static readonly OTP_LENGTH = 5;
+  private static readonly OTP_DIGITS = 5;
   private static readonly REFRESH_TOKEN_BYTES = 32;
+  private static readonly OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
+  private static readonly RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
+
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
@@ -48,27 +56,20 @@ export class AuthService {
     }
 
     const hashedPassword = await this.hashPassword(password);
-    const verifyPhoneToken = this.generateVerifyPhoneToken();
-    const verifyPhoneTokenExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    const verifyPhoneToken = this.generateNumericOtp(AuthService.OTP_DIGITS);
+    const verifyPhoneTokenExpiry = new Date(Date.now() + AuthService.OTP_EXPIRY_MS);
+
     const [newUser] = await this.authRepo.insertUser(
-      {
-        firstName,
-        lastName,
-        phone: normalizedPhone,
-        password: hashedPassword,
-        type,
-      },
+      { firstName, lastName, phone: normalizedPhone, password: hashedPassword, type },
       verifyPhoneToken,
       verifyPhoneTokenExpiry,
     );
-    try {
-      await this.torvoSms.sendQuickSms(
-        normalizedPhone,
-        this.torvoSms.buildPhoneVerificationMessage(verifyPhoneToken),
-      );
-    } catch (err) {
-      throw err;
-    }
+
+    await this.torvoSms.sendQuickSms(
+      normalizedPhone,
+      this.torvoSms.buildPhoneVerificationMessage(verifyPhoneToken),
+    );
+
     const { accessToken, refreshToken, installationId: issuedInstallationId } =
       await this.issueTokenPair(newUser.id, newUser.phone, { deviceLabel, installationId });
 
@@ -79,20 +80,12 @@ export class AuthService {
       accessToken,
       refreshToken,
       installationId: issuedInstallationId,
-      user: {
-        id: newUser.id,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        phone: newUser.phone,
-        type: newUser.type,
-        phoneVerified: !!newUser.verifiedPhoneAt,
-      },
+      user: this.formatUserSummary(newUser),
     };
   }
 
   async verifyPhone(phone: string, token: string) {
     const normalizedPhone = PhoneUtils.normalizePhone(phone);
-
     const user = await this.authRepo.getUserByPhone(normalizedPhone);
 
     if (!user || !user.verifyPhoneToken || !user.verifyPhoneTokenExpiry) {
@@ -112,9 +105,7 @@ export class AuthService {
     }
 
     // TODO: Use crypted tokens and compare using a timing-safe method
-    const valid = user.verifyPhoneToken === token;
-
-    if (!valid) {
+    if (user.verifyPhoneToken !== token) {
       this.logger.warn(
         { action: LogAction.USER_VERIFY_PHONE, reason: 'INVALID_VERIFICATION_TOKEN' },
         'Phone verification failed',
@@ -135,8 +126,8 @@ export class AuthService {
 
   async resendVerifyPhone(phone: string) {
     const normalizedPhone = PhoneUtils.normalizePhone(phone);
-
     const user = await this.authRepo.getUserByPhone(normalizedPhone);
+
     if (!user) {
       this.logger.warn(
         { action: LogAction.USER_RESEND_VERIFY_PHONE, reason: 'INVALID_VERIFICATION_REQUEST' },
@@ -145,14 +136,10 @@ export class AuthService {
       throw new BadRequestException('INVALID_VERIFICATION_REQUEST');
     }
 
-    const verifyPhoneToken = this.generateVerifyPhoneToken();
-    const verifyPhoneTokenExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    const verifyPhoneToken = this.generateNumericOtp(AuthService.OTP_DIGITS);
+    const verifyPhoneTokenExpiry = new Date(Date.now() + AuthService.OTP_EXPIRY_MS);
 
-    await this.authRepo.updateUser(user.id, {
-      verifyPhoneToken,
-      verifyPhoneTokenExpiry,
-    });
-
+    await this.authRepo.updateUser(user.id, { verifyPhoneToken, verifyPhoneTokenExpiry });
     await this.torvoSms.sendQuickSms(
       normalizedPhone,
       this.torvoSms.buildPhoneVerificationMessage(verifyPhoneToken),
@@ -173,14 +160,9 @@ export class AuthService {
     }
 
     const user = await this.authRepo.getUserByPhone(normalizedPhone);
+    const isPasswordValid = user && (await this.comparePassword(password, user.password));
 
-    if (!user) {
-      this.logger.warn({ action: LogAction.USER_LOGIN, reason: 'INVALID_CREDENTIALS' }, 'Login failed');
-      throw new UnauthorizedException('INVALID_CREDENTIALS');
-    }
-
-    const isPasswordValid = await this.comparePassword(password, user.password);
-    if (!isPasswordValid) {
+    if (!user || !isPasswordValid) {
       this.logger.warn({ action: LogAction.USER_LOGIN, reason: 'INVALID_CREDENTIALS' }, 'Login failed');
       throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
@@ -199,99 +181,21 @@ export class AuthService {
       accessToken,
       refreshToken,
       installationId: issuedInstallationId,
-      user: {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        phoneVerified: !!user.verifiedPhoneAt,
-      },
+      user: this.formatUserSummary(user),
     };
   }
 
   async requestPasswordReset(requestResetDto: RequestResetDto) {
-    const { phone } = requestResetDto;
-    let normalizedPhone: string;
-    try {
-      normalizedPhone = PhoneUtils.normalizePhone(phone);
-    } catch {
-      throw new BadRequestException('PHONE_WRONG');
-    }
-
-    const user = await this.authRepo.getUserByPhone(normalizedPhone);
-
-    if (!user) {
-      throw new NotFoundException('PHONE_NOT_FOUND');
-    }
-
-    const resetToken = this.generateResetToken();
-    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-    await this.authRepo.updateUser(user.id, {
-      resetToken,
-      resetTokenExpiry,
-    });
-
-    await this.torvoSms.sendQuickSms(
-      normalizedPhone,
-      this.torvoSms.buildPasswordResetMessage(resetToken),
-    );
-
-    this.logger.log(
-      { userId: user.id, action: LogAction.USER_PASSWORD_RESET_REQUEST },
-      'Password reset requested',
-    );
-
-    return { message: 'RESET_SENT' };
+    return this.sendPasswordResetOtp(requestResetDto.phone, 'RESET_SENT');
   }
 
   async resendResetOtp(requestResetDto: RequestResetDto) {
-    const { phone } = requestResetDto;
-    let normalizedPhone: string;
-    try {
-      normalizedPhone = PhoneUtils.normalizePhone(phone);
-    } catch {
-      throw new BadRequestException('PHONE_WRONG');
-    }
-
-    const user = await this.authRepo.getUserByPhone(normalizedPhone);
-
-    if (!user) {
-      throw new NotFoundException('PHONE_NOT_FOUND');
-    }
-
-    const resetToken = this.generateResetToken();
-    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
-
-    await this.authRepo.updateUser(user.id, {
-      resetToken,
-      resetTokenExpiry,
-    });
-
-    await this.torvoSms.sendQuickSms(
-      normalizedPhone,
-      this.torvoSms.buildPasswordResetMessage(resetToken),
-    );
-
-    return { message: 'RESET_RESENT' };
+    return this.sendPasswordResetOtp(requestResetDto.phone, 'RESET_RESENT');
   }
 
   async verifyResetToken(phone: string, token: string) {
     const normalizedPhone = PhoneUtils.normalizePhone(phone);
-
-    const user = await this.authRepo.getUserByPhone(normalizedPhone);
-    if (!user || !user.resetToken || !user.resetTokenExpiry) {
-      throw new BadRequestException('INVALID_RESET_REQUEST');
-    }
-
-    if (user.resetToken !== token) {
-      throw new BadRequestException('INVALID_RESET_TOKEN');
-    }
-
-    if (new Date() > user.resetTokenExpiry) {
-      throw new BadRequestException('RESET_TOKEN_EXPIRED');
-    }
-
+    await this.resolveValidResetUser(normalizedPhone, token);
     return { message: 'RESET_TOKEN_VALID' };
   }
 
@@ -299,29 +203,15 @@ export class AuthService {
     const { phone, token, newPassword } = resetPasswordDto;
 
     const normalizedPhone = PhoneUtils.normalizePhone(phone);
-    const user = await this.authRepo.getUserByPhone(normalizedPhone);
-
-    if (!user || !user.resetToken || !user.resetTokenExpiry) {
-      throw new BadRequestException('INVALID_RESET_REQUEST');
-    }
-
-    if (user.resetToken !== token) {
-      throw new BadRequestException('INVALID_RESET_TOKEN');
-    }
-
-    if (new Date() > user.resetTokenExpiry) {
-      throw new BadRequestException('RESET_TOKEN_EXPIRED');
-    }
+    const user = await this.resolveValidResetUser(normalizedPhone, token);
 
     const hashedPassword = await this.hashPassword(newPassword);
-
     await this.authRepo.updateUser(user.id, {
       password: hashedPassword,
       resetToken: null,
       resetTokenExpiry: null,
     });
-
-    await this.userSessionService.revokeAllForUser(user.id);
+    await this.userSessionService.revokeAllForUser(user.id, 'password_reset');
 
     this.logger.log(
       { userId: user.id, action: LogAction.USER_PASSWORD_RESET_COMPLETE },
@@ -350,31 +240,26 @@ export class AuthService {
 
     const hashedPassword = await this.hashPassword(newPassword);
     await this.authRepo.updateUser(userId, { password: hashedPassword });
-    await this.userSessionService.revokeAllForUser(userId);
+    await this.userSessionService.revokeAllForUser(userId, 'password_change');
 
     return { message: 'PASSWORD_CHANGED' };
   }
 
   async refresh(refreshTokenDto: RefreshTokenDto) {
     const { refreshToken } = refreshTokenDto;
-    const session = await this.userSessionService.validateRefreshToken(refreshToken);
+    const resolution = await this.userSessionService.resolveRefreshToken(refreshToken);
 
-    if (!session) {
-      this.logger.warn(
-        { action: LogAction.USER_TOKEN_REFRESH, reason: 'INVALID_REFRESH_TOKEN' },
-        'Token refresh failed',
-      );
-      throw new UnauthorizedException('INVALID_REFRESH_TOKEN');
-    }
+    this.assertRefreshResolutionValid(resolution);
 
+    const session = resolution.session;
     const user = await this.authRepo.getUserById(session.userId);
     if (!user) {
-      throw new UnauthorizedException('INVALID_REFRESH_TOKEN');
+      throw createSessionAuthException('INVALID_REFRESH_TOKEN');
     }
 
     if (user.deactivatedAt) {
-      await this.userSessionService.revokeSession(session.id);
-      throw new ForbiddenException('ACCOUNT_DEACTIVATED');
+      await this.userSessionService.revokeSession(session.id, 'account_deactivated');
+      throw createSessionAuthException('ACCOUNT_DEACTIVATED');
     }
 
     const tokens = await this.rotateTokenPair(session.id, session.userId, user.phone);
@@ -389,11 +274,105 @@ export class AuthService {
   }
 
   async logout(sessionId: number) {
-    await this.userSessionService.revokeSession(sessionId);
-
+    await this.userSessionService.revokeSession(sessionId, 'logout');
     this.logger.log({ sessionId, action: LogAction.USER_LOGOUT }, 'User logged out');
-
     return { message: 'LOGOUT_SUCCESS' };
+  }
+
+  // Private helpers
+
+  /** Shared flow for both request-reset and resend-reset — generates OTP, saves it, and sends SMS. */
+  private async sendPasswordResetOtp(phone: string, successMessage: string) {
+    let normalizedPhone: string;
+    try {
+      normalizedPhone = PhoneUtils.normalizePhone(phone);
+    } catch {
+      throw new BadRequestException('PHONE_WRONG');
+    }
+
+    const user = await this.authRepo.getUserByPhone(normalizedPhone);
+    if (!user) {
+      throw new NotFoundException('PHONE_NOT_FOUND');
+    }
+
+    const resetToken = this.generateNumericOtp(AuthService.OTP_DIGITS);
+    const resetTokenExpiry = new Date(Date.now() + AuthService.RESET_TOKEN_EXPIRY_MS);
+
+    await this.authRepo.updateUser(user.id, { resetToken, resetTokenExpiry });
+    await this.torvoSms.sendQuickSms(
+      normalizedPhone,
+      this.torvoSms.buildPasswordResetMessage(resetToken),
+    );
+
+    this.logger.log(
+      { userId: user.id, action: LogAction.USER_PASSWORD_RESET_REQUEST },
+      'Password reset OTP sent',
+    );
+
+    return { message: successMessage };
+  }
+
+  /** Validates a password reset token and returns the user if valid; throws otherwise. */
+  private async resolveValidResetUser(normalizedPhone: string, token: string) {
+    const user = await this.authRepo.getUserByPhone(normalizedPhone);
+
+    if (!user || !user.resetToken || !user.resetTokenExpiry) {
+      throw new BadRequestException('INVALID_RESET_REQUEST');
+    }
+
+    if (user.resetToken !== token) {
+      throw new BadRequestException('INVALID_RESET_TOKEN');
+    }
+
+    if (new Date() > user.resetTokenExpiry) {
+      throw new BadRequestException('RESET_TOKEN_EXPIRED');
+    }
+
+    return user;
+  }
+
+  /** Throws if the refresh resolution is not valid; narrows the type to `{ status: 'valid' }` for callers. */
+  private assertRefreshResolutionValid(
+    resolution: RefreshResolution,
+  ): asserts resolution is Extract<RefreshResolution, { status: 'valid' }> {
+    if (resolution.status === 'valid') return;
+
+    const code =
+      resolution.status === 'revoked'
+        ? toPublicRevokeCode(resolution.reason)
+        : resolution.status === 'expired'
+          ? 'SESSION_EXPIRED'
+          : 'INVALID_REFRESH_TOKEN';
+
+    this.throwRefreshFailure(code);
+  }
+
+  /** Logs a refresh failure reason and throws the corresponding session auth exception. */
+  private throwRefreshFailure(code: PublicSessionAuthCode): never {
+    this.logger.warn(
+      { action: LogAction.USER_TOKEN_REFRESH, reason: code },
+      'Token refresh failed',
+    );
+    throw createSessionAuthException(code);
+  }
+
+  /** Minimal user shape returned on login/register. */
+  private formatUserSummary(user: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    type?: string | null;
+    verifiedPhoneAt?: Date | null;
+  }) {
+    return {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      ...(user.type !== undefined && { type: user.type }),
+      phoneVerified: !!user.verifiedPhoneAt,
+    };
   }
 
   private async hashPassword(plain: string): Promise<string> {
@@ -411,6 +390,11 @@ export class AuthService {
 
   private generateRefreshToken(): string {
     return crypto.randomBytes(AuthService.REFRESH_TOKEN_BYTES).toString('hex');
+  }
+
+  private generateNumericOtp(digits: number): string {
+    const max = 10 ** digits;
+    return String(crypto.randomInt(0, max)).padStart(digits, '0');
   }
 
   private async issueTokenPair(
@@ -437,18 +421,5 @@ export class AuthService {
     await this.userSessionService.rotateRefreshToken(sessionId, refreshToken);
     const accessToken = this.generateAccessToken(userId, phone, sessionId);
     return { accessToken, refreshToken };
-  }
-
-  private generateResetToken(): string {
-    return this.generateNumericOtp(AuthService.OTP_LENGTH);
-  }
-
-  private generateVerifyPhoneToken(): string {
-    return this.generateNumericOtp(AuthService.OTP_LENGTH);
-  }
-
-  private generateNumericOtp(digits: number): string {
-    const max = 10 ** digits;
-    return String(crypto.randomInt(0, max)).padStart(digits, '0');
   }
 }

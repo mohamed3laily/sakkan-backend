@@ -1,6 +1,7 @@
 import { index, integer, pgTable, serial, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 import { users } from '../user/user';
 import { timestamps } from '../timestamps';
+import { sessionRevokeReasonEnum } from './enums';
 
 export const userSessions = pgTable(
   'user_sessions',
@@ -16,6 +17,7 @@ export const userSessions = pgTable(
     expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'string' }).notNull(),
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true, mode: 'string' }).notNull(),
     revokedAt: timestamp('revoked_at', { withTimezone: true, mode: 'string' }),
+    revokedReason: sessionRevokeReasonEnum('revoked_reason'),
     ...timestamps,
   },
   (table) => ({

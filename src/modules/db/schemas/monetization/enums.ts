@@ -24,3 +24,13 @@ export const paymentStatusEnum = pgEnum('payment_status', [
 ]);
 
 export const creditTypeEnum = pgEnum('credit_type', ['serious', 'featured']);
+
+export const sessionRevokeReasonEnum = pgEnum('session_revoke_reason', [
+  'device_limit',
+  'logout',
+  'password_change',
+  'password_reset',
+  'manual_revoke',
+  'account_deactivated',
+  'subscription_cancelled',
+]);

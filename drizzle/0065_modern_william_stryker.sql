@@ -1,0 +1,2 @@
+CREATE TYPE "public"."session_revoke_reason" AS ENUM('device_limit', 'logout', 'password_change', 'password_reset', 'manual_revoke', 'account_deactivated', 'subscription_cancelled');--> statement-breakpoint
+ALTER TABLE "user_sessions" ADD COLUMN "revoked_reason" "session_revoke_reason";

@@ -11,6 +11,7 @@ import { AuthRepo } from './auth.repo';
 import { UserModule } from '../user/user.module';
 import { SmsModule } from '../sms/sms.module';
 import { UserSessionService } from './user-session.service';
+import { UserSessionRepo } from './user-session.repo';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { UserSessionService } from './user-session.service';
     UserModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, AuthRepo, UserSessionService],
+  providers: [AuthService, JwtStrategy, AuthRepo, UserSessionRepo, UserSessionService],
   exports: [AuthService, AuthRepo, UserSessionService],
 })
 export class AuthModule {}
