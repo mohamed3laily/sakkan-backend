@@ -6,6 +6,7 @@ import * as arUser from './ar/user.json';
 import * as arTodo from './ar/todo.json';
 import * as arNote from './ar/note.json';
 import * as arNotification from './ar/notification.json';
+import * as arSubscription from './ar/subscription.json';
 
 import * as enCommon from './en/common.json';
 import * as enAuth from './en/auth.json';
@@ -15,6 +16,7 @@ import * as enUser from './en/user.json';
 import * as enTodo from './en/todo.json';
 import * as enNote from './en/note.json';
 import * as enNotification from './en/notification.json';
+import * as enSubscription from './en/subscription.json';
 
 export const i18n = {
   ar: {
@@ -26,6 +28,7 @@ export const i18n = {
     ...arTodo,
     ...arNote,
     ...arNotification,
+    ...arSubscription,
   },
   en: {
     ...enCommon,
@@ -36,6 +39,7 @@ export const i18n = {
     ...enTodo,
     ...enNote,
     ...enNotification,
+    ...enSubscription,
   },
 };
 

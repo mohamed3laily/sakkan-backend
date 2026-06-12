@@ -81,8 +81,11 @@ export class PaymobWebhookService {
     try {
       switch (payment.type) {
         case 'subscription':
-          await this.fulfillment.fulfillSubscription(payment);
-          await this.paymobService.markPaymentSuccess(payment.id, txnIdStr);
+          await this.paymobService.finalizePendingPaymentWithFulfillment(
+            payment.id,
+            txnIdStr,
+            (tx) => this.fulfillment.fulfillSubscriptionTx(tx, payment),
+          );
           break;
         case 'serious_request':
           await this.paymobService.finalizePendingPaymentWithFulfillment(

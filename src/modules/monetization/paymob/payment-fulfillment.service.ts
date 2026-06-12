@@ -56,6 +56,46 @@ export class PaymentFulfillmentService {
     );
   }
 
+  /**
+   * Transactional version for use inside `finalizePendingPaymentWithFulfillment`.
+   * Pre-loads the plan outside the transaction to avoid a round-trip inside it.
+   */
+  async fulfillSubscriptionTx(tx: AppTransaction, payment: PaymentRow) {
+    const { plan_id: planId } = this.getSubscriptionMeta(payment.metadata);
+    if (planId == null) {
+      this.logger.warn(
+        ({
+          action: LogAction.SUBSCRIPTION_ACTIVATED,
+          userId: payment.userId,
+          paymentId: payment.id,
+          reason: 'MISSING_PLAN_ID',
+        }),
+        'Subscription fulfillment skipped',
+      );
+      return;
+    }
+
+    const plan = await this.subscriptionService.getPlanById(planId);
+
+    await this.subscriptionService.activateSubscriptionTx(tx, {
+      userId: payment.userId,
+      planId,
+      paymobOrderId: payment.paymobOrderId ?? '',
+      paidAmountPiasters: payment.amountPiasters,
+      plan,
+    });
+
+    this.logger.log(
+      ({
+        action: LogAction.SUBSCRIPTION_ACTIVATED,
+        userId: payment.userId,
+        planId,
+        paymentId: payment.id,
+      }),
+      'Subscription activated',
+    );
+  }
+
   async fulfillSeriousRequestTx(tx: AppTransaction, payment: PaymentRow) {
     const { listing_id: listingId } = this.getCreditsMeta(payment.metadata);
 

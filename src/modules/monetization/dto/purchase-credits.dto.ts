@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class PurchaseCreditsDto {
   @IsString()
@@ -8,4 +8,9 @@ export class PurchaseCreditsDto {
   @IsString()
   @IsOptional()
   redirectionUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['card', 'wallet'])
+  paymentMethod?: 'card' | 'wallet';
 }
