@@ -6,6 +6,7 @@ import { subscriptionPlans } from '../../db/schemas/monetization/subscription-pl
 import { userSubscriptions } from '../../db/schemas/monetization/user-subscriptions';
 import { toPlanSnapshot, type PlanDto } from '../types';
 import { UserSessionService } from '../../auth/user-session.service';
+import type { AppTransaction } from '../monetization-db.types';
 
 @Injectable()
 export class SubscriptionService {
@@ -56,10 +57,34 @@ export class SubscriptionService {
     paidAmountPiasters: number;
   }) {
     const plan = await this.getPlanById(params.planId);
+    return this.activateSubscriptionTx(this.drizzle.db as unknown as AppTransaction, {
+      userId: params.userId,
+      planId: params.planId,
+      paymobOrderId: params.paymobOrderId,
+      paidAmountPiasters: params.paidAmountPiasters,
+      plan,
+    });
+  }
+
+  /**
+   * Same logic as `activateSubscription` but runs inside a caller-supplied transaction.
+   * Pass `plan` directly to avoid a second DB round-trip inside the transaction.
+   */
+  async activateSubscriptionTx(
+    tx: AppTransaction,
+    params: {
+      userId: number;
+      planId: number;
+      paymobOrderId: string;
+      paidAmountPiasters: number;
+      plan: Awaited<ReturnType<typeof this.getPlanById>>;
+    },
+  ) {
+    const { plan } = params;
     const planSnapshot = toPlanSnapshot(plan);
     const paidEgp = Math.floor(params.paidAmountPiasters / 100);
 
-    await this.drizzle.db
+    await tx
       .update(userSubscriptions)
       .set({
         status: 'cancelled',
@@ -74,7 +99,7 @@ export class SubscriptionService {
     const now = new Date();
     const periodEnd = this.computePeriodEnd(now, plan.billingPeriod);
 
-    const [subscription] = await this.drizzle.db
+    const [subscription] = await tx
       .insert(userSubscriptions)
       .values({
         userId: params.userId,

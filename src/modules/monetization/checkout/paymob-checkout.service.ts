@@ -43,10 +43,12 @@ export class PaymobCheckoutService {
       },
       billingData: billing,
       redirectionUrl: dto.redirectionUrl,
+      paymentMethod: dto.paymentMethod,
     });
 
     return {
       internalPaymentId: result.internalPaymentId,
+      paymentMethod: result.paymentMethod,
       amount: product.priceEgp,
       credits: product.credits,
       paymentUrl: result.paymentUrl,
@@ -69,10 +71,12 @@ export class PaymobCheckoutService {
       paymentType: 'subscription',
       metadata: { plan_id: plan.id },
       billingData: billing,
+      paymentMethod: dto.paymentMethod,
     });
 
     return {
       internalPaymentId: result.internalPaymentId,
+      paymentMethod: result.paymentMethod,
       paymentUrl: result.paymentUrl,
       paymob: this.paymobForFlutter(result),
       plan: {
@@ -86,16 +90,22 @@ export class PaymobCheckoutService {
   }
 
   /**
-   * Fields aligned with Paymob Flutter plugin: `Paymob.pay(publicKey:, clientSecret:)`.
-   * Use `unifiedCheckoutUrl` in a WebView if you skip the native SDK.
+   * Fields for the Paymob Flutter plugin.
+   *
+   * Card:   `Paymob.pay(publicKey, clientSecret)` OR open `unifiedCheckoutUrl` in a WebView.
+   * Wallet: `Paymob.pay(publicKey, clientSecret)` ONLY — `unifiedCheckoutUrl` is `null` because
+   *         opening it shows the card form, not the wallet UI.
    */
   private paymobForFlutter(result: PaymobOrderResult) {
     return {
       publicKey: result.publicKey,
       clientSecret: result.clientSecret,
+      /** `null` for wallet — use the Flutter SDK; do not open this in a WebView. */
       unifiedCheckoutUrl: result.paymentUrl,
       checkoutFlow: result.checkoutFlow,
       paymobOrderId: result.paymobOrderId,
+      paymentMethod: result.paymentMethod,
+      integrationId: result.integrationId,
     };
   }
 

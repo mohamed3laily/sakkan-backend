@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { HttpException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { eq } from 'drizzle-orm';
@@ -12,20 +12,28 @@ import {
 } from './paymob-hmac.util';
 import { LogAction } from 'src/common/logging';
 
-export type PaymobCheckoutFlow = 'intention' | 'legacy_iframe';
+export type PaymobCheckoutFlow = 'intention';
+
+export type PaymobPaymentMethod = 'card' | 'wallet';
 
 export type PaymobOrderResult = {
   paymobOrderId: string;
-  /** Stored on `payments.paymob_payment_key`; Intention: `client_secret`. */
+  /** Stored on `payments.paymob_payment_key` as the Intention `client_secret`. */
   paymentKey: string;
-  paymentUrl: string;
+  /**
+   * Unified Checkout URL for card WebView fallback.
+   * `null` for wallet — use `Paymob.pay(publicKey, clientSecret)` directly; this URL shows the card form.
+   */
+  paymentUrl: string | null;
   internalPaymentId: number;
-  /** Flutter `paymob` SDK: `Paymob.pay(publicKey:, clientSecret:)` — same as Intention `client_secret`. */
+  /** Flutter `paymob` SDK: `Paymob.pay(publicKey:, clientSecret:)` */
   clientSecret: string;
-  /** Flutter / Unified Checkout — `null` when legacy iframe-only and no public key configured. */
-  publicKey: string | null;
-  /** `intention`: prefer native SDK + optional WebView with `paymentUrl`; `legacy_iframe`: WebView `paymentUrl` only (token is not an Intention secret). */
+  publicKey: string;
   checkoutFlow: PaymobCheckoutFlow;
+  /** Which payment method this intention was created for. */
+  paymentMethod: PaymobPaymentMethod;
+  /** Paymob integration ID sent in the Intention `payment_methods` array — confirms correct integration was used. */
+  integrationId: string;
 };
 
 type CreateOrderParams = {
@@ -40,6 +48,7 @@ type CreateOrderParams = {
     phone: string;
   };
   redirectionUrl?: string;
+  paymentMethod?: PaymobPaymentMethod;
 };
 
 type PaymentRow = typeof payments.$inferSelect;
@@ -47,15 +56,12 @@ type PaymentRow = typeof payments.$inferSelect;
 @Injectable()
 export class PaymobService {
   private readonly logger = new Logger(PaymobService.name);
-  private readonly apiKey: string;
   private readonly integrationId: string;
-  private readonly iframeId: string;
-  /** Accept **Secret Key** (`PAYMOB_SECRET_KEY`): Intention / legacy API `Authorization: Token …` (not used for callback HMAC; that uses `PAYMOB_HMAC_SECRET` only). */
+  private readonly walletIntegrationId: string | undefined;
+  /** Accept **Secret Key** (`PAYMOB_SECRET_KEY`): Intention API `Authorization: Token …` (not used for callback HMAC; that uses `PAYMOB_HMAC_SECRET` only). */
   private readonly secretKey: string;
-  private readonly publicKey: string | undefined;
-  private readonly useIntention: boolean;
+  private readonly publicKey: string;
   private readonly acceptHost: string;
-  private readonly legacyApiBase: string;
   /**
    * Transaction callback HMAC (POST processed + GET response): SHA-512 over Paymob’s concat string using **`PAYMOB_HMAC_SECRET` only** ([docs](https://developers.paymob.com/paymob-docs/developers/webhook-callbacks-and-hmac/hmac-transaction-callback)).
    */
@@ -66,22 +72,13 @@ export class PaymobService {
     private readonly drizzle: DrizzleService,
   ) {
     this.integrationId = this.config.getOrThrow('PAYMOB_INTEGRATION_ID');
+    this.walletIntegrationId = this.config.get<string>('PAYMOB_WALLET_INTEGRATION_ID')?.trim() || undefined;
     this.acceptHost =
       this.config.get<string>('PAYMOB_ACCEPT_HOST')?.replace(/\/$/, '') ??
       'https://accept.paymob.com';
-    this.legacyApiBase = `${this.acceptHost}/api`;
 
     this.secretKey = this.config.getOrThrow<string>('PAYMOB_SECRET_KEY').trim();
-    this.publicKey = this.config.get<string>('PAYMOB_PUBLIC_KEY')?.trim();
-    this.useIntention = Boolean(this.publicKey);
-
-    if (this.useIntention) {
-      this.apiKey = '';
-      this.iframeId = '';
-    } else {
-      this.apiKey = this.config.getOrThrow('PAYMOB_API_KEY');
-      this.iframeId = this.config.getOrThrow('PAYMOB_IFRAME_ID');
-    }
+    this.publicKey = this.config.getOrThrow<string>('PAYMOB_PUBLIC_KEY').trim();
 
     const hmacSecret = (this.config.get<string>('PAYMOB_HMAC_SECRET') ?? '').trim();
     if (hmacSecret.length === 0) {
@@ -92,10 +89,16 @@ export class PaymobService {
 
     this.webhookHmacSecrets = [hmacSecret];
 
-    this.logger.log('Paymob transaction callback HMAC uses PAYMOB_HMAC_SECRET only (SHA-512).');
+    this.logger.log('Paymob Intention API active. HMAC uses PAYMOB_HMAC_SECRET only (SHA-512).');
   }
 
   async createOrder(params: CreateOrderParams): Promise<PaymobOrderResult> {
+    const paymentMethod = params.paymentMethod ?? 'card';
+
+    // Validate configuration BEFORE writing to DB — throws InternalServerErrorException early
+    // without creating a dangling failed payment row.
+    const integrationId = this.resolveIntegrationId(paymentMethod);
+
     const amountPiasters = params.amountEgp * 100;
 
     const [internalPayment] = await this.drizzle.db
@@ -105,26 +108,18 @@ export class PaymobService {
         type: params.paymentType,
         status: 'pending',
         amountPiasters,
-        metadata: params.metadata,
+        // Include payment_method in metadata for audit/observability.
+        metadata: { ...params.metadata, payment_method: paymentMethod },
       })
       .returning();
 
     try {
-      if (this.useIntention) {
-        const result = await this.createPaymentIntention(params, internalPayment, amountPiasters);
-        this.logger.log(
-          ({
-            action: LogAction.PAYMOB_CHECKOUT_CREATED,
-            userId: params.userId,
-            paymentId: internalPayment.id,
-            paymentType: params.paymentType,
-            amountEgp: params.amountEgp,
-          }),
-          'Paymob checkout created',
-        );
-        return result;
-      }
-      const result = await this.createOrderLegacy(params, internalPayment, amountPiasters);
+      const result = await this.createPaymentIntention(
+        params,
+        internalPayment,
+        amountPiasters,
+        integrationId,
+      );
       this.logger.log(
         ({
           action: LogAction.PAYMOB_CHECKOUT_CREATED,
@@ -132,11 +127,18 @@ export class PaymobService {
           paymentId: internalPayment.id,
           paymentType: params.paymentType,
           amountEgp: params.amountEgp,
+          paymentMethod: result.paymentMethod,
+          integrationId: result.integrationId,
         }),
         'Paymob checkout created',
       );
       return result;
     } catch (err) {
+      // Re-throw known HTTP errors without marking the payment failed or masking the message.
+      if (err instanceof HttpException) {
+        throw err;
+      }
+
       await this.drizzle.db
         .update(payments)
         .set({ status: 'failed', updatedAt: new Date().toISOString() })
@@ -160,14 +162,17 @@ export class PaymobService {
     params: CreateOrderParams,
     internalPayment: PaymentRow,
     amountPiasters: number,
+    integrationId: string,
   ): Promise<PaymobOrderResult> {
+    const paymentMethod = params.paymentMethod ?? 'card';
+
     const notificationUrl = this.resolveNotificationUrl();
     const redirectionUrl = params.redirectionUrl ?? this.resolveRedirectionUrl();
     const intentionUrl = `${this.acceptHost}/v1/intention/`;
     const body = {
       amount: amountPiasters,
       currency: 'EGP',
-      payment_methods: [Number(this.integrationId)],
+      payment_methods: [Number(integrationId)],
       items: [
         {
           name: this.labelForPaymentType(params.paymentType),
@@ -239,7 +244,10 @@ export class PaymobService {
       })
       .where(eq(payments.id, internalPayment.id));
 
-    const paymentUrl = `${this.acceptHost}/unifiedcheckout/?publicKey=${encodeURIComponent(this.publicKey!)}&clientSecret=${encodeURIComponent(clientSecret)}`;
+    // Card: provide the unified checkout URL for WebView fallback.
+    // Wallet: null — opening this URL shows the card form; use Paymob.pay() SDK instead.
+    const unifiedCheckoutUrl = `${this.acceptHost}/unifiedcheckout/?publicKey=${encodeURIComponent(this.publicKey!)}&clientSecret=${encodeURIComponent(clientSecret)}`;
+    const paymentUrl = paymentMethod === 'wallet' ? null : unifiedCheckoutUrl;
 
     return {
       paymobOrderId: String(intentionOrderId),
@@ -249,114 +257,12 @@ export class PaymobService {
       clientSecret,
       publicKey: this.publicKey ?? null,
       checkoutFlow: 'intention',
+      paymentMethod,
+      integrationId,
     };
   }
 
-  /** Legacy Accept API: auth token + ecommerce order + payment_keys + iframe. */
-  private async createOrderLegacy(
-    params: CreateOrderParams,
-    internalPayment: PaymentRow,
-    amountPiasters: number,
-  ): Promise<PaymobOrderResult> {
-    const authRes = await fetch(`${this.legacyApiBase}/auth/tokens`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ api_key: this.apiKey }),
-    });
-    if (!authRes.ok) {
-      throw new Error(`Paymob auth failed: ${authRes.status}`);
-    }
-    const authJson = (await authRes.json()) as { token?: string };
-    const authToken = authJson.token;
-    if (!authToken) {
-      throw new Error('Paymob auth: missing token');
-    }
-
-    const orderRes = await fetch(`${this.legacyApiBase}/ecommerce/orders`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        auth_token: authToken,
-        delivery_needed: false,
-        amount_cents: amountPiasters,
-        currency: 'EGP',
-        merchant_order_id: String(internalPayment.id),
-        items: [],
-      }),
-    });
-    if (!orderRes.ok) {
-      throw new Error(`Paymob order failed: ${orderRes.status}`);
-    }
-    const paymobOrder = (await orderRes.json()) as { id?: number };
-    if (paymobOrder.id == null) {
-      throw new Error('Paymob order: missing id');
-    }
-
-    const keyRes = await fetch(`${this.legacyApiBase}/acceptance/payment_keys`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        auth_token: authToken,
-        amount_cents: amountPiasters,
-        expiration: 3600,
-        order_id: paymobOrder.id,
-        billing_data: {
-          apartment: 'NA',
-          email: params.billingData.email,
-          floor: 'NA',
-          first_name: params.billingData.firstName,
-          street: 'NA',
-          building: 'NA',
-          phone_number: params.billingData.phone,
-          shipping_method: 'NA',
-          postal_code: 'NA',
-          city: 'NA',
-          country: 'EG',
-          last_name: params.billingData.lastName,
-          state: 'NA',
-        },
-        currency: 'EGP',
-        integration_id: Number(this.integrationId),
-      }),
-    });
-    if (!keyRes.ok) {
-      throw new Error(`Paymob payment_keys failed: ${keyRes.status}`);
-    }
-    const keyJson = (await keyRes.json()) as { token?: string };
-    const paymentKey = keyJson.token;
-    if (!paymentKey) {
-      throw new Error('Paymob payment_keys: missing token');
-    }
-
-    await this.drizzle.db
-      .update(payments)
-      .set({
-        paymobOrderId: String(paymobOrder.id),
-        paymobPaymentKey: paymentKey,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(payments.id, internalPayment.id));
-
-    const paymentUrl = `${this.acceptHost}/api/acceptance/iframes/${this.iframeId}?payment_token=${paymentKey}`;
-
-    return {
-      paymobOrderId: String(paymobOrder.id),
-      paymentKey,
-      paymentUrl,
-      internalPaymentId: internalPayment.id,
-      clientSecret: paymentKey,
-      publicKey: this.publicKey ?? null,
-      checkoutFlow: 'legacy_iframe',
-    };
-  }
-
-  private resolveNotificationUrl(): string {
+    private resolveNotificationUrl(): string {
     const explicit = this.config.get<string>('PAYMOB_NOTIFICATION_URL');
     if (explicit) {
       return explicit;
@@ -392,6 +298,17 @@ export class PaymobService {
       featured_bundle: 'Featured bundle',
     };
     return labels[paymentType];
+  }
+
+  private resolveIntegrationId(paymentMethod: PaymobPaymentMethod): string {
+    if (paymentMethod === 'wallet') {
+      if (!this.walletIntegrationId) {
+        this.logger.warn('Wallet payment requested but PAYMOB_WALLET_INTEGRATION_ID is not configured');
+        throw new InternalServerErrorException('WALLET_PAYMENT_NOT_CONFIGURED');
+      }
+      return this.walletIntegrationId;
+    }
+    return this.integrationId;
   }
 
   verifyWebhookHmac(payload: unknown, hmac: string): boolean {
