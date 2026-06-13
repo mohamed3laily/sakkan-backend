@@ -14,8 +14,8 @@ async function bootstrap() {
   // const citiesAreasSeed = app.get(CitiesAreasSeed);
   // await citiesAreasSeed.run();
 
-  // const subscriptionPlansSeed = app.get(SubscriptionPlansSeed);
-  // await subscriptionPlansSeed.run();
+   const subscriptionPlansSeed = app.get(SubscriptionPlansSeed);
+   await subscriptionPlansSeed.run();
 
   //const creditProductsSeed = app.get(CreditProductsSeed);
   //await creditProductsSeed.run();
@@ -24,8 +24,8 @@ async function bootstrap() {
   //const realEstateDevelopersSeed = app.get(RealEstateDevelopersSeed);
   //await realEstateDevelopersSeed.run();
 
-  const appSettingsSeed = app.get(AppSettingsSeed);
-  await appSettingsSeed.run();
+  //const appSettingsSeed = app.get(AppSettingsSeed);
+  //await appSettingsSeed.run();
 
   await app.close();
 }

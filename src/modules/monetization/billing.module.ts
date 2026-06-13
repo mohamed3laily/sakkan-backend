@@ -3,6 +3,11 @@ import { Module, forwardRef } from '@nestjs/common';
 import { ListingModule } from '../listing/listing.module';
 import { UserModule } from '../user/user.module';
 import { AuthModule } from '../auth/auth.module';
+import { AppleIAPController } from './apple/apple-iap.controller';
+import { AppleIAPWebhookController } from './apple/apple-iap-webhook.controller';
+import { AppleIAPRepo } from './apple/apple-iap.repo';
+import { AppleIAPService } from './apple/apple-iap.service';
+import { AppleIAPWebhookService } from './apple/apple-iap-webhook.service';
 import { PaymobCheckoutService } from './checkout/paymob-checkout.service';
 import { CreditsService } from './credits/credits.service';
 import { ListingExpiryService } from './expiry/listing-expiry.service';
@@ -19,7 +24,12 @@ import { SubscriptionService } from './subscription/subscription.service';
 
 @Module({
   imports: [UserModule, forwardRef(() => ListingModule), AuthModule, PaymentsModule],
-  controllers: [SubscriptionsController, PaymobWebhookController],
+  controllers: [
+    SubscriptionsController,
+    PaymobWebhookController,
+    AppleIAPController,
+    AppleIAPWebhookController,
+  ],
   providers: [
     SeriousRequestUnlockRepository,
     QuotaService,
@@ -31,6 +41,9 @@ import { SubscriptionService } from './subscription/subscription.service';
     PaymentFulfillmentService,
     PaymobWebhookService,
     ListingExpiryService,
+    AppleIAPRepo,
+    AppleIAPService,
+    AppleIAPWebhookService,
   ],
   exports: [
     SeriousRequestUnlockRepository,

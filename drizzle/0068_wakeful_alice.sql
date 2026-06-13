@@ -1,0 +1,1 @@
+ALTER TABLE "payments" DROP COLUMN "apple_environment";

@@ -17,6 +17,7 @@ export const subscriptionPlans = pgTable('subscription_plans', {
   hasPriorityListing: boolean('has_priority_listing').notNull().default(false),
   hasVerifiedBadge: boolean('has_verified_badge').notNull().default(false),
   hasDedicatedSupport: boolean('has_dedicated_support').notNull().default(false),
+  appleProductId: varchar('apple_product_id', { length: 255 }),
   isActive: boolean('is_active').notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),
   ...timestamps,
