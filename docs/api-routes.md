@@ -95,6 +95,7 @@ See [`monetization.md`](monetization.md).
 | GET | `/v1/subscriptions/plans` | Public |
 | GET | `/v1/subscriptions/credit-products` | Public |
 | POST | `/v1/subscriptions/subscribe` | JWT |
+| POST | `/v1/subscriptions/apple/verify-purchase` | JWT |
 | POST | `/v1/subscriptions/purchase/credits` | JWT |
 | GET | `/v1/subscriptions/wallet` | JWT |
 | GET | `/v1/subscriptions/devices` | JWT |
@@ -102,6 +103,7 @@ See [`monetization.md`](monetization.md).
 | POST | `/v1/subscriptions/listings/:id/reveal-serious` | JWT |
 | POST | `/v1/subscriptions/testing/reset-subscription` | JWT + non-prod |
 | POST | `/v1/payments/paymob-webhook` | Paymob HMAC |
+| POST | `/v1/payments/apple-webhook` | Apple (signed JWS payload) |
 | GET | `/v1/payments/paymob-return` | Public redirect |
 
 ---

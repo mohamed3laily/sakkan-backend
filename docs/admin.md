@@ -136,6 +136,8 @@ Guard: `AdminJwtAuthGuard`
 
 Response uses `featuredAdViewsQuotaPerMonth` (maps from DB `featured_ad_quota_per_month`). `name` and `billingPeriod` are not editable via PATCH. **`PATCH` requires `super_admin`**; `GET` routes allow any admin.
 
+Plans include optional `appleProductId` (DB `apple_product_id`) for iOS App Store product mapping; seeded via [`subscription-plans.seed.ts`](../src/modules/db/seed/subscription-plans.seed.ts) with prefix `com.sakanapp.ios.*`.
+
 ---
 
 ## Admin management

@@ -1,8 +1,18 @@
 import { Injectable } from '@nestjs/common';
+import { and, eq } from 'drizzle-orm';
 
 import { DrizzleService } from '../drizzle.service';
 import { subscriptionPlans } from '../schemas/monetization/subscription-plans';
-import { userSubscriptions } from '../schemas/monetization/user-subscriptions';
+
+const APPLE_BUNDLE_PREFIX = 'com.sakanapp.ios';
+
+const APPLE_PRODUCT_IDS = [
+  { name: 'basic', billingPeriod: 'monthly' as const, suffix: 'basic_monthly' },
+  { name: 'professional', billingPeriod: 'monthly' as const, suffix: 'professional_monthly' },
+  { name: 'gold', billingPeriod: 'monthly' as const, suffix: 'gold_monthly' },
+  { name: 'professional', billingPeriod: 'yearly' as const, suffix: 'professional_yearly' },
+  { name: 'gold', billingPeriod: 'yearly' as const, suffix: 'gold_yearly' },
+];
 
 @Injectable()
 export class SubscriptionPlansSeed {
@@ -12,8 +22,6 @@ export class SubscriptionPlansSeed {
     const db = this.drizzle.db;
 
     console.log('Seeding subscription plans...');
-
-    await db.delete(subscriptionPlans);
 
     await db.insert(subscriptionPlans).values([
       {
@@ -92,6 +100,15 @@ export class SubscriptionPlansSeed {
         sortOrder: 5,
       },
     ]);
+
+    for (const { name, billingPeriod, suffix } of APPLE_PRODUCT_IDS) {
+      await db
+        .update(subscriptionPlans)
+        .set({ appleProductId: `${APPLE_BUNDLE_PREFIX}.${suffix}` })
+        .where(
+          and(eq(subscriptionPlans.name, name), eq(subscriptionPlans.billingPeriod, billingPeriod)),
+        );
+    }
 
     console.log('Subscription plans seeded');
   }

@@ -16,7 +16,7 @@ High-level system map for AI agents and developers. API paths assume URI version
 | Storage | AWS S3 |
 | Push | Firebase Cloud Messaging |
 | SMS | Torvo |
-| Payments | Paymob Accept |
+| Payments | Paymob Accept; Apple In-App Purchase (iOS) |
 
 ---
 
@@ -82,6 +82,7 @@ Each domain module follows **controller → service → repo**. Internal modules
 | Torvo SMS | `sms` | `TORVO_SMS_API_KEY` |
 | Firebase FCM | `notification` | `FIREBASE_*` |
 | Paymob | `monetization` | `PAYMOB_*` |
+| Apple App Store (IAP) | `monetization` | `APPLE_BUNDLE_ID`, `APPLE_APP_STORE_CONNECT_*`, `APPLE_IAP_SANDBOX` |
 
 ---
 

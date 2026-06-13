@@ -11,6 +11,7 @@ export const creditProducts = pgTable('credit_products', {
   creditType: creditTypeEnum('credit_type').notNull(),
   credits: integer('credits').notNull(),
   priceEgp: integer('price_egp').notNull(),
+  appleProductId: varchar('apple_product_id', { length: 255 }),
   isActive: boolean('is_active').notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),
   ...timestamps,

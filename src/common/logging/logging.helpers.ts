@@ -52,6 +52,8 @@ export const LogAction = {
   SUBSCRIPTION_ACTIVATED: 'subscription_activated',
   CREDITS_ADDED: 'credits_added',
   FEATURED_BUNDLE_ACTIVATED: 'featured_bundle_activated',
+  APPLE_IAP_VERIFIED: 'apple_iap_verified',
+  APPLE_IAP_WEBHOOK_RECEIVED: 'apple_iap_webhook_received',
 
   SMS_SENT: 'sms_sent',
   SMS_SEND_FAILED: 'sms_send_failed',

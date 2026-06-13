@@ -19,6 +19,7 @@ const PLAN_COLUMNS = {
   hasVerifiedBadge: subscriptionPlans.hasVerifiedBadge,
   hasDedicatedSupport: subscriptionPlans.hasDedicatedSupport,
   isActive: subscriptionPlans.isActive,
+  appleProductId: subscriptionPlans.appleProductId,
   sortOrder: subscriptionPlans.sortOrder,
   createdAt: subscriptionPlans.createdAt,
   updatedAt: subscriptionPlans.updatedAt,

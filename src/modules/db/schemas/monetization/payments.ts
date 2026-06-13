@@ -16,6 +16,7 @@ export const payments = pgTable(
     paymobOrderId: varchar('paymob_order_id', { length: 255 }),
     paymobTransactionId: varchar('paymob_transaction_id', { length: 255 }),
     paymobPaymentKey: varchar('paymob_payment_key', { length: 1000 }),
+    appleTransactionId: varchar('apple_transaction_id', { length: 255 }),
     metadata: jsonb('metadata'),
     ...timestamps,
   },
