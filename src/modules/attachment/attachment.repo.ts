@@ -3,9 +3,11 @@ import { eq, inArray, notExists, and } from 'drizzle-orm';
 import { DrizzleService } from 'src/modules/db/drizzle.service';
 import { attachments, InsertAttachment } from 'src/modules/db/schemas/attachments/attachments';
 import { listings } from '../db/schemas/listing/listing';
+import { developersProjects } from '../db/schemas/real-state-developers/developers-projects';
 
 const ENTITY_TABLE: Record<string, any> = {
   LISTING: listings,
+  DEVELOPER_PROJECT: developersProjects,
 };
 
 @Injectable()

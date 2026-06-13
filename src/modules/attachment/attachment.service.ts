@@ -4,6 +4,7 @@ import { AttachmentRepository } from './attachment.repo';
 
 const ENTITY_FOLDER: Record<string, S3Folder> = {
   LISTING: 'listing-images',
+  DEVELOPER_PROJECT: 'listing-images',
 };
 
 @Injectable()

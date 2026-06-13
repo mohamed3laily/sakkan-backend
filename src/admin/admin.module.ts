@@ -11,6 +11,7 @@ import { UserSubscriptionsModule } from './user-subscriptions/user-subscriptions
 import { UsersModule } from './users/users.module';
 import { StatsModule } from './stats/stats.module';
 import { ReportsModule } from './reports/reports.module';
+import { RealEstateDevelopersParentModule } from './real-estate-developers/real-estate-developers.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ReportsModule } from './reports/reports.module';
     AuthModule,
     StatsModule,
     ReportsModule,
+    RealEstateDevelopersParentModule,
     RouterModule.register([
       {
         path: 'admin',
@@ -39,6 +41,7 @@ import { ReportsModule } from './reports/reports.module';
           { path: 'stats', module: StatsModule },
           { path: 'reports', module: ReportsModule },
           { path: 'auth', module: AuthModule },
+          { path: 'real-estate-developers', module: RealEstateDevelopersParentModule },
         ],
       },
     ]),
