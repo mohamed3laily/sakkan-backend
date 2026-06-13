@@ -145,7 +145,22 @@ See [`admin.md`](admin.md).
 | GET | `/v1/admin/admins/:id` | Super admin |
 | POST | `/v1/admin/admins` | Super admin |
 | PATCH | `/v1/admin/admins/:id` | Super admin |
-| PATCH | `/v1/admin/admins/:id/revoke` | Super admin |
+| DELETE | `/v1/admin/admins/:id` | Super admin |
+| GET | `/v1/admin/real-estate-developers` | Admin |
+| POST | `/v1/admin/real-estate-developers` | Admin |
+| GET | `/v1/admin/real-estate-developers/:id` | Admin |
+| PATCH | `/v1/admin/real-estate-developers/:id` | Admin |
+| DELETE | `/v1/admin/real-estate-developers/:id` | Admin |
+| GET | `/v1/admin/real-estate-developers/projects` | Admin |
+| POST | `/v1/admin/real-estate-developers/projects` | Admin |
+| GET | `/v1/admin/real-estate-developers/projects/:id` | Admin |
+| PATCH | `/v1/admin/real-estate-developers/projects/:id` | Admin |
+| DELETE | `/v1/admin/real-estate-developers/projects/:id` | Admin |
+| GET | `/v1/admin/real-estate-developers/listings` | Admin |
+| POST | `/v1/admin/real-estate-developers/listings` | Admin |
+| GET | `/v1/admin/real-estate-developers/listings/:id` | Admin |
+| PATCH | `/v1/admin/real-estate-developers/listings/:id` | Admin |
+| DELETE | `/v1/admin/real-estate-developers/listings/:id` | Admin |
 
 ---
 

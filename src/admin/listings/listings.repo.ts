@@ -51,6 +51,9 @@ export class ListingsRepo {
     const [listing] = await this.drizzleService.db
       .select(selectFields)
       .from(listings)
+      .leftJoin(cities, eq(listings.cityId, cities.id))
+      .leftJoin(propertyType, eq(listings.propertyTypeId, propertyType.id))
+      .leftJoin(users, eq(listings.userId, users.id))
       .where(eq(listings.id, id))
       .limit(1);
     return listing || null;

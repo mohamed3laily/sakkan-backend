@@ -151,9 +151,9 @@ Guard: `SuperAdminGuard` (all routes)
 | GET | `/v1/admin/admins/:id` | Admin detail |
 | POST | `/v1/admin/admins` | Create admin (optional `type`, default `admin`) |
 | PATCH | `/v1/admin/admins/:id` | Update name, phone, and/or `type` |
-| PATCH | `/v1/admin/admins/:id/revoke` | Revoke access (`revoked_at`) and invalidate sessions |
+| DELETE | `/v1/admin/admins/:id` | Revoke access (`revoked_at`) and invalidate sessions |
 
-Cannot revoke self or the last active `super_admin`.
+Cannot delete self or the last active `super_admin`.
 
 ---
 
@@ -188,6 +188,67 @@ Fields: `phones` (string array), `email`, `termsAndConditionsEn`, `termsAndCondi
 Responses always return separate `*En` / `*Ar` columns (translation interceptors are skipped on this controller). No `X-Raw-Response` header is required.
 
 Public read-only endpoint remains `GET /v1/app-settings` (excludes `id` and timestamps; merged by `Accept-Language`).
+
+---
+
+## Real estate developers (admin)
+
+Parent module: [`admin/real-estate-developers/real-estate-developers.module.ts`](../src/admin/real-estate-developers/real-estate-developers.module.ts)  
+Guard: `AdminJwtAuthGuard` on all sub-routes
+
+Nested structure under `/v1/admin/real-estate-developers`:
+
+| Submodule | Path prefix |
+| --------- | ------------- |
+| Developers | `/v1/admin/real-estate-developers` |
+| Projects | `/v1/admin/real-estate-developers/projects` |
+| Listings | `/v1/admin/real-estate-developers/listings` |
+
+### Developers
+
+Controller: [`admin/real-estate-developers/real-estate-developers.controller.ts`](../src/admin/real-estate-developers/real-estate-developers.controller.ts)
+
+All write endpoints use `multipart/form-data`.
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/v1/admin/real-estate-developers` | Paginated list (`page`, `limit`, optional `search`) |
+| POST | `/v1/admin/real-estate-developers` | Create developer — required: `nameEn`, `nameAr`, `logo` (file) |
+| GET | `/v1/admin/real-estate-developers/:id` | Developer detail |
+| PATCH | `/v1/admin/real-estate-developers/:id` | Update; optional `nameEn`, `nameAr`, `logo` (file) |
+| DELETE | `/v1/admin/real-estate-developers/:id` | Delete developer — cascades to projects, listings, and S3 objects |
+
+Response fields: `id`, `nameEn`, `nameAr`, `logo`, `createdAt`, `updatedAt`.
+
+### Projects
+
+Controller: [`admin/real-estate-developers/projects/projects.controller.ts`](../src/admin/real-estate-developers/projects/projects.controller.ts)
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/v1/admin/real-estate-developers/projects` | Paginated list (`page`, `limit`, `developerId?`, `cityId?`, `search?`) |
+| POST | `/v1/admin/real-estate-developers/projects` | Create — required: `developerId`, `cityId`, `nameEn`, `nameAr`, `images` (1–6 files) |
+| GET | `/v1/admin/real-estate-developers/projects/:id` | Full detail with `attachments`, nested `developer`, `city`, `area` |
+| PATCH | `/v1/admin/real-estate-developers/projects/:id` | Update metadata; add new `images` (files) and/or remove existing via `removeAttachmentIds` (repeat field per ID) |
+| DELETE | `/v1/admin/real-estate-developers/projects/:id` | Delete — cascades to linked listings and S3 objects |
+
+### Developer listings
+
+Controller: [`admin/real-estate-developers/listings/developer-listings.controller.ts`](../src/admin/real-estate-developers/listings/developer-listings.controller.ts)
+
+Scope: listings with `projectId` set and `listingType = OFFER` (developer catalog units).
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/v1/admin/real-estate-developers/listings` | Paginated list (`page`, `limit`, `projectId?`, `developerId?`, `search?`) |
+| POST | `/v1/admin/real-estate-developers/listings` | Create — required: `projectId`, `title`, `propertyTypeId`, `images` (1–6 files) |
+| GET | `/v1/admin/real-estate-developers/listings/:id` | Detail with `attachments`, nested `project`, `developer`, `deliveryReadiness` |
+| PATCH | `/v1/admin/real-estate-developers/listings/:id` | Update metadata; optionally add `images` |
+| DELETE | `/v1/admin/real-estate-developers/listings/:id` | Delete listing and its S3 images |
+
+Create auto-sets: `userId: null`, `dealType: BUY`, `listingType: OFFER`, `budgetType: MARKET`, `cityId`/`areaIds` inherited from project.
+
+Optional create/update fields: `description`, `price`, `spaceSqm`, `numberOfRooms`, `numberOfBathrooms`, `numberOfUnits`, `developerPaymentMethods`, `deliveryDate`.
 
 ---
 
@@ -248,6 +309,15 @@ Also returns:
 | `CANNOT_REVOKE_SELF` | Self-revoke attempt |
 | `LAST_SUPER_ADMIN` | Revoke or demote last super admin |
 | `REPORT_NOT_FOUND` | Report id not found |
+| `REAL_ESTATE_DEVELOPER_NOT_FOUND` | Developer id not found |
+| `LOGO_REQUIRED` | `POST /admin/real-estate-developers` missing logo file |
+| `DEVELOPER_PROJECT_NOT_FOUND` | Project id not found |
+| `DEVELOPER_PROJECT_IMAGE_REQUIRED` | `POST .../projects` missing images |
+| `INVALID_ATTACHMENT_IDS` | `removeAttachmentIds` contains IDs not belonging to this project |
+| `DEVELOPER_LISTING_NOT_FOUND` | Developer listing id not found |
+| `DEVELOPER_LISTING_IMAGE_REQUIRED` | `POST .../listings` missing images |
+| `PROPERTY_TYPE_NOT_FOUND` | Property type id not found |
+| `AREA_CITY_MISMATCH` | `areaId` does not belong to `cityId` |
 
 ---
 

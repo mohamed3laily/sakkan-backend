@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -38,11 +39,6 @@ export class AdminsController {
     return this.service.createAdmin(admin.id, dto);
   }
 
-  @Patch(':id/revoke')
-  revokeAdmin(@CurrentAdmin() admin: AuthenticatedAdmin, @Param('id', ParseIntPipe) id: number) {
-    return this.service.revokeAdmin(admin.id, id);
-  }
-
   @Patch(':id')
   updateAdmin(
     @CurrentAdmin() admin: AuthenticatedAdmin,
@@ -50,5 +46,10 @@ export class AdminsController {
     @Body() dto: UpdateAdminDto,
   ) {
     return this.service.updateAdmin(admin.id, id, dto);
+  }
+
+  @Delete(':id')
+  deleteAdmin(@CurrentAdmin() admin: AuthenticatedAdmin, @Param('id', ParseIntPipe) id: number) {
+    return this.service.deleteAdmin(admin.id, id);
   }
 }
