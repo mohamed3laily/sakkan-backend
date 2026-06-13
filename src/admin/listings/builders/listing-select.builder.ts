@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { areas, cities, listings, propertyType } from 'src/modules/db/schemas/schema-index';
+import { areas, attachments, cities, listings, propertyType } from 'src/modules/db/schemas/schema-index';
 import { users } from 'src/modules/db/schemas/user/user';
 
 export class ListingSelectBuilder {
@@ -15,6 +15,22 @@ export class ListingSelectBuilder {
         nameAr: propertyType.nameAr,
         nameEn: propertyType.nameEn,
       },
+      attachments: sql<{ id: number; url: string; fileType: string; mimeType: string }[]>`
+        COALESCE(
+          (
+            SELECT json_agg(json_build_object(
+              'id', ${attachments.id},
+              'url', ${attachments.url},
+              'fileType', ${attachments.fileType},
+              'mimeType', ${attachments.mimeType}
+            ))
+            FROM ${attachments}
+            WHERE ${attachments.attachableId} = ${listings.id}
+              AND ${attachments.attachableType} = 'LISTING'
+          ),
+          '[]'
+        )
+      `.as('attachments'),
       areas: sql<
         {
           id: number;

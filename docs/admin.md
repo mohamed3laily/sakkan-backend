@@ -151,9 +151,9 @@ Guard: `SuperAdminGuard` (all routes)
 | GET | `/v1/admin/admins/:id` | Admin detail |
 | POST | `/v1/admin/admins` | Create admin (optional `type`, default `admin`) |
 | PATCH | `/v1/admin/admins/:id` | Update name, phone, and/or `type` |
-| PATCH | `/v1/admin/admins/:id/revoke` | Revoke access (`revoked_at`) and invalidate sessions |
+| DELETE | `/v1/admin/admins/:id` | Revoke access (`revoked_at`) and invalidate sessions |
 
-Cannot revoke self or the last active `super_admin`.
+Cannot delete self or the last active `super_admin`.
 
 ---
 

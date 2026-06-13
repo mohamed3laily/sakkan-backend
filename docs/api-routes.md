@@ -145,7 +145,7 @@ See [`admin.md`](admin.md).
 | GET | `/v1/admin/admins/:id` | Super admin |
 | POST | `/v1/admin/admins` | Super admin |
 | PATCH | `/v1/admin/admins/:id` | Super admin |
-| PATCH | `/v1/admin/admins/:id/revoke` | Super admin |
+| DELETE | `/v1/admin/admins/:id` | Super admin |
 | GET | `/v1/admin/real-estate-developers` | Admin |
 | POST | `/v1/admin/real-estate-developers` | Admin |
 | GET | `/v1/admin/real-estate-developers/:id` | Admin |

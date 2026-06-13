@@ -97,7 +97,7 @@ export class AdminsService {
     return updated;
   }
 
-  async revokeAdmin(actorId: number, id: number) {
+  async deleteAdmin(actorId: number, id: number) {
     if (actorId === id) {
       throw new BadRequestException('CANNOT_REVOKE_SELF');
     }
@@ -130,7 +130,7 @@ export class AdminsService {
       'Super admin revoked admin access',
     );
 
-    return { id: revoked.id, revoked: true, revokedAt: revoked.revokedAt };
+    return { id: revoked.id, deleted: true };
   }
 
   private async ensureNotLastSuperAdmin(
