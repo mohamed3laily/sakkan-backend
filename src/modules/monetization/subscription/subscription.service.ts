@@ -4,7 +4,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { DrizzleService } from '../../db/drizzle.service';
 import { subscriptionPlans } from '../../db/schemas/monetization/subscription-plans';
 import { userSubscriptions } from '../../db/schemas/monetization/user-subscriptions';
-import { toPlanSnapshot, type PlanDto } from '../types';
+import { PLAN_DTO_SELECT, toPlanSnapshot, type PlanDto } from '../types';
 import { UserSessionService } from '../../auth/user-session.service';
 import type { AppTransaction } from '../monetization-db.types';
 
@@ -16,26 +16,11 @@ export class SubscriptionService {
   ) {}
 
   async getActivePlans(): Promise<PlanDto[]> {
-    const plans = await this.drizzle.db
-      .select()
+    return this.drizzle.db
+      .select(PLAN_DTO_SELECT)
       .from(subscriptionPlans)
       .where(eq(subscriptionPlans.isActive, true))
       .orderBy(subscriptionPlans.sortOrder);
-
-    return plans.map((p) => ({
-      id: p.id,
-      name: p.name,
-      displayNameEn: p.displayNameEn,
-      displayNameAr: p.displayNameAr,
-      billingPeriod: p.billingPeriod,
-      priceEgp: p.priceEgp,
-      deviceLimit: p.deviceLimit,
-      seriousRequestViewsQuotaPerMonth: p.seriousRequestViewsQuotaPerMonth,
-      featuredAdViewsQuotaPerMonth: p.featuredAdQuotaPerMonth,
-      hasPriorityListing: p.hasPriorityListing,
-      hasVerifiedBadge: p.hasVerifiedBadge,
-      hasDedicatedSupport: p.hasDedicatedSupport,
-    }));
   }
 
   async getPlanById(planId: number) {
