@@ -1,4 +1,20 @@
-import type { subscriptionPlans } from '../../db/schemas/monetization/subscription-plans';
+import { subscriptionPlans } from '../../db/schemas/monetization/subscription-plans';
+
+export const PLAN_DTO_SELECT = {
+  id: subscriptionPlans.id,
+  name: subscriptionPlans.name,
+  displayNameEn: subscriptionPlans.displayNameEn,
+  displayNameAr: subscriptionPlans.displayNameAr,
+  billingPeriod: subscriptionPlans.billingPeriod,
+  priceEgp: subscriptionPlans.priceEgp,
+  deviceLimit: subscriptionPlans.deviceLimit,
+  seriousRequestViewsQuotaPerMonth: subscriptionPlans.seriousRequestViewsQuotaPerMonth,
+  featuredAdViewsQuotaPerMonth: subscriptionPlans.featuredAdQuotaPerMonth,
+  appleProductId: subscriptionPlans.appleProductId,
+  hasPriorityListing: subscriptionPlans.hasPriorityListing,
+  hasVerifiedBadge: subscriptionPlans.hasVerifiedBadge,
+  hasDedicatedSupport: subscriptionPlans.hasDedicatedSupport,
+} as const;
 
 export type PlanDto = {
   id: number;
@@ -10,6 +26,7 @@ export type PlanDto = {
   deviceLimit: number;
   seriousRequestViewsQuotaPerMonth: number;
   featuredAdViewsQuotaPerMonth: number;
+  appleProductId: string | null;
   hasPriorityListing: boolean;
   hasVerifiedBadge: boolean;
   hasDedicatedSupport: boolean;
