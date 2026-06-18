@@ -14,11 +14,11 @@ async function bootstrap() {
   // const citiesAreasSeed = app.get(CitiesAreasSeed);
   // await citiesAreasSeed.run();
 
-   const subscriptionPlansSeed = app.get(SubscriptionPlansSeed);
-   await subscriptionPlansSeed.run();
+   //const subscriptionPlansSeed = app.get(SubscriptionPlansSeed);
+   //await subscriptionPlansSeed.run();
 
-  //const creditProductsSeed = app.get(CreditProductsSeed);
-  //await creditProductsSeed.run();
+  const creditProductsSeed = app.get(CreditProductsSeed);
+  await creditProductsSeed.run();
 
   // Requires cities in DB (run CitiesAreasSeed or migrate + data first):
   //const realEstateDevelopersSeed = app.get(RealEstateDevelopersSeed);
