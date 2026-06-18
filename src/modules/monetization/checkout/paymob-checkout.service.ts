@@ -92,15 +92,13 @@ export class PaymobCheckoutService {
   /**
    * Fields for the Paymob Flutter plugin.
    *
-   * Card:   `Paymob.pay(publicKey, clientSecret)` OR open `unifiedCheckoutUrl` in a WebView.
-   * Wallet: `Paymob.pay(publicKey, clientSecret)` ONLY — `unifiedCheckoutUrl` is `null` because
-   *         opening it shows the card form, not the wallet UI.
+   * Card or Wallet: use `Paymob.pay(publicKey, clientSecret)` OR open `unifiedCheckoutUrl` in a WebView.
+   * Paymob renders only the payment method matching the integration ID sent in the intention.
    */
   private paymobForFlutter(result: PaymobOrderResult) {
     return {
       publicKey: result.publicKey,
       clientSecret: result.clientSecret,
-      /** `null` for wallet — use the Flutter SDK; do not open this in a WebView. */
       unifiedCheckoutUrl: result.paymentUrl,
       checkoutFlow: result.checkoutFlow,
       paymobOrderId: result.paymobOrderId,

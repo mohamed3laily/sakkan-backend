@@ -40,6 +40,7 @@ export class CreditsService {
         creditType: creditProducts.creditType,
         credits: creditProducts.credits,
         priceEgp: creditProducts.priceEgp,
+        appleProductId: creditProducts.appleProductId,
         isActive: creditProducts.isActive,
         sortOrder: creditProducts.sortOrder,
       })

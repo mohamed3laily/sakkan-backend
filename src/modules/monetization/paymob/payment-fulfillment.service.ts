@@ -10,7 +10,7 @@ import { SubscriptionService } from '../subscription/subscription.service';
 type PaymentRow = typeof payments.$inferSelect;
 
 type SubscriptionMetadata = { plan_id?: number };
-type CreditsMetadata = { listing_id?: number };
+type CreditsMetadata = { listing_id?: number; credits_to_add?: number };
 
 @Injectable()
 export class PaymentFulfillmentService {
@@ -97,9 +97,17 @@ export class PaymentFulfillmentService {
   }
 
   async fulfillSeriousRequestTx(tx: AppTransaction, payment: PaymentRow) {
-    const { listing_id: listingId } = this.getCreditsMeta(payment.metadata);
+    const { listing_id: listingId, credits_to_add: creditsToAdd } = this.getCreditsMeta(
+      payment.metadata,
+    );
 
-    await this.creditsService.addCreditsTx(tx, payment.userId, 'serious', 1, payment.id);
+    await this.creditsService.addCreditsTx(
+      tx,
+      payment.userId,
+      'serious',
+      creditsToAdd ?? 1,
+      payment.id,
+    );
 
     if (listingId != null) {
       const result = await this.listingPromotionService.promoteToPremiumByPaymentInTx(
@@ -123,9 +131,17 @@ export class PaymentFulfillmentService {
   }
 
   async fulfillFeaturedSingleTx(tx: AppTransaction, payment: PaymentRow) {
-    const { listing_id: listingId } = this.getCreditsMeta(payment.metadata);
+    const { listing_id: listingId, credits_to_add: creditsToAdd } = this.getCreditsMeta(
+      payment.metadata,
+    );
 
-    await this.creditsService.addCreditsTx(tx, payment.userId, 'featured', 1, payment.id);
+    await this.creditsService.addCreditsTx(
+      tx,
+      payment.userId,
+      'featured',
+      creditsToAdd ?? 1,
+      payment.id,
+    );
 
     if (listingId != null) {
       const result = await this.listingPromotionService.promoteToPremiumByPaymentInTx(
@@ -149,14 +165,17 @@ export class PaymentFulfillmentService {
   }
 
   async fulfillFeaturedBundleTx(tx: AppTransaction, payment: PaymentRow) {
-    await this.creditsService.addCreditsTx(tx, payment.userId, 'featured', 15, payment.id);
+    const { credits_to_add: creditsToAdd } = this.getCreditsMeta(payment.metadata);
+    const amount = creditsToAdd ?? 15;
+
+    await this.creditsService.addCreditsTx(tx, payment.userId, 'featured', amount, payment.id);
 
     this.logger.log(
       ({
         action: LogAction.FEATURED_BUNDLE_ACTIVATED,
         userId: payment.userId,
         paymentId: payment.id,
-        credits: 15,
+        credits: amount,
       }),
       'Featured bundle activated',
     );

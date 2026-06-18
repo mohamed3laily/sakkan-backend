@@ -20,11 +20,8 @@ export type PaymobOrderResult = {
   paymobOrderId: string;
   /** Stored on `payments.paymob_payment_key` as the Intention `client_secret`. */
   paymentKey: string;
-  /**
-   * Unified Checkout URL for card WebView fallback.
-   * `null` for wallet — use `Paymob.pay(publicKey, clientSecret)` directly; this URL shows the card form.
-   */
-  paymentUrl: string | null;
+  /** Unified Checkout URL — works for both card and wallet (Paymob renders only the methods in `payment_methods`). */
+  paymentUrl: string;
   internalPaymentId: number;
   /** Flutter `paymob` SDK: `Paymob.pay(publicKey:, clientSecret:)` */
   clientSecret: string;
@@ -95,8 +92,6 @@ export class PaymobService {
   async createOrder(params: CreateOrderParams): Promise<PaymobOrderResult> {
     const paymentMethod = params.paymentMethod ?? 'card';
 
-    // Validate configuration BEFORE writing to DB — throws InternalServerErrorException early
-    // without creating a dangling failed payment row.
     const integrationId = this.resolveIntegrationId(paymentMethod);
 
     const amountPiasters = params.amountEgp * 100;
@@ -108,7 +103,6 @@ export class PaymobService {
         type: params.paymentType,
         status: 'pending',
         amountPiasters,
-        // Include payment_method in metadata for audit/observability.
         metadata: { ...params.metadata, payment_method: paymentMethod },
       })
       .returning();
@@ -134,7 +128,6 @@ export class PaymobService {
       );
       return result;
     } catch (err) {
-      // Re-throw known HTTP errors without marking the payment failed or masking the message.
       if (err instanceof HttpException) {
         throw err;
       }
@@ -244,10 +237,9 @@ export class PaymobService {
       })
       .where(eq(payments.id, internalPayment.id));
 
-    // Card: provide the unified checkout URL for WebView fallback.
-    // Wallet: null — opening this URL shows the card form; use Paymob.pay() SDK instead.
-    const unifiedCheckoutUrl = `${this.acceptHost}/unifiedcheckout/?publicKey=${encodeURIComponent(this.publicKey!)}&clientSecret=${encodeURIComponent(clientSecret)}`;
-    const paymentUrl = paymentMethod === 'wallet' ? null : unifiedCheckoutUrl;
+    // Unified checkout URL works for both card and wallet — Paymob shows only the
+    // methods matching the integration IDs sent in payment_methods.
+    const paymentUrl = `${this.acceptHost}/unifiedcheckout/?publicKey=${encodeURIComponent(this.publicKey!)}&clientSecret=${encodeURIComponent(clientSecret)}`;
 
     return {
       paymobOrderId: String(intentionOrderId),

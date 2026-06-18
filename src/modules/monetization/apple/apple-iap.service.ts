@@ -106,10 +106,12 @@ export class AppleIAPService implements OnModuleInit {
       throw new BadRequestException('APPLE_IAP_VERIFICATION_FAILED');
     }
 
-    const { paymentType, planId } = await this.resolveProduct(productId);
+    const { paymentType, planId, creditsToAdd, creditType } = await this.resolveProduct(productId);
 
     const metadata: Record<string, unknown> =
-      paymentType === 'subscription' ? { plan_id: planId } : {};
+      paymentType === 'subscription'
+        ? { plan_id: planId }
+        : { credits_to_add: creditsToAdd, credit_type: creditType };
 
     const paymentRow = await this.repo.insertPayment({
       userId,
@@ -167,6 +169,8 @@ export class AppleIAPService implements OnModuleInit {
   private async resolveProduct(productId: string): Promise<{
     paymentType: 'subscription' | 'featured_bundle' | 'featured_single' | 'serious_request';
     planId?: number;
+    creditsToAdd?: number;
+    creditType?: 'featured' | 'serious';
   }> {
     const plan = await this.repo.findPlanByAppleProductId(productId);
     if (plan) {
@@ -185,7 +189,7 @@ export class AppleIAPService implements OnModuleInit {
           ? 'featured_single'
           : 'serious_request';
 
-    return { paymentType };
+    return { paymentType, creditsToAdd: cp.credits, creditType: cp.creditType };
   }
 
   private fulfillByType(

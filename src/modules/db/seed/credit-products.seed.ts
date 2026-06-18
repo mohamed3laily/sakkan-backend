@@ -1,7 +1,16 @@
 import { Injectable } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 
 import { DrizzleService } from '../drizzle.service';
 import { creditProducts } from '../schemas/monetization/credit-products';
+
+const APPLE_BUNDLE_PREFIX = 'com.sakanapp.ios';
+
+const APPLE_PRODUCT_IDS: { key: string; suffix: string }[] = [
+  { key: 'serious_single', suffix: 'serious_single' },
+  { key: 'featured_single', suffix: 'featured_single' },
+  { key: 'featured_bundle', suffix: 'featured_bundle' },
+];
 
 @Injectable()
 export class CreditProductsSeed {
@@ -46,6 +55,13 @@ export class CreditProductsSeed {
         sortOrder: 3,
       },
     ]);
+
+    for (const { key, suffix } of APPLE_PRODUCT_IDS) {
+      await db
+        .update(creditProducts)
+        .set({ appleProductId: `${APPLE_BUNDLE_PREFIX}.${suffix}` })
+        .where(eq(creditProducts.key, key));
+    }
 
     console.log('Credit products seeded');
   }
