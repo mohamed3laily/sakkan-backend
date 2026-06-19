@@ -98,15 +98,13 @@ export class AdminsRepo {
     return updated ?? null;
   }
 
-  async revoke(id: number) {
-    const now = new Date().toISOString();
-    const [updated] = await this.drizzleService.db
-      .update(admins)
-      .set({ revokedAt: now, updatedAt: now })
+  async delete(id: number) {
+    const [deleted] = await this.drizzleService.db
+      .delete(admins)
       .where(eq(admins.id, id))
       .returning(ADMIN_COLUMNS);
 
-    return updated ?? null;
+    return deleted ?? null;
   }
 
   private buildSearchWhere(search: string) {

@@ -99,7 +99,7 @@ export class AdminsService {
 
   async deleteAdmin(actorId: number, id: number) {
     if (actorId === id) {
-      throw new BadRequestException('CANNOT_REVOKE_SELF');
+      throw new BadRequestException('CANNOT_DELETE_SELF');
     }
 
     const existing = await this.repo.findById(id);
@@ -107,30 +107,19 @@ export class AdminsService {
       throw new NotFoundException('ADMIN_NOT_FOUND');
     }
 
-    if (existing.revokedAt) {
-      throw new BadRequestException('ADMIN_REVOKED');
-    }
+    await this.adminSessionService.revokeAllSessionsForAdmin(id);
 
-    if (existing.type === 'super_admin') {
-      const remaining = await this.repo.countActiveSuperAdmins(id);
-      if (remaining === 0) {
-        throw new BadRequestException('LAST_SUPER_ADMIN');
-      }
-    }
-
-    const revoked = await this.repo.revoke(id);
-    if (!revoked) {
+    const deleted = await this.repo.delete(id);
+    if (!deleted) {
       throw new NotFoundException('ADMIN_NOT_FOUND');
     }
 
-    await this.adminSessionService.revokeAllSessionsForAdmin(id);
-
     this.logger.log(
       { action: LogAction.ADMIN_REVOKED, actorId, targetAdminId: id },
-      'Super admin revoked admin access',
+      'Super admin deleted admin',
     );
 
-    return { id: revoked.id, deleted: true };
+    return { id: deleted.id, deleted: true };
   }
 
   private async ensureNotLastSuperAdmin(
