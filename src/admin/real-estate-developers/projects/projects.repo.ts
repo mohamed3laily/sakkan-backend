@@ -70,7 +70,7 @@ export class ProjectsRepo {
   constructor(private readonly drizzle: DrizzleService) {}
 
   async findAll(query: ProjectQueryDto) {
-    const { page = 1, limit = 20, developerId, cityId, search } = query;
+    const { page = 1, limit = 10, developerId, cityId, search } = query;
     const offset = (page - 1) * limit;
 
     const conditions = [
@@ -104,7 +104,7 @@ export class ProjectsRepo {
         .where(whereClause),
     ]);
 
-    return { data, total: Number(total), page, limit };
+    return { data, total: Number(total) };
   }
 
   async findById(id: number) {

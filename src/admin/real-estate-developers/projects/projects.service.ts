@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 
 import { LogAction } from 'src/common/logging';
+import { PaginationService } from 'src/common/services/pagination.service';
 import { AttachmentService } from 'src/modules/attachment/attachment.service';
 import { S3Service } from 'src/modules/storage/s3.service';
 import { ProjectsRepo } from './projects.repo';
@@ -19,12 +20,15 @@ export class ProjectsService {
 
   constructor(
     private readonly repo: ProjectsRepo,
+    private readonly paginationService: PaginationService,
     private readonly attachmentService: AttachmentService,
     private readonly s3: S3Service,
   ) {}
 
   async getProjects(query: ProjectQueryDto) {
-    return this.repo.findAll(query);
+    const { page = 1, limit = 10 } = query;
+    const { data, total } = await this.repo.findAll(query);
+    return this.paginationService.createPaginatedResponse(data, total, page, limit);
   }
 
   async getProjectById(id: number) {

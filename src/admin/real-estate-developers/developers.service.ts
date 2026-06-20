@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { LogAction } from 'src/common/logging';
+import { PaginationService } from 'src/common/services/pagination.service';
 import { S3Service } from 'src/modules/storage/s3.service';
 import { DevelopersRepo } from './developers.repo';
 import { DeveloperQueryDto } from './dto/developer-query.dto';
@@ -13,11 +14,14 @@ export class DevelopersService {
 
   constructor(
     private readonly repo: DevelopersRepo,
+    private readonly paginationService: PaginationService,
     private readonly s3: S3Service,
   ) {}
 
   async getDevelopers(query: DeveloperQueryDto) {
-    return this.repo.findAll(query);
+    const { page = 1, limit = 10 } = query;
+    const { data, total } = await this.repo.findAll(query);
+    return this.paginationService.createPaginatedResponse(data, total, page, limit);
   }
 
   async getDeveloperById(id: number) {

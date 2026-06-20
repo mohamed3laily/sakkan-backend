@@ -51,7 +51,7 @@ export class DeveloperListingsRepo {
   }
 
   async findAll(query: DeveloperListingQueryDto) {
-    const { page = 1, limit = 20 } = query;
+    const { page = 1, limit = 10 } = query;
     const offset = (page - 1) * limit;
     const whereClause = this.buildListWhere(query);
 
@@ -67,7 +67,7 @@ export class DeveloperListingsRepo {
       countBase.where(whereClause),
     ]);
 
-    return { data, total: Number(total), page, limit };
+    return { data, total: Number(total) };
   }
 
   async findById(id: number) {

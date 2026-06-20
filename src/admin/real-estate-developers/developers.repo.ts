@@ -24,7 +24,7 @@ export class DevelopersRepo {
   constructor(private readonly drizzle: DrizzleService) {}
 
   async findAll(query: DeveloperQueryDto) {
-    const { page = 1, limit = 20, search } = query;
+    const { page = 1, limit = 10, search } = query;
     const offset = (page - 1) * limit;
     const whereClause = search
       ? or(
@@ -48,7 +48,7 @@ export class DevelopersRepo {
         .where(whereClause),
     ]);
 
-    return { data, total: Number(total), page, limit };
+    return { data, total: Number(total) };
   }
 
   async findById(id: number) {
