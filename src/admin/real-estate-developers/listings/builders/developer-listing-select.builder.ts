@@ -42,6 +42,7 @@ export const developerListingSelectFields = {
     id: propertyType.id,
     nameAr: propertyType.nameAr,
     nameEn: propertyType.nameEn,
+    parent: propertyType.parent,
   },
   attachments: sql<{ id: number; url: string; fileType: string; mimeType: string }[]>`
     COALESCE(

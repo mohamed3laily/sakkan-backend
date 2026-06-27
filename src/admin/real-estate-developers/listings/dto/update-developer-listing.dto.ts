@@ -77,4 +77,20 @@ export class UpdateDeveloperListingDto {
   @IsOptional()
   @IsDateString()
   deliveryDate?: string;
+
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }) => {
+    if (value == null || value === '') return undefined;
+    return Array.isArray(value) ? value : [value];
+  })
+  @Type(() => Number)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  removeAttachmentIds?: number[];
 }
+
+export type UpdateDeveloperListingFields = Omit<
+  UpdateDeveloperListingDto,
+  'removeAttachmentIds'
+>;

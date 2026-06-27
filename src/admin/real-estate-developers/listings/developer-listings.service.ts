@@ -91,9 +91,28 @@ export class DeveloperListingsService {
       }
     }
 
-    const updated = await this.repo.update(id, dto, project);
-    if (!updated) {
-      throw new NotFoundException('DEVELOPER_LISTING_NOT_FOUND');
+    const { removeAttachmentIds, ...fields } = dto;
+    const removeIds = removeAttachmentIds ?? [];
+
+    if (removeIds.length > 0) {
+      const valid = await this.repo.validateAttachmentIds(id, removeIds);
+      if (!valid) {
+        throw new BadRequestException('INVALID_ATTACHMENT_IDS');
+      }
+    }
+
+    if (Object.values(fields).some((value) => value !== undefined)) {
+      const updated = await this.repo.update(id, fields, project);
+      if (!updated) {
+        throw new NotFoundException('DEVELOPER_LISTING_NOT_FOUND');
+      }
+    }
+
+    if (removeIds.length > 0) {
+      const attachmentRows = await this.repo.findListingAttachments(id);
+      const toRemove = attachmentRows.filter((a) => removeIds.includes(a.id));
+      await Promise.all(toRemove.map((a) => this.s3.deleteByKey(a.key)));
+      await this.repo.deleteAttachmentsByIds(removeIds);
     }
 
     if (imageFiles && imageFiles.length > 0) {

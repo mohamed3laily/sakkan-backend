@@ -11,3 +11,5 @@ export class UpdateDeveloperDto {
   @MaxLength(200)
   nameAr?: string;
 }
+
+export type UpdateDeveloperFields = UpdateDeveloperDto;

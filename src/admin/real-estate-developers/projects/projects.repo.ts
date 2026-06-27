@@ -10,7 +10,7 @@ import { realEstateDevelopers } from 'src/modules/db/schemas/real-state-develope
 import { listings } from 'src/modules/db/schemas/listing/listing';
 import { ProjectQueryDto } from './dto/project-query.dto';
 import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
+import { UpdateProjectFields } from './dto/update-project.dto';
 
 const PROJECT_COLUMNS = {
   id: developersProjects.id,
@@ -130,8 +130,7 @@ export class ProjectsRepo {
     return row!;
   }
 
-  async update(id: number, dto: UpdateProjectDto) {
-    const { removeAttachmentIds: _, ...fields } = dto;
+  async update(id: number, fields: UpdateProjectFields) {
     const [row] = await this.drizzle.db
       .update(developersProjects)
       .set(fields)

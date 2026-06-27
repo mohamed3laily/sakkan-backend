@@ -78,7 +78,9 @@ export class ProjectsService {
       await this.validateForeignKeys(developerId, cityId, dto.areaId);
     }
 
-    const removeIds = dto.removeAttachmentIds ?? [];
+    const { removeAttachmentIds, ...fields } = dto;
+    const removeIds = removeAttachmentIds ?? [];
+
     if (removeIds.length > 0) {
       const valid = await this.repo.validateAttachmentIds(id, removeIds);
       if (!valid) {
@@ -86,7 +88,9 @@ export class ProjectsService {
       }
     }
 
-    await this.repo.update(id, dto);
+    if (Object.values(fields).some((value) => value !== undefined)) {
+      await this.repo.update(id, fields);
+    }
 
     if (removeIds.length > 0) {
       const attachmentRows = await this.repo.findProjectAttachments(id);

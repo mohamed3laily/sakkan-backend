@@ -12,7 +12,7 @@ import { propertyType } from 'src/modules/db/schemas/listing/property-type';
 import { developerListingSelectFields } from './builders/developer-listing-select.builder';
 import { DeveloperListingQueryDto } from './dto/developer-listing-query.dto';
 import { CreateDeveloperListingDto } from './dto/create-developer-listing.dto';
-import { UpdateDeveloperListingDto } from './dto/update-developer-listing.dto';
+import { UpdateDeveloperListingFields } from './dto/update-developer-listing.dto';
 
 const developerListingBaseWhere = and(
   isNotNull(listings.projectId),
@@ -124,8 +124,12 @@ export class DeveloperListingsRepo {
     return row!;
   }
 
-  async update(id: number, dto: UpdateDeveloperListingDto, project?: { cityId: number; areaId: number | null }) {
-    const { projectId, deliveryDate, ...rest } = dto;
+  async update(
+    id: number,
+    fields: UpdateDeveloperListingFields,
+    project?: { cityId: number; areaId: number | null },
+  ) {
+    const { projectId, deliveryDate, ...rest } = fields;
     const updateValues: Partial<typeof listings.$inferInsert> = { ...rest };
 
     if (projectId !== undefined) {
@@ -164,6 +168,21 @@ export class DeveloperListingsRepo {
       .where(
         and(eq(attachments.attachableType, 'LISTING'), eq(attachments.attachableId, listingId)),
       );
+  }
+
+  async validateAttachmentIds(listingId: number, ids: number[]) {
+    if (ids.length === 0) return true;
+    const rows = await this.drizzle.db
+      .select({ id: attachments.id })
+      .from(attachments)
+      .where(
+        and(
+          eq(attachments.attachableType, 'LISTING'),
+          eq(attachments.attachableId, listingId),
+          inArray(attachments.id, ids),
+        ),
+      );
+    return rows.length === ids.length;
   }
 
   async deleteAttachmentsByIds(ids: number[]) {
