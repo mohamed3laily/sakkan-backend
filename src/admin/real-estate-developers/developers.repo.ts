@@ -8,7 +8,7 @@ import { realEstateDevelopers } from 'src/modules/db/schemas/real-state-develope
 import { listings } from 'src/modules/db/schemas/listing/listing';
 import { DeveloperQueryDto } from './dto/developer-query.dto';
 import { CreateDeveloperDto } from './dto/create-developer.dto';
-import { UpdateDeveloperDto } from './dto/update-developer.dto';
+import { UpdateDeveloperFields } from './dto/update-developer.dto';
 
 const DEVELOPER_COLUMNS = {
   id: realEstateDevelopers.id,
@@ -70,8 +70,8 @@ export class DevelopersRepo {
     return row!;
   }
 
-  async update(id: number, dto: UpdateDeveloperDto, logoUrl?: string) {
-    const updateValues: Partial<typeof realEstateDevelopers.$inferInsert> = { ...dto };
+  async update(id: number, fields: UpdateDeveloperFields, logoUrl?: string) {
+    const updateValues: Partial<typeof realEstateDevelopers.$inferInsert> = { ...fields };
     if (logoUrl !== undefined) {
       updateValues.logo = logoUrl;
     }

@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Patch, UseGuards } from '@nestjs/common';
 
+import { SkipTranslation } from 'src/common/decorators/skip-translation.decorator';
 import { AdminJwtAuthGuard } from '../auth/guards/admin-jwt-auth.guard';
 import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
 import { CurrentAdmin } from '../auth/decorators/current-admin.decorator';
@@ -7,6 +8,7 @@ import { AuthenticatedAdmin } from '../auth/interfaces/authenticated-admin.inter
 import { SubscriptionPlansService } from './subscription-plans.service';
 import { UpdateSubscriptionPlanDto } from './dto/update-subscription-plan.dto';
 
+@SkipTranslation()
 @UseGuards(AdminJwtAuthGuard)
 @Controller('')
 export class SubscriptionPlansController {

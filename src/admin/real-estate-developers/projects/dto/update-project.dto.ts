@@ -91,3 +91,5 @@ export class UpdateProjectDto {
   @Min(1, { each: true })
   removeAttachmentIds?: number[];
 }
+
+export type UpdateProjectFields = Omit<UpdateProjectDto, 'removeAttachmentIds'>;

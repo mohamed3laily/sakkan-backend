@@ -65,9 +65,14 @@ export class DevelopersService {
       logoUrl = uploaded.url;
     }
 
-    const updated = await this.repo.update(id, dto, logoUrl);
-    if (!updated) {
-      throw new NotFoundException('REAL_ESTATE_DEVELOPER_NOT_FOUND');
+    const hasFieldUpdates = Object.values(dto).some((value) => value !== undefined);
+    let updated = existing;
+
+    if (hasFieldUpdates || logoUrl !== undefined) {
+      updated = await this.repo.update(id, dto, logoUrl);
+      if (!updated) {
+        throw new NotFoundException('REAL_ESTATE_DEVELOPER_NOT_FOUND');
+      }
     }
 
     if (logoFile && existing.logo) {
