@@ -26,21 +26,16 @@ import { AppLoggingModule } from './common/logging/logging.module';
 import { RedisModule } from './common/redis/redis.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { AUTH_THROTTLE } from './common/throttling/throttle.constants';
+import { DEFAULT_THROTTLE } from './common/throttling/throttle.constants';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([
       {
-        name: 'default',
-        ttl: 60_000,
-        limit: 100,
-      },
-      {
-        name: AUTH_THROTTLE.name,
-        ttl: AUTH_THROTTLE.ttl,
-        limit: AUTH_THROTTLE.limit,
+        name: DEFAULT_THROTTLE.name,
+        ttl: DEFAULT_THROTTLE.ttl,
+        limit: DEFAULT_THROTTLE.limit,
       },
     ]),
     AppLoggingModule,

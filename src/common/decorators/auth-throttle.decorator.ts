@@ -5,14 +5,14 @@ import { AUTH_THROTTLE, STRICT_AUTH_THROTTLE } from '../throttling/throttle.cons
 
 export function AuthThrottle() {
   return applyDecorators(
-    Throttle({ [AUTH_THROTTLE.name]: { limit: AUTH_THROTTLE.limit, ttl: AUTH_THROTTLE.ttl } }),
+    Throttle({ default: { limit: AUTH_THROTTLE.limit, ttl: AUTH_THROTTLE.ttl } }),
   );
 }
 
 export function StrictAuthThrottle() {
   return applyDecorators(
     Throttle({
-      [STRICT_AUTH_THROTTLE.name]: {
+      default: {
         limit: STRICT_AUTH_THROTTLE.limit,
         ttl: STRICT_AUTH_THROTTLE.ttl,
       },
