@@ -111,7 +111,7 @@ export class ListingsRepository {
         )
         .leftJoin(subscriptionPlans, eq(subscriptionPlans.id, userSubscriptions.planId))
         .where(whereClause)
-        .orderBy(orderByClause)
+        .orderBy(...orderByClause)
         .limit(limit)
         .offset(offset),
 

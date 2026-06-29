@@ -103,18 +103,25 @@ export function buildListingWhere(filters: ListingFiltersDto, userId?: number) {
   );
 }
 
-export function buildListingOrderBy(sort: ListingSortDto): SQL {
+export function buildListingOrderBy(sort: ListingSortDto): SQL[] {
   const direction = sort.order === SortOrder.ASC ? asc : desc;
 
+  let userSort: SQL;
   switch (sort.sortBy) {
     case ListingSortBy.PRICE:
-      return direction(listings.price);
+      userSort = direction(listings.price);
+      break;
     case ListingSortBy.SPACE:
-      return direction(listings.spaceSqm);
+      userSort = direction(listings.spaceSqm);
+      break;
     case ListingSortBy.LISTING_TIER:
-      return direction(listings.listingTier);
+      userSort = direction(listings.listingTier);
+      break;
     case ListingSortBy.CREATED_AT:
     default:
-      return direction(listings.createdAt);
+      userSort = direction(listings.createdAt);
+      break;
   }
+
+  return [desc(listings.listingTier), userSort];
 }
