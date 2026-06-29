@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { DrizzleService } from 'src/modules/db/drizzle.service';
 import { listings } from 'src/modules/db/schemas/listing/listing';
-import {
-  buildListingWhere,
-  buildListingOrderBy,
-} from 'src/modules/listing/builders/listing-query.builder';
+import { buildListingWhere } from 'src/modules/listing/builders/listing-query.builder';
+import { buildListingOrderBy } from './builders/listing-query.builder';
 import { cities } from 'src/modules/db/schemas/cities/cities';
 import { propertyType } from 'src/modules/db/schemas/listing/property-type';
 import { users } from 'src/modules/db/schemas/schema-index';
