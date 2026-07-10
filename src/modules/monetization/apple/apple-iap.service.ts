@@ -9,6 +9,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  APIError,
+  APIException,
   AppStoreServerAPIClient,
   Environment,
   SignedDataVerifier,
@@ -50,10 +52,17 @@ export class AppleIAPService implements OnModuleInit {
   private readonly issuerId: string;
   private readonly privateKey: string;
   private readonly isSandbox: boolean;
+  /** Apple's numeric app ID (App Store Connect → App Information). Required by
+   * `SignedDataVerifier` when targeting the Production environment. */
+  private readonly appAppleId?: string;
 
-  /** Exposed so the webhook service can reuse it without re-initialising. */
+  /** Exposed so the webhook service can reuse it without re-initialising.
+   * Points at the environment configured via `APPLE_IAP_SANDBOX`. */
   verifier!: SignedDataVerifier;
-  private apiClient!: AppStoreServerAPIClient;
+  private sandboxApiClient!: AppStoreServerAPIClient;
+  private sandboxVerifier!: SignedDataVerifier;
+  private productionApiClient?: AppStoreServerAPIClient;
+  private productionVerifier?: SignedDataVerifier;
 
   constructor(
     private readonly config: ConfigService,
@@ -63,23 +72,56 @@ export class AppleIAPService implements OnModuleInit {
     this.bundleId = this.config.getOrThrow('APPLE_BUNDLE_ID');
     this.keyId = this.config.getOrThrow('APPLE_APP_STORE_CONNECT_KEY_ID');
     this.issuerId = this.config.getOrThrow('APPLE_APP_STORE_CONNECT_ISSUER_ID');
-    this.privateKey = this.config.getOrThrow('APPLE_APP_STORE_CONNECT_PRIVATE_KEY');
+    this.privateKey = this.config
+      .getOrThrow<string>('APPLE_APP_STORE_CONNECT_PRIVATE_KEY')
+      .replace(/\\n/g, '\n');
     this.isSandbox = this.config.get<string>('APPLE_IAP_SANDBOX') !== 'false';
+    this.appAppleId = this.config.get<string>('APPLE_APP_APPLE_ID');
   }
 
   async onModuleInit() {
-    const environment = this.isSandbox ? Environment.SANDBOX : Environment.PRODUCTION;
+    const rootCAs = await this.loadAppleRootCAs();
 
-    this.apiClient = new AppStoreServerAPIClient(
+    this.sandboxApiClient = new AppStoreServerAPIClient(
       this.privateKey,
       this.keyId,
       this.issuerId,
       this.bundleId,
-      environment,
+      Environment.SANDBOX,
+    );
+    this.sandboxVerifier = new SignedDataVerifier(
+      rootCAs,
+      true,
+      Environment.SANDBOX,
+      this.bundleId,
     );
 
-    const rootCAs = await this.loadAppleRootCAs();
-    this.verifier = new SignedDataVerifier(rootCAs, true, environment, this.bundleId);
+    // Production requires `appAppleId`; only stand it up once the app has a real
+    // App Store release and the ID is configured, otherwise every call would 401.
+    if (!this.isSandbox && this.appAppleId) {
+      this.productionApiClient = new AppStoreServerAPIClient(
+        this.privateKey,
+        this.keyId,
+        this.issuerId,
+        this.bundleId,
+        Environment.PRODUCTION,
+      );
+      this.productionVerifier = new SignedDataVerifier(
+        rootCAs,
+        true,
+        Environment.PRODUCTION,
+        this.bundleId,
+        Number(this.appAppleId),
+      );
+    } else if (!this.isSandbox) {
+      this.logger.warn(
+        'APPLE_IAP_SANDBOX=false but APPLE_APP_APPLE_ID is not set — falling back to Sandbox only, Production purchases will fail verification',
+      );
+    }
+
+    this.verifier = this.isSandbox
+      ? this.sandboxVerifier
+      : (this.productionVerifier ?? this.sandboxVerifier);
 
     this.logger.log(`Apple IAP initialized (${this.isSandbox ? 'Sandbox' : 'Production'})`);
   }
@@ -150,16 +192,47 @@ export class AppleIAPService implements OnModuleInit {
   // ---------------------------------------------------------------------------
 
   async verifyTransaction(transactionId: string): Promise<JWSTransactionDecodedPayload> {
-    try {
-      const response = await this.apiClient.getTransactionInfo(transactionId);
-      if (!response.signedTransactionInfo) {
-        throw new Error('Apple API returned no signedTransactionInfo');
+    // A bare transactionId doesn't reveal its environment. Apple's documented approach:
+    // https://developer.apple.com/documentation/appstoreserverapi/get_transaction_info
+    // try Production first, and only fall back to Sandbox on TRANSACTION_ID_NOT_FOUND.
+    // This matters even in "production" deployments because TestFlight/Xcode-signed
+    // builds always produce Sandbox transactions.
+    if (this.productionApiClient && this.productionVerifier) {
+      try {
+        return await this.fetchAndVerify(
+          this.productionApiClient,
+          this.productionVerifier,
+          transactionId,
+        );
+      } catch (err) {
+        if (!(err instanceof APIException && err.apiError === APIError.TRANSACTION_ID_NOT_FOUND)) {
+          this.logger.error('Apple IAP verification failed (Production)', err);
+          throw new BadRequestException('APPLE_IAP_VERIFICATION_FAILED');
+        }
+        this.logger.log(
+          `Transaction ${transactionId} not found in Production, retrying in Sandbox`,
+        );
       }
-      return await this.verifier.verifyAndDecodeTransaction(response.signedTransactionInfo);
+    }
+
+    try {
+      return await this.fetchAndVerify(this.sandboxApiClient, this.sandboxVerifier, transactionId);
     } catch (err) {
-      this.logger.error('Apple IAP verification failed', err);
+      this.logger.error('Apple IAP verification failed (Sandbox)', err);
       throw new BadRequestException('APPLE_IAP_VERIFICATION_FAILED');
     }
+  }
+
+  private async fetchAndVerify(
+    apiClient: AppStoreServerAPIClient,
+    verifier: SignedDataVerifier,
+    transactionId: string,
+  ): Promise<JWSTransactionDecodedPayload> {
+    const response = await apiClient.getTransactionInfo(transactionId);
+    if (!response.signedTransactionInfo) {
+      throw new Error('Apple API returned no signedTransactionInfo');
+    }
+    return await verifier.verifyAndDecodeTransaction(response.signedTransactionInfo);
   }
 
   // ---------------------------------------------------------------------------
