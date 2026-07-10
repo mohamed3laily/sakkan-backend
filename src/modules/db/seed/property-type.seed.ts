@@ -23,6 +23,7 @@ const propertyTypeData = [
   { parent: 'VILLA_PALACE', nameAr: 'بيت شعبي', nameEn: 'Traditional House' },
   { parent: 'VILLA_PALACE', nameAr: 'فيلا في مجمع سكني', nameEn: 'Villa in Residential Compound' },
   { parent: 'VILLA_PALACE', nameAr: 'فيلا', nameEn: 'Villa' },
+  { parent: 'VILLA_PALACE', nameAr: 'تاون هاوس', nameEn: 'Town House' },
   { parent: 'VILLA_PALACE', nameAr: 'فيلا مع شقتين', nameEn: 'Villa with Two Apartments' },
   { parent: 'VILLA_PALACE', nameAr: 'فيلا عظم', nameEn: 'Shell Villa' },
   { parent: 'VILLA_PALACE', nameAr: 'فيلا مع شقة', nameEn: 'Villa with Apartment' },

@@ -113,8 +113,10 @@ Required for App Store distribution (Paymob is not allowed on iOS). Android/web 
 
 1. User completes purchase in iOS app (StoreKit 2).
 2. App calls `POST /v1/subscriptions/apple/verify-purchase` with JWT body `{ transactionId, productId }`.
-3. [`AppleIAPService`](../src/modules/monetization/apple/apple-iap.service.ts) checks idempotency (`payments.apple_transaction_id`), fetches transaction from Apple, verifies JWS, matches `productId` to `subscription_plans.apple_product_id` or `credit_products.apple_product_id`.
+3. [`AppleIAPService`](../src/modules/monetization/apple/apple-iap.service.ts) checks idempotency (`payments.apple_transaction_id`), fetches transaction from Apple (Production first, falling back to Sandbox on `TransactionIdNotFoundError` — see below), verifies JWS, matches `productId` to `subscription_plans.apple_product_id` or `credit_products.apple_product_id`.
 4. Inserts `payments` row (`pending`), runs [`AppleIAPRepo.finalizePayment`](../src/modules/monetization/apple/apple-iap.repo.ts) → same `fulfillSubscriptionTx` / credit fulfillment as Paymob → marks `success`.
+
+**Environment lookup:** a bare `transactionId` doesn't reveal whether it belongs to Sandbox or Production (TestFlight/Xcode builds always produce Sandbox transactions, even on a "production" backend). Per [Apple's guidance](https://developer.apple.com/documentation/appstoreserverapi/get_transaction_info), `verifyTransaction()` tries the Production API first when `APPLE_IAP_SANDBOX=false` and `APPLE_APP_APPLE_ID` is set, and retries against Sandbox only on error `4040010` (`TransactionIdNotFoundError`). If `APPLE_APP_APPLE_ID` is missing, only Sandbox is used and Production purchases will fail with `APPLE_IAP_VERIFICATION_FAILED`.
 
 ### Schema
 
@@ -150,9 +152,10 @@ APPLE_APP_STORE_CONNECT_KEY_ID=
 APPLE_APP_STORE_CONNECT_ISSUER_ID=
 APPLE_APP_STORE_CONNECT_PRIVATE_KEY=   # ES256 PEM from App Store Connect
 APPLE_IAP_SANDBOX=true                 # false in production
+APPLE_APP_APPLE_ID=                    # Apple's numeric App ID; required for Production verification
 ```
 
-`APPLE_BUNDLE_ID` must match the Xcode bundle ID. Sandbox vs production is controlled by `APPLE_IAP_SANDBOX` (no per-payment environment column in DB).
+`APPLE_BUNDLE_ID` must match the Xcode bundle ID. `APPLE_IAP_SANDBOX=false` enables the Production lookup, but Apple's `SignedDataVerifier` also requires `APPLE_APP_APPLE_ID` (App Store Connect → App Information → Apple ID) for Production — without it the service silently stays on Sandbox-only and logs a warning at startup.
 
 ### App Store Connect setup
 
