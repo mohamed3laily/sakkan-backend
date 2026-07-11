@@ -115,6 +115,7 @@ export class AppleIAPService implements OnModuleInit {
       );
     } else if (!this.isSandbox) {
       this.logger.warn(
+        { isSandbox: this.isSandbox, hasAppAppleId: false },
         'APPLE_IAP_SANDBOX=false but APPLE_APP_APPLE_ID is not set — falling back to Sandbox only, Production purchases will fail verification',
       );
     }
@@ -123,7 +124,10 @@ export class AppleIAPService implements OnModuleInit {
       ? this.sandboxVerifier
       : (this.productionVerifier ?? this.sandboxVerifier);
 
-    this.logger.log(`Apple IAP initialized (${this.isSandbox ? 'Sandbox' : 'Production'})`);
+    this.logger.log(
+      { environment: this.isSandbox ? 'Sandbox' : 'Production' },
+      'Apple IAP initialized',
+    );
   }
 
   /**
@@ -135,7 +139,15 @@ export class AppleIAPService implements OnModuleInit {
 
     const existing = await this.repo.findPaymentByAppleTransactionId(transactionId);
     if (existing?.status === 'success') {
-      this.logger.log(`Apple IAP ${transactionId} already processed (payment ${existing.id})`);
+      this.logger.log(
+        {
+          action: LogAction.APPLE_IAP_ALREADY_PROCESSED,
+          userId,
+          transactionId,
+          paymentId: existing.id,
+        },
+        'Apple IAP transaction already processed',
+      );
       throw new ConflictException('APPLE_TRANSACTION_ALREADY_PROCESSED');
     }
 
@@ -143,7 +155,14 @@ export class AppleIAPService implements OnModuleInit {
 
     if (decoded.productId !== productId) {
       this.logger.warn(
-        `Apple IAP product mismatch: client=${productId}, Apple=${decoded.productId}`,
+        {
+          action: LogAction.APPLE_IAP_PRODUCT_MISMATCH,
+          userId,
+          transactionId,
+          clientProductId: productId,
+          appleProductId: decoded.productId,
+        },
+        'Apple IAP product mismatch between client and Apple',
       );
       throw new BadRequestException('APPLE_IAP_VERIFICATION_FAILED');
     }
@@ -168,8 +187,17 @@ export class AppleIAPService implements OnModuleInit {
       await this.repo.finalizePayment(paymentRow.id, (tx) =>
         this.fulfillByType(paymentType, tx, paymentRow),
       );
-    } catch (err) {
-      this.logger.error(`Apple IAP fulfillment failed for payment ${paymentRow.id}`, err);
+    } catch (err: unknown) {
+      this.logger.error(
+        {
+          action: LogAction.APPLE_IAP_FULFILLMENT_FAILED,
+          err,
+          userId,
+          transactionId,
+          paymentId: paymentRow.id,
+        },
+        'Apple IAP fulfillment failed',
+      );
       throw new InternalServerErrorException('PAYMENT_FULFILLMENT_FAILED');
     }
 
@@ -204,21 +232,38 @@ export class AppleIAPService implements OnModuleInit {
           this.productionVerifier,
           transactionId,
         );
-      } catch (err) {
+      } catch (err: unknown) {
         if (!(err instanceof APIException && err.apiError === APIError.TRANSACTION_ID_NOT_FOUND)) {
-          this.logger.error('Apple IAP verification failed (Production)', err);
+          this.logger.error(
+            {
+              action: LogAction.APPLE_IAP_VERIFICATION_FAILED,
+              err,
+              transactionId,
+              environment: 'Production',
+            },
+            'Apple IAP verification failed',
+          );
           throw new BadRequestException('APPLE_IAP_VERIFICATION_FAILED');
         }
         this.logger.log(
-          `Transaction ${transactionId} not found in Production, retrying in Sandbox`,
+          { action: LogAction.APPLE_IAP_ENVIRONMENT_FALLBACK, transactionId },
+          'Transaction not found in Production, retrying in Sandbox',
         );
       }
     }
 
     try {
       return await this.fetchAndVerify(this.sandboxApiClient, this.sandboxVerifier, transactionId);
-    } catch (err) {
-      this.logger.error('Apple IAP verification failed (Sandbox)', err);
+    } catch (err: unknown) {
+      this.logger.error(
+        {
+          action: LogAction.APPLE_IAP_VERIFICATION_FAILED,
+          err,
+          transactionId,
+          environment: 'Sandbox',
+        },
+        'Apple IAP verification failed',
+      );
       throw new BadRequestException('APPLE_IAP_VERIFICATION_FAILED');
     }
   }
@@ -289,12 +334,18 @@ export class AppleIAPService implements OnModuleInit {
     for (const url of APPLE_ROOT_CA_URLS) {
       try {
         certs.push(await fetchBuffer(url));
-      } catch (err) {
-        this.logger.warn(`Failed to download Apple root CA from ${url}`, err);
+      } catch (err: unknown) {
+        this.logger.warn(
+          { action: LogAction.APPLE_IAP_ROOT_CA_FAILED, err, url },
+          'Failed to download Apple root CA',
+        );
       }
     }
     if (certs.length === 0) {
-      this.logger.warn('No Apple root CAs loaded — JWS verification will fail');
+      this.logger.warn(
+        { action: LogAction.APPLE_IAP_ROOT_CA_FAILED, loadedCount: certs.length },
+        'No Apple root CAs loaded — JWS verification will fail',
+      );
     }
     return certs;
   }
