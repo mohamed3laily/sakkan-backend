@@ -62,6 +62,12 @@ export const LogAction = {
   CREDITS_ADDED: 'credits_added',
   FEATURED_BUNDLE_ACTIVATED: 'featured_bundle_activated',
   APPLE_IAP_VERIFIED: 'apple_iap_verified',
+  APPLE_IAP_ALREADY_PROCESSED: 'apple_iap_already_processed',
+  APPLE_IAP_PRODUCT_MISMATCH: 'apple_iap_product_mismatch',
+  APPLE_IAP_VERIFICATION_FAILED: 'apple_iap_verification_failed',
+  APPLE_IAP_ENVIRONMENT_FALLBACK: 'apple_iap_environment_fallback',
+  APPLE_IAP_FULFILLMENT_FAILED: 'apple_iap_fulfillment_failed',
+  APPLE_IAP_ROOT_CA_FAILED: 'apple_iap_root_ca_failed',
   APPLE_IAP_WEBHOOK_RECEIVED: 'apple_iap_webhook_received',
 
   SMS_SENT: 'sms_sent',
